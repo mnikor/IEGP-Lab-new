@@ -93,18 +93,18 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
 
         {/* Chart */}
         <div className="mb-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-neutral-dark mb-2">Feasibility Analysis</h4>
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-neutral-dark">Feasibility Analysis</h4>
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="sm" 
-              className="h-7 p-1"
-              onClick={() => setShowFeasibilityDetails(!showFeasibilityDetails)}
+              className="h-7 text-xs"
+              onClick={() => setShowFeasibilityDetails(prev => !prev)}
             >
               {showFeasibilityDetails ? (
-                <><ChevronUp className="h-4 w-4 mr-1" /> Less Detail</>
+                <><ChevronUp className="h-4 w-4 mr-1" /> Show Less</>
               ) : (
-                <><ChevronDown className="h-4 w-4 mr-1" /> More Detail</>
+                <><ChevronDown className="h-4 w-4 mr-1" /> Show Details</>
               )}
             </Button>
           </div>
@@ -116,7 +116,9 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
           
           {/* Detailed View */}
           {showFeasibilityDetails && (
-            <FeasibilityDetails feasibilityData={concept.feasibilityData} />
+            <div className="border rounded-md p-3 bg-blue-50/30">
+              <FeasibilityDetails feasibilityData={concept.feasibilityData} />
+            </div>
           )}
         </div>
 
