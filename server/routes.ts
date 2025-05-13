@@ -84,11 +84,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const mcdaScores = scoreMcda(concept, data);
         const swotAnalysis = generateSwot(concept, searchResults);
         
+        // Format citations with sources
+        const currentEvidence = {
+          summary: searchResults.content,
+          citations: searchResults.citations.map((citation, index) => ({
+            id: index + 1,
+            url: citation,
+            title: `Source ${index + 1}` // We could parse the URL to get a better title, but this is simpler
+          }))
+        };
+        
         return {
           ...concept,
           feasibilityData,
           mcdaScores,
-          swotAnalysis
+          swotAnalysis,
+          currentEvidence
         };
       });
 

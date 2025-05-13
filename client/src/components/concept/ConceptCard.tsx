@@ -6,6 +6,7 @@ import { Star } from "lucide-react";
 import PicoFramework from "@/components/shared/PicoFramework";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
 import FeasibilityChart from "@/components/shared/FeasibilityChart";
+import CurrentEvidence from "@/components/shared/CurrentEvidence";
 
 interface ConceptCardProps {
   concept: StudyConcept;

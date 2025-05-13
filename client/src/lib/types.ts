@@ -42,6 +42,17 @@ export interface EvidenceSource {
   citation: string;
 }
 
+export interface EvidenceCitation {
+  id: number;
+  url: string;
+  title: string;
+}
+
+export interface CurrentEvidence {
+  summary: string;
+  citations: EvidenceCitation[];
+}
+
 export interface StudyConcept {
   id?: number;
   title: string;
@@ -60,6 +71,7 @@ export interface StudyConcept {
   swotAnalysis: SwotAnalysis;
   feasibilityData: FeasibilityData;
   evidenceSources: EvidenceSource[];
+  currentEvidence?: CurrentEvidence;
   createdAt?: string;
 }
 
