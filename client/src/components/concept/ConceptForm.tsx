@@ -45,6 +45,7 @@ const formSchema = z.object({
     .refine(val => val === undefined || (val !== undefined && !isNaN(val) && val > 0), {
       message: "Sales impact threshold must be a positive number",
     }),
+  anticipatedFpiDate: z.string().optional(),
   globalLoeDate: z.string().optional(),
   hasPatentExtensionPotential: z.boolean().optional().default(false),
 });
@@ -412,6 +413,33 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                   />
                 </div>
                 
+                {/* Study Timeline Section */}
+                <div className="mt-6 border-t pt-4 border-neutral-light">
+                  <h3 className="text-sm font-medium mb-4">Study Timeline Information</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <FormField
+                      control={form.control}
+                      name="anticipatedFpiDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Anticipated FPI Date</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="date" 
+                              {...field}
+                            />
+                          </FormControl>
+                          <p className="text-xs text-neutral-medium mt-1">
+                            When do you expect First Patient In (FPI)? If not provided, defaults to 12 months from now.
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
                 {/* LOE (Loss of Exclusivity) Section */}
                 <div className="mt-6 border-t pt-4 border-neutral-light">
                   <h3 className="text-sm font-medium mb-4">Patent Exclusivity Information</h3>

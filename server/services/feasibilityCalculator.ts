@@ -1,6 +1,11 @@
 import { StudyConcept, GenerateConceptRequest } from "@shared/schema";
 import { FeasibilityData, RegionalLoeData } from "@/lib/types";
 
+// TypeScript interface for the extended request type including anticipatedFpiDate
+interface ExtendedGenerateConceptRequest extends GenerateConceptRequest {
+  anticipatedFpiDate?: string;
+}
+
 // Type assertion helper for feasibilityData
 type ConceptWithFeasibility = Partial<StudyConcept> & {
   feasibilityData?: FeasibilityData;
@@ -13,7 +18,7 @@ type ConceptWithFeasibility = Partial<StudyConcept> & {
  * @param requestData The original request data for context
  * @returns Feasibility data object
  */
-export function calculateFeasibility(concept: ConceptWithFeasibility, requestData: Partial<GenerateConceptRequest>): FeasibilityData {
+export function calculateFeasibility(concept: ConceptWithFeasibility, requestData: Partial<ExtendedGenerateConceptRequest>): FeasibilityData {
   // Step 1: Determine the study phase and complexity factors
   const studyPhase = concept.studyPhase || 'any';
   const isRealWorldEvidence = concept.strategicGoal === 'real_world_evidence';
