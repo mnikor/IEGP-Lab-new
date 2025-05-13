@@ -111,6 +111,11 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
             <p className="text-xs text-neutral-medium">
               Total timeline is from FPI (First Patient In) to completion of follow-up
             </p>
+            {feasibilityData.estimatedFpiDate && (
+              <p className="text-xs text-primary-dark font-medium mt-1">
+                Estimated FPI Date: {new Date(feasibilityData.estimatedFpiDate).toLocaleDateString()}
+              </p>
+            )}
             <p className="text-xs text-neutral-medium mt-1">
               Expected recruitment rate: {
                 typeof feasibilityData.recruitmentRate === 'number'
