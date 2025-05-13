@@ -166,7 +166,7 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   // Calculate recruitment period
   const recruitmentPeriod = Math.ceil(patientCount / (totalSites * monthlyRecruitmentPerSite));
   
-  // Total timeline
+  // Total timeline from FPI (First Patient In) to completion of follow-up
   let timeline = recruitmentPeriod + baseProcessingTimes[studyPhase];
   
   // Adjust timeline for multi-geography studies (regulatory delays)
@@ -446,11 +446,14 @@ function calculateProjectedROI(
   const discountRate = 0.1; // 10% annual discount rate
   const discountFactor = 1 / Math.pow(1 + discountRate, timeToImpact);
   
-  // Revenue over 5 years after study completion
+  // Revenue over 5 years after primary endpoint readout (not from study initiation)
+  // We assume primary endpoint readout is at study completion
   let totalDiscountedRevenue = 0;
   for (let year = 1; year <= 5; year++) {
     // Revenue ramps up over time
     const yearlyRevenue = potentialRevenue * Math.min(1.0, year * 0.3);
+    // Calculate discount based on when the revenue will be received: 
+    // timeToImpact represents time to primary endpoint readout, after which we calculate 5 years
     const yearsFromNow = timeToImpact + year;
     const yearDiscountFactor = 1 / Math.pow(1 + discountRate, yearsFromNow);
     totalDiscountedRevenue += yearlyRevenue * yearDiscountFactor;
