@@ -161,7 +161,14 @@ export async function generatePdfReport(concepts: StudyConcept[]): Promise<Buffe
         // Evidence Sources
         doc.fontSize(12).font('Helvetica-Bold').text('Evidence Sources', { underline: true });
         doc.moveDown(0.5);
-        concept.evidenceSources.forEach((source, i) => {
+        
+        // Type assertion for evidence sources
+        const evidenceSources = concept.evidenceSources as Array<{
+          citation: string;
+          url?: string;
+        }>;
+        
+        evidenceSources.forEach((source: any, i: number) => {
           doc.fontSize(9).font('Helvetica').text(`${i + 1}. ${source.citation}`);
         });
       });
@@ -247,23 +254,31 @@ export async function generatePptxReport(concepts: StudyConcept[]): Promise<Buff
         swotSlide.addText(`Concept ${index + 1}: SWOT Analysis`, { x: 0.5, y: 0.5, w: 9, h: 0.8, fontSize: 18, fontFace: 'Arial', bold: true });
         
         // Create SWOT quadrants
+        // Type assertion for SWOT analysis
+        const pptxSwotAnalysis = concept.swotAnalysis as {
+          strengths: string[];
+          weaknesses: string[];
+          opportunities: string[];
+          threats: string[];
+        };
+        
         swotSlide.addText('Strengths', { x: 0.5, y: 1.5, w: 4.5, h: 0.5, fontSize: 16, fontFace: 'Arial', bold: true, color: '107C10' });
-        concept.swotAnalysis.strengths.forEach((strength, i) => {
+        pptxSwotAnalysis.strengths.forEach((strength: string, i: number) => {
           swotSlide.addText(strength, { x: 0.5, y: 2.0 + (i * 0.4), w: 4.5, h: 0.4, fontSize: 12, fontFace: 'Arial', bullet: true });
         });
         
         swotSlide.addText('Weaknesses', { x: 5.0, y: 1.5, w: 4.5, h: 0.5, fontSize: 16, fontFace: 'Arial', bold: true, color: 'D83B01' });
-        concept.swotAnalysis.weaknesses.forEach((weakness, i) => {
+        pptxSwotAnalysis.weaknesses.forEach((weakness: string, i: number) => {
           swotSlide.addText(weakness, { x: 5.0, y: 2.0 + (i * 0.4), w: 4.5, h: 0.4, fontSize: 12, fontFace: 'Arial', bullet: true });
         });
         
         swotSlide.addText('Opportunities', { x: 0.5, y: 4.0, w: 4.5, h: 0.5, fontSize: 16, fontFace: 'Arial', bold: true, color: '0078D4' });
-        concept.swotAnalysis.opportunities.forEach((opportunity, i) => {
+        pptxSwotAnalysis.opportunities.forEach((opportunity: string, i: number) => {
           swotSlide.addText(opportunity, { x: 0.5, y: 4.5 + (i * 0.4), w: 4.5, h: 0.4, fontSize: 12, fontFace: 'Arial', bullet: true });
         });
         
         swotSlide.addText('Threats', { x: 5.0, y: 4.0, w: 4.5, h: 0.5, fontSize: 16, fontFace: 'Arial', bold: true, color: 'E81123' });
-        concept.swotAnalysis.threats.forEach((threat, i) => {
+        pptxSwotAnalysis.threats.forEach((threat: string, i: number) => {
           swotSlide.addText(threat, { x: 5.0, y: 4.5 + (i * 0.4), w: 4.5, h: 0.4, fontSize: 12, fontFace: 'Arial', bullet: true });
         });
         
@@ -271,8 +286,14 @@ export async function generatePptxReport(concepts: StudyConcept[]): Promise<Buff
         const evidenceSlide = pptx.addSlide();
         evidenceSlide.addText(`Concept ${index + 1}: Evidence Sources`, { x: 0.5, y: 0.5, w: 9, h: 0.8, fontSize: 18, fontFace: 'Arial', bold: true });
         
+        // Type assertion for evidence sources
+        const pptxEvidenceSources = concept.evidenceSources as Array<{
+          citation: string;
+          url?: string;
+        }>;
+        
         let evidenceY = 1.5;
-        concept.evidenceSources.forEach((source, i) => {
+        pptxEvidenceSources.forEach((source: any, i: number) => {
           evidenceSlide.addText(`${i + 1}. ${source.citation}`, { x: 0.5, y: evidenceY, w: 9, h: 0.5, fontSize: 12, fontFace: 'Arial' });
           evidenceY += 0.4;
         });
@@ -287,7 +308,20 @@ export async function generatePptxReport(concepts: StudyConcept[]): Promise<Buff
       stream.on('end', () => resolve(Buffer.concat(chunks)));
       stream.on('error', (err) => reject(err));
       
-      pptx.write('nodebuffer', stream);
+      // pptxgenjs passes a single argument to write() in recent versions
+      const writeOutput = pptx.write('nodebuffer'); 
+      if (writeOutput instanceof Promise) {
+        writeOutput.then((buffer: Buffer) => {
+          stream.write(buffer);
+          stream.end();
+        }).catch((err: Error) => {
+          reject(err);
+        });
+      } else {
+        // For older versions that might return the buffer directly
+        stream.write(writeOutput);
+        stream.end();
+      }
     } catch (error) {
       reject(error);
     }
