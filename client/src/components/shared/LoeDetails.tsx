@@ -44,7 +44,9 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
 
   // Determine color based on time to LOE
   const getLoeStatusColor = () => {
-    if (!timeToLoe) return 'bg-neutral-100 text-neutral-700';
+    if (!timeToLoe || typeof timeToLoe !== 'number' || isNaN(timeToLoe)) {
+      return 'bg-neutral-100 text-neutral-700';
+    }
     if (timeToLoe < 24) return 'bg-red-100 text-red-800'; // < 2 years: urgent
     if (timeToLoe < 60) return 'bg-yellow-100 text-yellow-800'; // < 5 years: warning
     return 'bg-green-100 text-green-800'; // > 5 years: good
@@ -74,7 +76,7 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
                 <Badge variant="outline" className={getLoeStatusColor()}>
                   {timeToLoe != null ? `${timeToLoe} months` : 'Unknown'}
                 </Badge>
-                {timeToLoe != null && timeToLoe < 36 && (
+                {typeof timeToLoe === 'number' && !isNaN(timeToLoe) && timeToLoe < 36 && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -94,12 +96,12 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
           </div>
 
           {/* Post-LOE value retention */}
-          {postLoeValue != null && (
+          {postLoeValue != null && typeof postLoeValue === 'number' && !isNaN(postLoeValue) && (
             <div className="space-y-2">
               <div className="text-sm font-medium text-neutral-dark">Post-LOE Value Retention</div>
               <div className="flex items-center">
                 <Badge variant="outline" className="bg-blue-50 text-blue-800">
-                  {Math.round(postLoeValue * 100)}% of peak value
+                  {Math.round(Math.max(0, Math.min(1, postLoeValue)) * 100)}% of peak value
                 </Badge>
                 <TooltipProvider>
                   <Tooltip>

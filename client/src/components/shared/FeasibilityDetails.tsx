@@ -106,7 +106,9 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
                   ? (feasibilityData.recruitmentRate * 100).toFixed(0) 
                   : '50'
               }% of target
-              {feasibilityData.dropoutRate > 0 && ` • Estimated dropout rate: ${(feasibilityData.dropoutRate * 100).toFixed(0)}%`}
+              {typeof feasibilityData.dropoutRate === 'number' && feasibilityData.dropoutRate > 0 
+                ? ` • Estimated dropout rate: ${(feasibilityData.dropoutRate * 100).toFixed(0)}%` 
+                : ''}
             </p>
           </div>
         </div>

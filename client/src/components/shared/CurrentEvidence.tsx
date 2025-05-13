@@ -20,21 +20,37 @@ const formatMarkdownTitles = (text: string): string => {
   
   // First clean up the text to handle Perplexity API text-formatting placeholders
   let formattedText = text
+    // Remove any HTML tags that might have been included in the response
+    .replace(/<div.*?>/g, '')
+    .replace(/<\/div>/g, '')
+    .replace(/<span.*?>/g, '')
+    .replace(/<\/span>/g, '')
+    
     // Replace text-base, text-sm, text-* placeholders with proper HTML
     .replace(/text-base font-bold my-2>(.*?)(?=<|$)/g, '<strong>$1</strong>')
     .replace(/text-sm font-bold my->/g, '<strong>')
     .replace(/text-sm font-bold my-2>(.*?)(?=<|$)/g, '<strong>$1</strong>')
     .replace(/text-base font-bold my->/g, '<strong>')
+    .replace(/<span class="text-base font-bold.*?">(.*?)<\/span>/g, '<strong>$1</strong>')
+    .replace(/<span class="text-sm font-bold.*?">(.*?)<\/span>/g, '<strong>$1</strong>')
+    
     // Clean up formatting tags
     .replace(/my-\d+>/g, '>')
     .replace(/my-\d+->/g, '>')
+    .replace(/class=".*?"/g, '')
+    
     // Handle "text-sm font-bold" patterns
     .replace(/text-sm font-bold\s+(.*?)(?=\n|$)/g, '<strong>$1</strong>')
     .replace(/text-base font-bold\s+(.*?)(?=\n|$)/g, '<strong>$1</strong>')
+    
     // Clean up any leftover markers
     .replace(/text-.*?>/g, '>')
     .replace(/font-bold/g, '<strong>')
-    .replace(/<\/font-bold>/g, '</strong>');
+    .replace(/<\/font-bold>/g, '</strong>')
+    
+    // Fix double line breaks or excessive spacing
+    .replace(/\n\s*\n\s*\n/g, '\n\n')
+    .replace(/\s{3,}/g, ' ');
   
   // Now handle markdown-like headers
   formattedText = formattedText
@@ -53,6 +69,19 @@ const formatMarkdownTitles = (text: string): string => {
     .replace(/^([A-Z][A-Z\s]+):?$/gm, '<strong>$1</strong>')
     .replace(/([A-Z][A-Z0-9\s-]+\s+(?:STUDY|TRIAL))/g, '<strong>$1</strong>');
   
+  // Section titles that are commonly used in clinical evidence
+  const sectionTitles = [
+    'Background', 'Methods', 'Results', 'Conclusion', 'Discussion', 
+    'Primary Endpoint', 'Secondary Endpoints', 'Adverse Events', 
+    'Efficacy', 'Safety', 'Clinical Implications', 'Study Design'
+  ];
+  
+  // Make section titles bold when they appear at the start of a line
+  sectionTitles.forEach(title => {
+    const regex = new RegExp(`^(${title}\\s*:)`, 'gm');
+    formattedText = formattedText.replace(regex, '<strong>$1</strong>');
+  });
+  
   return formattedText;
 };
 
@@ -70,29 +99,46 @@ const CurrentEvidence: React.FC<CurrentEvidenceProps> = ({ currentEvidence, clas
         <div className="text-sm text-neutral-dark">
           <div className="bg-blue-50 p-3 rounded-md mb-4">
             <h4 className="text-sm font-semibold text-blue-800 mb-2">Existing Research Summary</h4>
-            <div className="whitespace-pre-line text-blue-700 prose prose-sm max-w-none" dangerouslySetInnerHTML={{
-              __html: formatMarkdownTitles(currentEvidence.summary)
-            }} />
+            {currentEvidence.summary ? (
+              <div className="whitespace-pre-line text-blue-700 prose prose-sm max-w-none" dangerouslySetInnerHTML={{
+                __html: formatMarkdownTitles(currentEvidence.summary)
+              }} />
+            ) : (
+              <div className="whitespace-pre-line text-blue-700 prose prose-sm max-w-none">
+                <p>No summary information available for this evidence.</p>
+              </div>
+            )}
           </div>
           
-          {currentEvidence.citations && currentEvidence.citations.length > 0 && (
+          {currentEvidence.citations && Array.isArray(currentEvidence.citations) && currentEvidence.citations.length > 0 && (
             <div className="border border-neutral-200 rounded-md p-3">
               <h4 className="font-medium mb-2">Key Literature References:</h4>
               <ul className="space-y-2">
-                {currentEvidence.citations.map((citation) => (
-                  <li key={citation.id} className="flex items-start">
-                    <span className="font-medium text-xs mr-2 bg-neutral-100 px-1 py-0.5 rounded">[{citation.id}]</span>
-                    <a 
-                      href={citation.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-primary hover:text-primary-dark hover:underline flex items-center"
-                    >
-                      {citation.title || citation.url}
-                      <ExternalLink className="h-3 w-3 ml-1 inline" />
-                    </a>
-                  </li>
-                ))}
+                {currentEvidence.citations.map((citation, index) => {
+                  // Skip invalid citations
+                  if (!citation || (!citation.url && !citation.title)) {
+                    return null;
+                  }
+                  
+                  const citationId = citation.id || `ref-${index + 1}`;
+                  const citationUrl = citation.url || '#';
+                  const citationTitle = citation.title || citationUrl;
+                  
+                  return (
+                    <li key={citationId} className="flex items-start">
+                      <span className="font-medium text-xs mr-2 bg-neutral-100 px-1 py-0.5 rounded">[{citationId}]</span>
+                      <a 
+                        href={citationUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:text-primary-dark hover:underline flex items-center"
+                      >
+                        {citationTitle}
+                        <ExternalLink className="h-3 w-3 ml-1 inline" />
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
