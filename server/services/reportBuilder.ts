@@ -1,6 +1,8 @@
 import { StudyConcept, SynopsisValidation } from "@shared/schema";
 import PDFDocument from 'pdfkit';
-import PptxGenJS from 'pptxgenjs';
+import * as PptxGenJSModule from 'pptxgenjs';
+// Handle both ESM and CommonJS import styles
+const PptxGenJS = (PptxGenJSModule.default || PptxGenJSModule) as any;
 import { PassThrough } from 'stream';
 
 /**
