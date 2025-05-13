@@ -194,7 +194,14 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
 
   # Evidence from Literature:
   ${searchResults.content}
-
+  
+  ## IMPORTANT INSTRUCTIONS:
+  1. The evidence above contains valuable information about study design, costs, patient numbers, and geographic considerations. You MUST incorporate this evidence into your study concept designs.
+  2. For Phase III oncology studies, ensure cost estimates accurately reflect the high expense (typically €30-100M range).
+  3. When EU is specified as a geography, your design should include multiple European countries (8-12 countries).
+  4. Sample sizes should align with the evidence provided and typical values for the specified phase and indication.
+  5. Study design should follow established precedents for similar drugs in similar indications.
+  
   Respond with a JSON object in this format:
   {
     "concepts": [

@@ -17,18 +17,40 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   // Step 1: Determine the study phase and complexity factors
   const studyPhase = concept.studyPhase || 'any';
   const isRealWorldEvidence = concept.strategicGoal === 'real_world_evidence';
-  const geographyCount = concept.geography?.length || 1;
+  const isOncology = (concept.indication || '').toLowerCase().includes('cancer') || 
+                    (concept.indication || '').toLowerCase().includes('oncol') || 
+                    (concept.indication || '').toLowerCase().includes('tumor') ||
+                    (concept.indication || '').toLowerCase().includes('carcinoma') ||
+                    (concept.indication || '').toLowerCase().includes('sarcoma') ||
+                    (concept.indication || '').toLowerCase().includes('leukemia') ||
+                    (concept.indication || '').toLowerCase().includes('lymphoma');
+  
+  // Calculate number of countries based on geography array
+  // Special handling for EU - it represents multiple countries
+  let geographyCount = 0;
+  if (concept.geography) {
+    for (const region of concept.geography) {
+      if (region === 'EU' || region.toLowerCase() === 'europe' || region.toLowerCase() === 'european union') {
+        // EU represents approximately 27 member countries
+        geographyCount += 10; // Assuming a typical study won't run in all EU countries, but in ~10
+      } else {
+        geographyCount += 1;
+      }
+    }
+  }
+  geographyCount = geographyCount || 1; // Ensure at least 1 country
+  
   const hasTargetSubpopulation = !!concept.targetSubpopulation;
   const comparatorCount = concept.comparatorDrugs?.length || 0;
   
-  // Step 2: Calculate patient numbers based on phase and indication
-  // These are estimated average patient numbers by phase
+  // Step 2: Calculate patient numbers based on phase, indication, and study type
+  // These are estimated average patient numbers by phase with adjustments for oncology and RWE
   const basePatientsByPhase: { [key: string]: number } = {
-    'I': isRealWorldEvidence ? 200 : 50,
-    'II': isRealWorldEvidence ? 500 : 200,
-    'III': isRealWorldEvidence ? 2000 : 1000,
-    'IV': isRealWorldEvidence ? 3000 : 1500,
-    'any': isRealWorldEvidence ? 1000 : 500
+    'I': isRealWorldEvidence ? 200 : (isOncology ? 40 : 50),
+    'II': isRealWorldEvidence ? 500 : (isOncology ? 150 : 200),
+    'III': isRealWorldEvidence ? 2500 : (isOncology ? 800 : 1000),
+    'IV': isRealWorldEvidence ? 3500 : (isOncology ? 1800 : 1500),
+    'any': isRealWorldEvidence ? 1200 : (isOncology ? 600 : 500)
   };
   
   // Vary patient counts to ensure each concept has different numbers
@@ -73,18 +95,40 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   // Minimum sites per geography
   totalSites = Math.max(totalSites, geographyCount * 2);
   
-  // Step 4: Calculate cost based on patient and site numbers
-  // Average cost per patient by phase (in EUR)
-  const costPerPatientByPhase: { [key: string]: number } = {
-    'I': 20000,
-    'II': 15000,
-    'III': 10000,
-    'IV': 5000,
-    'any': 12000
-  };
+  // Step 4: Calculate cost based on patient and site numbers, indication, and study type
+  // Average cost per patient by phase (in EUR), with significant adjustments for oncology
+  let costPerPatientByPhase: { [key: string]: number };
   
-  // Site setup cost per site (in EUR)
-  const siteSetupCost = 25000;
+  if (isOncology) {
+    // Oncology studies are significantly more expensive
+    costPerPatientByPhase = {
+      'I': 35000,  // Phase I oncology trials often include complex biomarker analysis
+      'II': 45000, // Phase II involves more extensive monitoring and imaging
+      'III': 60000, // Phase III oncology trials are very expensive due to long-term follow-up
+      'IV': 20000, // Post-market still costly for cancer
+      'any': 40000  // Default for oncology is high
+    };
+  } else {
+    // Non-oncology studies
+    costPerPatientByPhase = {
+      'I': 25000,
+      'II': 20000,
+      'III': 30000,
+      'IV': 10000,
+      'any': 18000
+    };
+  }
+  
+  // Adjust for real world evidence studies
+  if (isRealWorldEvidence) {
+    // RWE studies typically have more data collection but less intensive interventions
+    Object.keys(costPerPatientByPhase).forEach(phase => {
+      costPerPatientByPhase[phase] = Math.round(costPerPatientByPhase[phase] * 0.8);
+    });
+  }
+  
+  // Site setup cost per site (in EUR) - higher for multisite studies
+  const siteSetupCost = geographyCount > 5 ? 35000 : 25000;
   
   let estimatedCost = (patientCount * costPerPatientByPhase[studyPhase]) + (totalSites * siteSetupCost);
   
@@ -93,8 +137,18 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
     estimatedCost *= (1 + (comparatorCount * 0.1)); // 10% increase per comparator
   }
   
-  // Regulatory costs vary by geography
-  estimatedCost += geographyCount * 50000; // 50K EUR per geography for regulatory
+  // Regulatory costs vary by geography, phase, and therapeutic area
+  // First country has higher regulatory costs, then each additional country adds less
+  let regulatoryCostBase = isOncology ? 100000 : 75000; // Base cost for first country
+  if (studyPhase === 'III') {
+    regulatoryCostBase *= 1.5; // Phase III studies have higher regulatory complexity
+  } else if (studyPhase === 'I') {
+    regulatoryCostBase *= 0.7; // Phase I studies have less regulatory burden
+  }
+  
+  // Calculate total regulatory costs with diminishing returns for additional countries
+  const regulatoryCost = regulatoryCostBase + (Math.log2(geographyCount) * regulatoryCostBase * 0.5);
+  estimatedCost += regulatoryCost;
   
   // Step 5: Calculate timeline based on recruitment rates and processing time
   // Base monthly recruitment rate per site
@@ -168,12 +222,33 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
 
   // Calculate cost breakdowns
   const totalCost = Math.round(estimatedCost);
+  
+  // Adjust proportions for oncology studies which have different cost distribution
+  let personnelPct, materialPct, monitoringPct, dataPct;
+  
+  if (isOncology) {
+    // Oncology trials have higher monitoring and data costs
+    personnelPct = 0.25; // Staff costs are proportionally lower
+    materialPct = 0.20;  // Materials (drugs, tests) are higher
+    monitoringPct = 0.25; // More intensive patient monitoring
+    dataPct = 0.18;      // More complex data collection and analysis
+  } else {
+    // Standard distribution for non-oncology
+    personnelPct = 0.30;
+    materialPct = 0.15;
+    monitoringPct = 0.20;
+    dataPct = 0.15;
+  }
+  
   const siteCosts = Math.round(totalSites * siteSetupCost);
-  const personnelCosts = Math.round(totalCost * 0.3); // Approximately 30% of total cost
-  const materialCosts = Math.round(totalCost * 0.15); // Approximately 15% of total cost
-  const monitoringCosts = Math.round(totalCost * 0.2); // Approximately 20% of total cost
-  const dataCosts = Math.round(totalCost * 0.15); // Approximately 15% of total cost
-  const regulatoryCosts = Math.round(geographyCount * 50000); // Regulatory costs
+  const regulatoryCosts = Math.round(regulatoryCost);
+  
+  // Calculate other costs as percentages of the remaining budget after site and regulatory costs
+  const remainingBudget = totalCost - siteCosts - regulatoryCosts;
+  const personnelCosts = Math.round(remainingBudget * personnelPct);
+  const materialCosts = Math.round(remainingBudget * materialPct); 
+  const monitoringCosts = Math.round(remainingBudget * monitoringPct);
+  const dataCosts = Math.round(remainingBudget * dataPct);
   
   // Risk factors
   const dropoutRate = Math.min(0.3, 0.1 + (completionRisk * 0.2)); // 10-30% dropout rate

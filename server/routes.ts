@@ -68,18 +68,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = validationResult.data;
       
       // Step 1: Perform web search using Perplexity API to gather evidence
-      const searchQuery = `Provide the latest clinical evidence for ${data.drugName} in ${data.indication} focusing on ${data.strategicGoal.replace('_', ' ')}`;
+      const isOncology = (data.indication || '').toLowerCase().includes('cancer') || 
+                         (data.indication || '').toLowerCase().includes('oncol') ||
+                         (data.indication || '').toLowerCase().includes('tumor');
+      
+      // Create a more detailed query that explicitly asks for study design information                   
+      const searchQuery = `Provide the latest clinical evidence for ${data.drugName} in ${data.indication} focusing on ${data.strategicGoal.replace('_', ' ')}. 
+      Include details about: 
+      1. Optimal study design (Phase ${data.studyPhasePref}) 
+      2. Typical patient populations and sample sizes 
+      3. Common comparators used in similar studies
+      4. Standard endpoints and outcomes
+      5. Average costs and durations for similar trials${isOncology ? ' in oncology' : ''}
+      6. Common inclusion/exclusion criteria 
+      7. Geographic patterns/differences in conducting these trials`;
+      
       const searchResults = await perplexityWebSearch(searchQuery, [
         "pubmed.ncbi.nlm.nih.gov",
-        "clinicaltrials.gov",
-        "nejm.org"
+        "clinicaltrials.gov", 
+        "nejm.org",
+        "accessdata.fda.gov",
+        "ema.europa.eu",
+        "nature.com"
       ]);
 
       // Step 2: Generate concepts using OpenAI
       const concepts = await analyzeWithOpenAI(searchResults, data);
 
       // Step 3: For each concept, calculate feasibility, MCDA scores, and SWOT analysis
-      const enrichedConcepts = concepts.map(concept => {
+      const enrichedConcepts = concepts.map((concept: Partial<StudyConcept>) => {
         const feasibilityData = calculateFeasibility(concept, data);
         const mcdaScores = scoreMcda(concept, data);
         const swotAnalysis = generateSwot(concept, searchResults);
