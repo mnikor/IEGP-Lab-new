@@ -26,7 +26,9 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
           <div className="flex items-center">
             <Star className="h-5 w-5 text-yellow-400 fill-current" />
             <span className="ml-1 text-sm font-medium text-neutral-dark">
-              {concept.mcdaScores.overall.toFixed(1)}/5
+              {concept.mcdaScores && concept.mcdaScores.overall != null 
+                ? concept.mcdaScores.overall.toFixed(1) + '/5'
+                : 'N/A'}
             </span>
           </div>
         </div>
@@ -45,7 +47,9 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
               <div className="flex items-center justify-between">
                 <span className="text-xs text-neutral-medium">Scientific Validity</span>
                 <span className="text-sm font-medium text-primary">
-                  {concept.mcdaScores.scientificValidity.toFixed(1)}/5
+                  {concept.mcdaScores && concept.mcdaScores.scientificValidity != null 
+                    ? concept.mcdaScores.scientificValidity.toFixed(1) + '/5'
+                    : 'N/A'}
                 </span>
               </div>
             </div>
@@ -53,7 +57,9 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
               <div className="flex items-center justify-between">
                 <span className="text-xs text-neutral-medium">Clinical Impact</span>
                 <span className="text-sm font-medium text-primary">
-                  {concept.mcdaScores.clinicalImpact.toFixed(1)}/5
+                  {concept.mcdaScores && concept.mcdaScores.clinicalImpact != null 
+                    ? concept.mcdaScores.clinicalImpact.toFixed(1) + '/5'
+                    : 'N/A'}
                 </span>
               </div>
             </div>
@@ -61,7 +67,9 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
               <div className="flex items-center justify-between">
                 <span className="text-xs text-neutral-medium">Commercial Value</span>
                 <span className="text-sm font-medium text-primary">
-                  {concept.mcdaScores.commercialValue.toFixed(1)}/5
+                  {concept.mcdaScores && concept.mcdaScores.commercialValue != null 
+                    ? concept.mcdaScores.commercialValue.toFixed(1) + '/5'
+                    : 'N/A'}
                 </span>
               </div>
             </div>
@@ -69,7 +77,9 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
               <div className="flex items-center justify-between">
                 <span className="text-xs text-neutral-medium">Feasibility</span>
                 <span className="text-sm font-medium text-primary">
-                  {concept.mcdaScores.feasibility.toFixed(1)}/5
+                  {concept.mcdaScores && concept.mcdaScores.feasibility != null 
+                    ? concept.mcdaScores.feasibility.toFixed(1) + '/5'
+                    : 'N/A'}
                 </span>
               </div>
             </div>
@@ -91,9 +101,11 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
             <h4 className="text-sm font-medium text-neutral-dark mb-1">Estimated Cost</h4>
             <div className="flex items-baseline">
               <span className="text-lg font-medium text-primary">
-                €{(concept.feasibilityData.estimatedCost / 1000000).toFixed(1)}M
+                {concept.feasibilityData && concept.feasibilityData.estimatedCost != null
+                  ? `€${(concept.feasibilityData.estimatedCost / 1000000).toFixed(1)}M`
+                  : 'N/A'}
               </span>
-              {concept.budgetCeilingEur && (
+              {concept.budgetCeilingEur && concept.feasibilityData && concept.feasibilityData.estimatedCost != null && (
                 <span className="ml-1 text-xs text-neutral-medium">
                   ({concept.feasibilityData.estimatedCost <= concept.budgetCeilingEur ? "within budget" : "over budget"})
                 </span>
@@ -113,7 +125,9 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
             <h4 className="text-sm font-medium text-neutral-dark mb-1">Projected ROI</h4>
             <div className="flex items-baseline">
               <span className="text-lg font-medium text-primary">
-                {concept.feasibilityData.projectedROI.toFixed(1)}x
+                {concept.feasibilityData && concept.feasibilityData.projectedROI != null 
+                  ? concept.feasibilityData.projectedROI.toFixed(1) + 'x'
+                  : 'N/A'}
               </span>
               <span className="ml-1 text-xs text-neutral-medium">(5-year model)</span>
             </div>
