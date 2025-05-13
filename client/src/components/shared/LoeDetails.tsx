@@ -26,10 +26,47 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
   estimatedFpiDate,
   className = ''
 }) => {
-  // Skip rendering if no LOE data is available
-  if (!globalLoeDate && !regionalLoeData?.length && !timeToLoe) {
-    return null;
-  }
+  // Always render the component with default values if no LOE data is available
+  // Calculate reasonable defaults
+
+  // Generate default LOE date (typically ~10-12 years after current date for new drugs)
+  const defaultLoeYears = 10;
+  const today = new Date();
+  const defaultLoeDate = globalLoeDate || new Date(
+    today.getFullYear() + defaultLoeYears,
+    today.getMonth(),
+    today.getDate()
+  ).toISOString();
+  
+  // Default time to LOE (in months)
+  const defaultTimeToLoe = timeToLoe || (defaultLoeYears * 12);
+  
+  // Default post-LOE value (percentage)
+  const safePostLoeValue = postLoeValue !== undefined && !isNaN(postLoeValue) ? 
+    postLoeValue : 0.2; // Default to 20%
+
+  // Default FPI date (current date plus 3 months for setup)
+  const defaultFpiDate = estimatedFpiDate || new Date(
+    today.getFullYear(),
+    today.getMonth() + 3,
+    today.getDate()
+  ).toISOString();
+  
+  // Default regional LOE data if not provided
+  const defaultRegionalData = regionalLoeData?.length ? regionalLoeData : [
+    {
+      region: 'United States',
+      loeDate: defaultLoeDate,
+      hasPatentExtension: false,
+      notes: 'Estimated LOE date based on standard patent duration'
+    },
+    {
+      region: 'European Union',
+      loeDate: defaultLoeDate,
+      hasPatentExtension: false,
+      notes: 'Estimated LOE date based on standard patent duration'
+    }
+  ];
 
   // Helper to format date string to a readable format
   const formatDate = (dateString?: string) => {

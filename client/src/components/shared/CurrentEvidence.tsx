@@ -18,8 +18,13 @@ interface CurrentEvidenceProps {
 const formatMarkdownTitles = (text: string): string => {
   if (!text) return '';
   
-  // First clean up the text to handle Perplexity API text-formatting placeholders
+  // First clean up the text by removing raw formatting tags that might appear in headings/titles
   let formattedText = text
+    // Remove raw formatting tags completely from the beginning of sentences
+    .replace(/^text-base font-bold my-\d+>/gm, '')
+    .replace(/^text-sm font-bold my-\d+>/gm, '')
+    .replace(/^text-\w+ font-bold my-\d+>/gm, '')
+    
     // Remove any HTML tags that might have been included in the response
     .replace(/<div.*?>/g, '')
     .replace(/<\/div>/g, '')
@@ -35,8 +40,8 @@ const formatMarkdownTitles = (text: string): string => {
     .replace(/<span class="text-sm font-bold.*?">(.*?)<\/span>/g, '<strong>$1</strong>')
     
     // Clean up formatting tags
-    .replace(/my-\d+>/g, '>')
-    .replace(/my-\d+->/g, '>')
+    .replace(/my-\d+>/g, '')
+    .replace(/my-\d+->/g, '')
     .replace(/class=".*?"/g, '')
     
     // Handle "text-sm font-bold" patterns
@@ -44,7 +49,7 @@ const formatMarkdownTitles = (text: string): string => {
     .replace(/text-base font-bold\s+(.*?)(?=\n|$)/g, '<strong>$1</strong>')
     
     // Clean up any leftover markers
-    .replace(/text-.*?>/g, '>')
+    .replace(/text-.*?>/g, '')
     .replace(/font-bold/g, '<strong>')
     .replace(/<\/font-bold>/g, '</strong>')
     

@@ -39,6 +39,17 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
   // Recalculate total if provided total is too small compared to components
   const effectiveTotalCost = Math.max(totalCost, sumComponentCosts);
   
+  // Ensure timeline components have valid values
+  const recruitmentPeriodMonths = feasibilityData.recruitmentPeriodMonths ?? 6;
+  const followUpPeriodMonths = feasibilityData.followUpPeriodMonths ?? 12;
+  
+  // Calculate total timeline or use provided value if available
+  const calculatedTimeline = recruitmentPeriodMonths + followUpPeriodMonths;
+  const timeline = feasibilityData.timeline ?? calculatedTimeline;
+  
+  // Ensure timeline is at least the sum of recruitment and follow-up
+  const effectiveTimeline = Math.max(timeline, calculatedTimeline);
+  
   const getCostPercentage = (cost: number | undefined) => {
     if (!cost || !effectiveTotalCost) return 0;
     return Math.round((cost / effectiveTotalCost) * 100);
@@ -80,21 +91,21 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
               <Clock className="h-4 w-4 text-primary" />
               <span className="text-sm">Recruitment Period</span>
             </div>
-            <span className="text-sm font-medium">{feasibilityData.recruitmentPeriodMonths || 0} months</span>
+            <span className="text-sm font-medium">{recruitmentPeriodMonths} months</span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Clock className="h-4 w-4 text-primary" />
               <span className="text-sm">Follow-up Period</span>
             </div>
-            <span className="text-sm font-medium">{feasibilityData.followUpPeriodMonths || 0} months</span>
+            <span className="text-sm font-medium">{followUpPeriodMonths} months</span>
           </div>
           <div className="flex items-center justify-between border-t pt-2 border-neutral-light">
             <div className="flex items-center space-x-2">
               <Clock className="h-4 w-4 text-primary-dark" />
               <span className="text-sm font-medium">Total Timeline</span>
             </div>
-            <span className="text-sm font-medium">{feasibilityData.timeline || 0} months</span>
+            <span className="text-sm font-medium">{effectiveTimeline} months</span>
           </div>
           <div className="mt-1">
             <p className="text-xs text-neutral-medium">
