@@ -195,12 +195,22 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
   # Evidence from Literature:
   ${searchResults.content}
   
-  ## IMPORTANT INSTRUCTIONS:
-  1. The evidence above contains valuable information about study design, costs, patient numbers, and geographic considerations. You MUST incorporate this evidence into your study concept designs.
+  ## CRITICAL INSTRUCTIONS:
+  1. FIRST, analyze the evidence to identify what is ALREADY KNOWN about ${data.drugName} in ${data.indication}.
+  2. SECOND, identify critical KNOWLEDGE GAPS that align with the strategic goal "${data.strategicGoal.replace('_', ' ')}".
+  3. THIRD, design NOVEL study concepts that address these gaps and advance the strategic goal, rather than replicating existing studies.
+  
+  ## Design Requirements:
+  1. Create truly innovative studies that build upon existing evidence rather than duplicating what's already been done.
   2. For Phase III oncology studies, ensure cost estimates accurately reflect the high expense (typically €30-100M range).
   3. When EU is specified as a geography, your design should include multiple European countries (8-12 countries).
-  4. Sample sizes should align with the evidence provided and typical values for the specified phase and indication.
-  5. Study design should follow established precedents for similar drugs in similar indications.
+  4. Sample sizes should align with typical values for the specified phase and indication.
+  5. Each concept should clearly explain WHY this approach is novel and how it addresses a specific gap in current knowledge.
+  
+  ## Example Reasoning Process:
+  - "Current evidence shows drug X has been studied in combination with Y for indication Z."
+  - "However, there's limited data on its efficacy in specific subpopulations with biomarker W."
+  - "Given the strategic goal is to expand label, a study targeting this subpopulation would address this knowledge gap."
   
   Respond with a JSON object in this format:
   {
@@ -214,6 +224,8 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
         "studyPhase": "A recommended study phase (I, II, III, IV, or any)",
         "targetSubpopulation": "The target subpopulation (use the provided value or suggest one)",
         "comparatorDrugs": ["Array of comparator drugs (use the provided values or suggest appropriate ones)"],
+        "knowledgeGapAddressed": "Detailed explanation of the specific knowledge gap this study addresses based on current evidence",
+        "innovationJustification": "Explanation of why this study design is novel and how it advances the strategic goal",
         "picoData": {
           "population": "Detailed description of the study population",
           "intervention": "Detailed description of the intervention",

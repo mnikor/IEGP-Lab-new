@@ -41,6 +41,24 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
       <CardContent className="p-4">
         <h3 className="text-lg font-medium text-neutral-dark mb-2">{concept.title}</h3>
         
+        {/* Knowledge Gap & Innovation Justification */}
+        {(concept.knowledgeGapAddressed || concept.innovationJustification) && (
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4">
+            {concept.knowledgeGapAddressed && (
+              <div className="mb-2">
+                <h4 className="text-sm font-semibold text-amber-800">Knowledge Gap Addressed:</h4>
+                <p className="text-sm text-amber-700">{concept.knowledgeGapAddressed}</p>
+              </div>
+            )}
+            {concept.innovationJustification && (
+              <div>
+                <h4 className="text-sm font-semibold text-amber-800">Innovation Value:</h4>
+                <p className="text-sm text-amber-700">{concept.innovationJustification}</p>
+              </div>
+            )}
+          </div>
+        )}
+        
         {/* PICO Framework */}
         <PicoFramework picoData={concept.picoData} className="mb-4" />
 

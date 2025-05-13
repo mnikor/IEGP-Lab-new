@@ -87,6 +87,8 @@ export interface StudyConcept {
   budgetCeilingEur?: number;
   timelineCeilingMonths?: number;
   salesImpactThreshold?: number;
+  knowledgeGapAddressed?: string;
+  innovationJustification?: string;
   picoData: PicoData;
   mcdaScores: McDAScore;
   swotAnalysis: SwotAnalysis;
