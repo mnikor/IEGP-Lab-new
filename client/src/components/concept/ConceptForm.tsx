@@ -119,11 +119,45 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
     try {
       setIsGenerating(true);
 
+      // Prepare regional LOE dates based on selected geographies if global LOE date is set
+      let processedRegionalLoeDates;
+      if (values.globalLoeDate) {
+        // Use either user-defined regional dates or create them based on global date
+        if (regionalLoeDates.length > 0) {
+          processedRegionalLoeDates = regionalLoeDates;
+        } else {
+          // Create region-specific LOE dates based on the global date
+          processedRegionalLoeDates = selectedGeographies.map(region => {
+            // Create a new date object from the global date
+            const date = new Date(values.globalLoeDate);
+            
+            // Slightly adjust the date based on region for realism
+            // (some regions may have different patent expiration dates)
+            if (region === "US") {
+              // US patents may have slightly longer terms in some cases
+              date.setMonth(date.getMonth() + 3);
+            } else if (region === "EU") {
+              // EU might have different patent terms
+              date.setMonth(date.getMonth() - 2);
+            } else if (region === "JP") {
+              // Japan may have its own timeline
+              date.setMonth(date.getMonth() + 1);
+            }
+            
+            return {
+              region,
+              date: date.toISOString().split('T')[0]
+            };
+          });
+        }
+      }
+      
       const requestData: GenerateConceptRequest = {
         ...values,
         geography: selectedGeographies,
         comparatorDrugs: comparatorDrugs.length > 0 ? comparatorDrugs : undefined,
         currentEvidenceRefs: evidenceFiles.map(f => f.name),
+        regionalLoeDates: values.globalLoeDate ? processedRegionalLoeDates : undefined,
       };
 
       const response = await apiRequest("POST", "/api/study-concepts/generate", requestData);
