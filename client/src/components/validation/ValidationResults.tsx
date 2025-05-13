@@ -156,13 +156,15 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results }) => {
               <div className="p-3 border rounded-md">
                 <h4 className="text-sm font-medium text-neutral-dark mb-1">Cost Estimate</h4>
                 <div className="flex items-center">
-                  {results.revisedEconomics.originalCost && (
+                  {results.revisedEconomics.originalCost && typeof results.revisedEconomics.originalCost === 'number' && (
                     <span className="text-sm line-through text-neutral-medium mr-2">
                       €{(results.revisedEconomics.originalCost / 1000000).toFixed(1)}M
                     </span>
                   )}
                   <span className="text-lg font-medium text-primary">
-                    €{(results.revisedEconomics.revisedCost / 1000000).toFixed(1)}M
+                    {typeof results.revisedEconomics.revisedCost === 'number'
+                      ? `€${(results.revisedEconomics.revisedCost / 1000000).toFixed(1)}M`
+                      : `€${results.revisedEconomics.revisedCost}M`}
                   </span>
                 </div>
               </div>
@@ -182,13 +184,15 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results }) => {
               <div className="p-3 border rounded-md">
                 <h4 className="text-sm font-medium text-neutral-dark mb-1">ROI Estimate</h4>
                 <div className="flex items-center">
-                  {results.revisedEconomics.originalROI && (
+                  {results.revisedEconomics.originalROI && typeof results.revisedEconomics.originalROI === 'number' && (
                     <span className="text-sm line-through text-neutral-medium mr-2">
                       {results.revisedEconomics.originalROI.toFixed(1)}x
                     </span>
                   )}
                   <span className="text-lg font-medium text-primary">
-                    {results.revisedEconomics.revisedROI.toFixed(1)}x
+                    {typeof results.revisedEconomics.revisedROI === 'number' 
+                      ? `${results.revisedEconomics.revisedROI.toFixed(1)}x`
+                      : `${results.revisedEconomics.revisedROI}x`}
                   </span>
                 </div>
               </div>
