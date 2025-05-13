@@ -342,7 +342,7 @@ function calculateRecruitmentRate(concept: ConceptWithFeasibility, studyPhase: s
 function calculateCompletionRisk(
   concept: ConceptWithFeasibility, 
   studyPhase: string,
-  requestData: Partial<GenerateConceptRequest>
+  requestData: Partial<ExtendedGenerateConceptRequest>
 ): number {
   let baseRisk = 0.3; // Default 30% risk
   
