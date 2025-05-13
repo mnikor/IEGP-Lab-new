@@ -210,15 +210,24 @@ export async function generatePptxReport(concepts: StudyConcept[]): Promise<Buff
         overviewSlide.addText(`Drug: ${concept.drugName} | Indication: ${concept.indication}`, { x: 0.5, y: 1.3, w: 9, h: 0.5, fontSize: 14, fontFace: 'Arial' });
         overviewSlide.addText(`Strategic Goal: ${concept.strategicGoal.replace('_', ' ')} | Phase: ${concept.studyPhase} | Geography: ${concept.geography.join(', ')}`, { x: 0.5, y: 1.8, w: 9, h: 0.5, fontSize: 14, fontFace: 'Arial' });
         
+        // Type assertion for MCDA scores
+        const pptxMcdaScores = concept.mcdaScores as {
+          overall: number;
+          scientificValidity: number;
+          clinicalImpact: number;
+          commercialValue: number;
+          feasibility: number;
+        };
+        
         // Overall Score
-        overviewSlide.addText(`Overall Score: ${concept.mcdaScores.overall.toFixed(1)}/5`, { x: 0.5, y: 2.5, w: 9, h: 0.5, fontSize: 16, fontFace: 'Arial', bold: true });
+        overviewSlide.addText(`Overall Score: ${pptxMcdaScores.overall.toFixed(1)}/5`, { x: 0.5, y: 2.5, w: 9, h: 0.5, fontSize: 16, fontFace: 'Arial', bold: true });
         
         // Add score bar chart
         const scores = [
-          { name: 'Scientific Validity', score: concept.mcdaScores.scientificValidity },
-          { name: 'Clinical Impact', score: concept.mcdaScores.clinicalImpact },
-          { name: 'Commercial Value', score: concept.mcdaScores.commercialValue },
-          { name: 'Feasibility', score: concept.mcdaScores.feasibility }
+          { name: 'Scientific Validity', score: pptxMcdaScores.scientificValidity },
+          { name: 'Clinical Impact', score: pptxMcdaScores.clinicalImpact },
+          { name: 'Commercial Value', score: pptxMcdaScores.commercialValue },
+          { name: 'Feasibility', score: pptxMcdaScores.feasibility }
         ];
         
         // Add score text instead of chart (since actual chart creation is complex in pptxgenjs)
@@ -230,24 +239,42 @@ export async function generatePptxReport(concepts: StudyConcept[]): Promise<Buff
         
         // Feasibility info
         overviewSlide.addText('Feasibility Overview:', { x: 0.5, y: 5.2, w: 9, h: 0.5, fontSize: 14, fontFace: 'Arial', bold: true });
-        overviewSlide.addText(`Cost: €${(concept.feasibilityData.estimatedCost / 1000000).toFixed(1)}M | Timeline: ${concept.feasibilityData.timeline} months | ROI: ${concept.feasibilityData.projectedROI.toFixed(1)}x`, { x: 0.5, y: 5.7, w: 9, h: 0.5, fontSize: 14, fontFace: 'Arial' });
+        
+        // Type assertion for feasibility data
+        const pptxFeasibilityData = concept.feasibilityData as {
+          estimatedCost: number;
+          timeline: number;
+          projectedROI: number;
+          recruitmentRate: number;
+          completionRisk: number;
+        };
+        
+        overviewSlide.addText(`Cost: €${(pptxFeasibilityData.estimatedCost / 1000000).toFixed(1)}M | Timeline: ${pptxFeasibilityData.timeline} months | ROI: ${pptxFeasibilityData.projectedROI.toFixed(1)}x`, { x: 0.5, y: 5.7, w: 9, h: 0.5, fontSize: 14, fontFace: 'Arial' });
         
         // PICO slide
         const picoSlide = pptx.addSlide();
         picoSlide.addText(`Concept ${index + 1}: PICO Framework`, { x: 0.5, y: 0.5, w: 9, h: 0.8, fontSize: 18, fontFace: 'Arial', bold: true });
         
+        // Type assertion for PICO data
+        const pptxPicoData = concept.picoData as {
+          population: string;
+          intervention: string;
+          comparator: string;
+          outcomes: string;
+        };
+        
         // Add PICO elements
         picoSlide.addText('Population', { x: 0.5, y: 1.5, w: 9, h: 0.5, fontSize: 16, fontFace: 'Arial', bold: true });
-        picoSlide.addText(concept.picoData.population, { x: 0.5, y: 2.0, w: 9, h: 1.0, fontSize: 14, fontFace: 'Arial', bullet: true });
+        picoSlide.addText(pptxPicoData.population, { x: 0.5, y: 2.0, w: 9, h: 1.0, fontSize: 14, fontFace: 'Arial', bullet: true });
         
         picoSlide.addText('Intervention', { x: 0.5, y: 3.0, w: 9, h: 0.5, fontSize: 16, fontFace: 'Arial', bold: true });
-        picoSlide.addText(concept.picoData.intervention, { x: 0.5, y: 3.5, w: 9, h: 1.0, fontSize: 14, fontFace: 'Arial', bullet: true });
+        picoSlide.addText(pptxPicoData.intervention, { x: 0.5, y: 3.5, w: 9, h: 1.0, fontSize: 14, fontFace: 'Arial', bullet: true });
         
         picoSlide.addText('Comparator', { x: 0.5, y: 4.5, w: 9, h: 0.5, fontSize: 16, fontFace: 'Arial', bold: true });
-        picoSlide.addText(concept.picoData.comparator, { x: 0.5, y: 5.0, w: 9, h: 1.0, fontSize: 14, fontFace: 'Arial', bullet: true });
+        picoSlide.addText(pptxPicoData.comparator, { x: 0.5, y: 5.0, w: 9, h: 1.0, fontSize: 14, fontFace: 'Arial', bullet: true });
         
         picoSlide.addText('Outcomes', { x: 0.5, y: 6.0, w: 9, h: 0.5, fontSize: 16, fontFace: 'Arial', bold: true });
-        picoSlide.addText(concept.picoData.outcomes, { x: 0.5, y: 6.5, w: 9, h: 1.0, fontSize: 14, fontFace: 'Arial', bullet: true });
+        picoSlide.addText(pptxPicoData.outcomes, { x: 0.5, y: 6.5, w: 9, h: 1.0, fontSize: 14, fontFace: 'Arial', bullet: true });
         
         // SWOT slide
         const swotSlide = pptx.addSlide();
@@ -308,18 +335,19 @@ export async function generatePptxReport(concepts: StudyConcept[]): Promise<Buff
       stream.on('end', () => resolve(Buffer.concat(chunks)));
       stream.on('error', (err) => reject(err));
       
-      // pptxgenjs passes a single argument to write() in recent versions
-      const writeOutput = pptx.write('nodebuffer'); 
+      // Must cast to any since the TypeScript types for pptxgenjs are not updated to match the actual API
+      // This is safe because we know the API accepts 'nodebuffer' as a parameter
+      const writeOutput = (pptx as any).write('nodebuffer'); 
       if (writeOutput instanceof Promise) {
-        writeOutput.then((buffer: Buffer) => {
-          stream.write(buffer);
+        writeOutput.then((buffer: any) => {
+          stream.write(Buffer.from(buffer));
           stream.end();
         }).catch((err: Error) => {
           reject(err);
         });
       } else {
         // For older versions that might return the buffer directly
-        stream.write(writeOutput);
+        stream.write(Buffer.from(writeOutput));
         stream.end();
       }
     } catch (error) {
