@@ -41,8 +41,8 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
           <div className="flex items-start space-x-2">
             <BrainCircuit className="h-5 w-5 text-primary mt-1" />
             <div>
-              <p className="text-sm font-medium">{feasibilityData.numberOfSites} sites across {feasibilityData.numberOfCountries} {feasibilityData.numberOfCountries === 1 ? 'country' : 'countries'}</p>
-              <p className="text-xs text-neutral-medium">Complexity factor: {feasibilityData.complexityFactor.toFixed(2)}</p>
+              <p className="text-sm font-medium">{feasibilityData.numberOfSites || 0} sites across {feasibilityData.numberOfCountries || 0} {(feasibilityData.numberOfCountries || 0) === 1 ? 'country' : 'countries'}</p>
+              <p className="text-xs text-neutral-medium">Complexity factor: {feasibilityData.complexityFactor ? feasibilityData.complexityFactor.toFixed(2) : '0.00'}</p>
             </div>
           </div>
         </div>
@@ -57,25 +57,25 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
               <Clock className="h-4 w-4 text-primary" />
               <span className="text-sm">Recruitment Period</span>
             </div>
-            <span className="text-sm font-medium">{feasibilityData.recruitmentPeriodMonths} months</span>
+            <span className="text-sm font-medium">{feasibilityData.recruitmentPeriodMonths || 0} months</span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Clock className="h-4 w-4 text-primary" />
               <span className="text-sm">Follow-up Period</span>
             </div>
-            <span className="text-sm font-medium">{feasibilityData.followUpPeriodMonths} months</span>
+            <span className="text-sm font-medium">{feasibilityData.followUpPeriodMonths || 0} months</span>
           </div>
           <div className="flex items-center justify-between border-t pt-2 border-neutral-light">
             <div className="flex items-center space-x-2">
               <Clock className="h-4 w-4 text-primary-dark" />
               <span className="text-sm font-medium">Total Timeline</span>
             </div>
-            <span className="text-sm font-medium">{feasibilityData.timeline} months</span>
+            <span className="text-sm font-medium">{feasibilityData.timeline || 0} months</span>
           </div>
           <div className="mt-1">
             <p className="text-xs text-neutral-medium">
-              Expected recruitment rate: {(feasibilityData.recruitmentRate * 100).toFixed(0)}% of target
+              Expected recruitment rate: {feasibilityData.recruitmentRate ? (feasibilityData.recruitmentRate * 100).toFixed(0) : '0'}% of target
               {feasibilityData.dropoutRate > 0 && ` • Estimated dropout rate: ${(feasibilityData.dropoutRate * 100).toFixed(0)}%`}
             </p>
           </div>
@@ -163,8 +163,8 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
           <div className="flex items-start space-x-2">
             <BarChart3 className="h-5 w-5 text-primary mt-1" />
             <div>
-              <p className="text-sm font-medium">Projected ROI: {feasibilityData.projectedROI.toFixed(1)}x</p>
-              <p className="text-xs text-neutral-medium">5-year NPV model with {(feasibilityData.completionRisk * 100).toFixed(0)}% completion risk</p>
+              <p className="text-sm font-medium">Projected ROI: {feasibilityData.projectedROI ? feasibilityData.projectedROI.toFixed(1) : '0.0'}x</p>
+              <p className="text-xs text-neutral-medium">5-year NPV model with {feasibilityData.completionRisk ? (feasibilityData.completionRisk * 100).toFixed(0) : '0'}% completion risk</p>
             </div>
           </div>
         </div>
