@@ -20,15 +20,18 @@ const CurrentEvidence: React.FC<CurrentEvidenceProps> = ({ currentEvidence, clas
       </CardHeader>
       <CardContent>
         <div className="text-sm text-neutral-dark">
-          <p className="whitespace-pre-line mb-4">{currentEvidence.summary}</p>
+          <div className="bg-blue-50 p-3 rounded-md mb-4">
+            <h4 className="text-sm font-semibold text-blue-800 mb-2">Existing Research Summary</h4>
+            <p className="whitespace-pre-line text-blue-700">{currentEvidence.summary}</p>
+          </div>
           
           {currentEvidence.citations && currentEvidence.citations.length > 0 && (
-            <>
-              <h4 className="font-medium mb-2 mt-4">References:</h4>
-              <ul className="space-y-1">
+            <div className="border border-neutral-200 rounded-md p-3">
+              <h4 className="font-medium mb-2">Key Literature References:</h4>
+              <ul className="space-y-2">
                 {currentEvidence.citations.map((citation) => (
                   <li key={citation.id} className="flex items-start">
-                    <span className="font-medium text-xs mr-2">[{citation.id}]</span>
+                    <span className="font-medium text-xs mr-2 bg-neutral-100 px-1 py-0.5 rounded">[{citation.id}]</span>
                     <a 
                       href={citation.url} 
                       target="_blank" 
@@ -41,7 +44,7 @@ const CurrentEvidence: React.FC<CurrentEvidenceProps> = ({ currentEvidence, clas
                   </li>
                 ))}
               </ul>
-            </>
+            </div>
           )}
         </div>
       </CardContent>

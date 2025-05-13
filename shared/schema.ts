@@ -28,6 +28,8 @@ export const studyConcepts = pgTable("study_concepts", {
   budgetCeilingEur: real("budget_ceiling_eur"),
   timelineCeilingMonths: integer("timeline_ceiling_months"),
   salesImpactThreshold: real("sales_impact_threshold"),
+  knowledgeGapAddressed: text("knowledge_gap_addressed"),
+  innovationJustification: text("innovation_justification"),
   picoData: json("pico_data").notNull(),
   mcdaScores: json("mcda_scores").notNull(),
   swotAnalysis: json("swot_analysis").notNull(),
