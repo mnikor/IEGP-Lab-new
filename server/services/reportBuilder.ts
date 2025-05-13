@@ -418,7 +418,15 @@ export async function generateValidationPdfReport(validation: SynopsisValidation
       doc.fontSize(16).font('Helvetica-Bold').text('Benchmark Deltas');
       doc.moveDown();
       
-      validation.benchmarkDeltas.forEach((delta, index) => {
+      // Type assertion for benchmark deltas
+      const benchmarkDeltas = validation.benchmarkDeltas as Array<{
+        aspect: string;
+        current: string;
+        suggested: string;
+        impact: 'positive' | 'negative' | 'neutral';
+      }>;
+      
+      benchmarkDeltas.forEach((delta: any, index: number) => {
         doc.fontSize(12).font('Helvetica-Bold').text(`${index + 1}. ${delta.aspect}`);
         doc.fontSize(10).font('Helvetica-Bold').text('Current: ').font('Helvetica').text(delta.current);
         doc.fontSize(10).font('Helvetica-Bold').text('Suggested: ').font('Helvetica').text(delta.suggested);
@@ -439,7 +447,15 @@ export async function generateValidationPdfReport(validation: SynopsisValidation
       doc.fontSize(16).font('Helvetica-Bold').text('Risk Flags');
       doc.moveDown();
       
-      validation.riskFlags.forEach((flag, index) => {
+      // Type assertion for risk flags
+      const riskFlags = validation.riskFlags as Array<{
+        category: string;
+        description: string;
+        severity: 'high' | 'medium' | 'low';
+        mitigation?: string;
+      }>;
+      
+      riskFlags.forEach((flag: any, index: number) => {
         // Color-code severity
         let severityColor = '000000'; // Default black
         if (flag.severity === 'high') severityColor = 'E81123';
@@ -462,7 +478,16 @@ export async function generateValidationPdfReport(validation: SynopsisValidation
       doc.fontSize(16).font('Helvetica-Bold').text('Revised Economics');
       doc.moveDown();
       
-      const economics = validation.revisedEconomics;
+      // Type assertion for revised economics
+      const economics = validation.revisedEconomics as {
+        originalCost?: number;
+        revisedCost: number;
+        originalTimeline?: number;
+        revisedTimeline: number;
+        originalROI?: number;
+        revisedROI: number;
+        notes: string;
+      };
       
       // Cost
       doc.fontSize(12).font('Helvetica-Bold').text('Cost Estimate:');
@@ -499,6 +524,14 @@ export async function generateValidationPdfReport(validation: SynopsisValidation
       doc.addPage();
       doc.fontSize(16).font('Helvetica-Bold').text('SWOT Analysis');
       doc.moveDown();
+      
+      // Type assertion for SWOT analysis
+      const validationSwot = validation.swotAnalysis as {
+        strengths: string[];
+        weaknesses: string[];
+        opportunities: string[];
+        threats: string[];
+      };
       
       // Strengths
       doc.fontSize(12).font('Helvetica-Bold').fillColor('107C10').text('Strengths:');
