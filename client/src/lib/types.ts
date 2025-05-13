@@ -26,11 +26,32 @@ export interface SwotAnalysis {
 }
 
 export interface FeasibilityData {
+  // Core metrics
   estimatedCost: number;
   timeline: number;
   projectedROI: number;
   recruitmentRate: number;
   completionRisk: number;
+  
+  // Enhanced study details
+  sampleSize: number;
+  sampleSizeJustification: string;
+  numberOfSites: number;
+  numberOfCountries: number;
+  recruitmentPeriodMonths: number;
+  followUpPeriodMonths: number;
+  
+  // Cost breakdown
+  siteCosts: number;
+  personnelCosts: number;
+  materialCosts: number;
+  monitoringCosts: number;
+  dataCosts: number;
+  regulatoryCosts: number;
+  
+  // Risk factors
+  dropoutRate: number;
+  complexityFactor: number;
 }
 
 export interface EvidenceSource {
