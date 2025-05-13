@@ -24,11 +24,24 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
     }).format(value);
   };
 
-  // Calculate total cost and percentages
-  const totalCost = feasibilityData.estimatedCost || 0;
+  // Ensure all costs have valid values, not undefined
+  const siteCosts = feasibilityData.siteCosts ?? 0;
+  const personnelCosts = feasibilityData.personnelCosts ?? 0;
+  const materialCosts = feasibilityData.materialCosts ?? 0;
+  const monitoringCosts = feasibilityData.monitoringCosts ?? 0;
+  const dataCosts = feasibilityData.dataCosts ?? 0;
+  const regulatoryCosts = feasibilityData.regulatoryCosts ?? 0;
+  
+  // Ensure total cost is a valid number and is at least the sum of components if unspecified
+  const sumComponentCosts = siteCosts + personnelCosts + materialCosts + monitoringCosts + dataCosts + regulatoryCosts;
+  const totalCost = feasibilityData.estimatedCost ?? sumComponentCosts;
+  
+  // Recalculate total if provided total is too small compared to components
+  const effectiveTotalCost = Math.max(totalCost, sumComponentCosts);
+  
   const getCostPercentage = (cost: number | undefined) => {
-    if (!cost || !totalCost) return 0;
-    return Math.round((cost / totalCost) * 100);
+    if (!cost || !effectiveTotalCost) return 0;
+    return Math.round((cost / effectiveTotalCost) * 100);
   };
 
   return (
@@ -101,8 +114,8 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
               <span className="text-sm">Site Costs</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">{formatCurrency(feasibilityData.siteCosts)}</span>
-              <span className="text-xs text-neutral-medium">({getCostPercentage(feasibilityData.siteCosts)}%)</span>
+              <span className="text-sm font-medium">{formatCurrency(siteCosts)}</span>
+              <span className="text-xs text-neutral-medium">({getCostPercentage(siteCosts)}%)</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
@@ -111,8 +124,8 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
               <span className="text-sm">Personnel Costs</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">{formatCurrency(feasibilityData.personnelCosts)}</span>
-              <span className="text-xs text-neutral-medium">({getCostPercentage(feasibilityData.personnelCosts)}%)</span>
+              <span className="text-sm font-medium">{formatCurrency(personnelCosts)}</span>
+              <span className="text-xs text-neutral-medium">({getCostPercentage(personnelCosts)}%)</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
@@ -121,8 +134,8 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
               <span className="text-sm">Materials & Supplies</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">{formatCurrency(feasibilityData.materialCosts)}</span>
-              <span className="text-xs text-neutral-medium">({getCostPercentage(feasibilityData.materialCosts)}%)</span>
+              <span className="text-sm font-medium">{formatCurrency(materialCosts)}</span>
+              <span className="text-xs text-neutral-medium">({getCostPercentage(materialCosts)}%)</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
@@ -131,8 +144,8 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
               <span className="text-sm">Monitoring</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">{formatCurrency(feasibilityData.monitoringCosts)}</span>
-              <span className="text-xs text-neutral-medium">({getCostPercentage(feasibilityData.monitoringCosts)}%)</span>
+              <span className="text-sm font-medium">{formatCurrency(monitoringCosts)}</span>
+              <span className="text-xs text-neutral-medium">({getCostPercentage(monitoringCosts)}%)</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
@@ -141,8 +154,8 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
               <span className="text-sm">Data Management</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">{formatCurrency(feasibilityData.dataCosts)}</span>
-              <span className="text-xs text-neutral-medium">({getCostPercentage(feasibilityData.dataCosts)}%)</span>
+              <span className="text-sm font-medium">{formatCurrency(dataCosts)}</span>
+              <span className="text-xs text-neutral-medium">({getCostPercentage(dataCosts)}%)</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
