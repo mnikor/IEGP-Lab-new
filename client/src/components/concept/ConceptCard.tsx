@@ -137,6 +137,13 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
           </div>
         </div>
 
+        {/* Current Evidence */}
+        {concept.currentEvidence && (
+          <div className="mb-4">
+            <CurrentEvidence currentEvidence={concept.currentEvidence} />
+          </div>
+        )}
+
         {/* Evidence Sources */}
         <div>
           <h4 className="text-sm font-medium text-neutral-dark mb-2">Evidence Sources</h4>
