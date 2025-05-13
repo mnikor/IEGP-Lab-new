@@ -30,21 +30,21 @@ const formSchema = z.object({
     required_error: "Please select a study phase preference",
   }),
   targetSubpopulation: z.string().optional(),
-  budgetCeilingEur: z.string().optional()
-    .transform(val => val === "" ? undefined : Number(val))
-    .refine(val => val === undefined || (val !== undefined && !isNaN(val) && val > 0), {
-      message: "Budget ceiling must be a positive number",
-    }),
-  timelineCeilingMonths: z.string().optional()
-    .transform(val => val === "" ? undefined : Number(val))
-    .refine(val => val === undefined || (val !== undefined && !isNaN(val) && val > 0), {
-      message: "Timeline ceiling must be a positive number",
-    }),
-  salesImpactThreshold: z.string().optional()
-    .transform(val => val === "" ? undefined : Number(val))
-    .refine(val => val === undefined || (val !== undefined && !isNaN(val) && val > 0), {
-      message: "Sales impact threshold must be a positive number",
-    }),
+  budgetCeilingEur: z.number().optional().or(
+    z.string().transform(val => val === "" ? undefined : Number(val))
+  ).refine(val => val === undefined || (val !== undefined && !isNaN(val) && val > 0), {
+    message: "Budget ceiling must be a positive number",
+  }),
+  timelineCeilingMonths: z.number().optional().or(
+    z.string().transform(val => val === "" ? undefined : Number(val))
+  ).refine(val => val === undefined || (val !== undefined && !isNaN(val) && val > 0), {
+    message: "Timeline ceiling must be a positive number",
+  }),
+  salesImpactThreshold: z.number().optional().or(
+    z.string().transform(val => val === "" ? undefined : Number(val))
+  ).refine(val => val === undefined || (val !== undefined && !isNaN(val) && val > 0), {
+    message: "Sales impact threshold must be a positive number",
+  }),
   anticipatedFpiDate: z.string().optional(),
   globalLoeDate: z.string().optional(),
   hasPatentExtensionPotential: z.boolean().optional().default(false),
@@ -123,7 +123,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
 
       // Prepare regional LOE dates based on selected geographies if global LOE date is set
       let processedRegionalLoeDates;
-      if (values.globalLoeDate) {
+      if (values.globalLoeDate && values.globalLoeDate.trim() !== '') {
         // Use either user-defined regional dates or create them based on global date
         if (regionalLoeDates.length > 0) {
           processedRegionalLoeDates = regionalLoeDates;
@@ -131,7 +131,8 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
           // Create region-specific LOE dates based on the global date
           processedRegionalLoeDates = selectedGeographies.map(region => {
             // Create a new date object from the global date
-            const date = new Date(values.globalLoeDate);
+            // We can safely use globalLoeDate now as we've verified it exists and is not empty
+            const date = new Date(values.globalLoeDate as string);
             
             // Slightly adjust the date based on region for realism
             // (some regions may have different patent expiration dates)
