@@ -60,63 +60,100 @@ export async function generatePdfReport(concepts: StudyConcept[]): Promise<Buffe
         // PICO Framework
         doc.fontSize(12).font('Helvetica-Bold').text('PICO Framework', { underline: true });
         doc.moveDown(0.5);
-        doc.fontSize(10).font('Helvetica-Bold').text('Population: ').font('Helvetica').text(concept.picoData.population);
+        
+        // Type assertion for PICO data
+        const picoData = concept.picoData as {
+          population: string;
+          intervention: string;
+          comparator: string;
+          outcomes: string;
+        };
+        
+        doc.fontSize(10).font('Helvetica-Bold').text('Population: ').font('Helvetica').text(picoData.population);
         doc.moveDown(0.5);
-        doc.fontSize(10).font('Helvetica-Bold').text('Intervention: ').font('Helvetica').text(concept.picoData.intervention);
+        doc.fontSize(10).font('Helvetica-Bold').text('Intervention: ').font('Helvetica').text(picoData.intervention);
         doc.moveDown(0.5);
-        doc.fontSize(10).font('Helvetica-Bold').text('Comparator: ').font('Helvetica').text(concept.picoData.comparator);
+        doc.fontSize(10).font('Helvetica-Bold').text('Comparator: ').font('Helvetica').text(picoData.comparator);
         doc.moveDown(0.5);
-        doc.fontSize(10).font('Helvetica-Bold').text('Outcomes: ').font('Helvetica').text(concept.picoData.outcomes);
+        doc.fontSize(10).font('Helvetica-Bold').text('Outcomes: ').font('Helvetica').text(picoData.outcomes);
         doc.moveDown();
         
         // MCDA Scores
         doc.fontSize(12).font('Helvetica-Bold').text('MCDA Scores', { underline: true });
         doc.moveDown(0.5);
-        doc.fontSize(10).font('Helvetica-Bold').text('Overall Score: ').font('Helvetica').text(`${concept.mcdaScores.overall.toFixed(1)}/5`);
-        doc.fontSize(10).font('Helvetica-Bold').text('Scientific Validity: ').font('Helvetica').text(`${concept.mcdaScores.scientificValidity.toFixed(1)}/5`);
-        doc.fontSize(10).font('Helvetica-Bold').text('Clinical Impact: ').font('Helvetica').text(`${concept.mcdaScores.clinicalImpact.toFixed(1)}/5`);
-        doc.fontSize(10).font('Helvetica-Bold').text('Commercial Value: ').font('Helvetica').text(`${concept.mcdaScores.commercialValue.toFixed(1)}/5`);
-        doc.fontSize(10).font('Helvetica-Bold').text('Feasibility: ').font('Helvetica').text(`${concept.mcdaScores.feasibility.toFixed(1)}/5`);
+        
+        // Type assertion for MCDA scores
+        const mcdaScores = concept.mcdaScores as {
+          overall: number;
+          scientificValidity: number;
+          clinicalImpact: number;
+          commercialValue: number;
+          feasibility: number;
+        };
+        
+        doc.fontSize(10).font('Helvetica-Bold').text('Overall Score: ').font('Helvetica').text(`${mcdaScores.overall.toFixed(1)}/5`);
+        doc.fontSize(10).font('Helvetica-Bold').text('Scientific Validity: ').font('Helvetica').text(`${mcdaScores.scientificValidity.toFixed(1)}/5`);
+        doc.fontSize(10).font('Helvetica-Bold').text('Clinical Impact: ').font('Helvetica').text(`${mcdaScores.clinicalImpact.toFixed(1)}/5`);
+        doc.fontSize(10).font('Helvetica-Bold').text('Commercial Value: ').font('Helvetica').text(`${mcdaScores.commercialValue.toFixed(1)}/5`);
+        doc.fontSize(10).font('Helvetica-Bold').text('Feasibility: ').font('Helvetica').text(`${mcdaScores.feasibility.toFixed(1)}/5`);
         doc.moveDown();
         
         // Feasibility Data
         doc.fontSize(12).font('Helvetica-Bold').text('Feasibility Analysis', { underline: true });
         doc.moveDown(0.5);
-        doc.fontSize(10).font('Helvetica-Bold').text('Estimated Cost: ').font('Helvetica').text(`€${(concept.feasibilityData.estimatedCost / 1000000).toFixed(1)}M`);
-        doc.fontSize(10).font('Helvetica-Bold').text('Timeline: ').font('Helvetica').text(`${concept.feasibilityData.timeline} months`);
-        doc.fontSize(10).font('Helvetica-Bold').text('Projected ROI: ').font('Helvetica').text(`${concept.feasibilityData.projectedROI.toFixed(1)}x`);
-        doc.fontSize(10).font('Helvetica-Bold').text('Recruitment Rate: ').font('Helvetica').text(`${(concept.feasibilityData.recruitmentRate * 100).toFixed(0)}%`);
-        doc.fontSize(10).font('Helvetica-Bold').text('Completion Risk: ').font('Helvetica').text(`${(concept.feasibilityData.completionRisk * 100).toFixed(0)}%`);
+        
+        // Type assertion for feasibility data
+        const feasibilityData = concept.feasibilityData as {
+          estimatedCost: number;
+          timeline: number;
+          projectedROI: number;
+          recruitmentRate: number;
+          completionRisk: number;
+        };
+        
+        doc.fontSize(10).font('Helvetica-Bold').text('Estimated Cost: ').font('Helvetica').text(`€${(feasibilityData.estimatedCost / 1000000).toFixed(1)}M`);
+        doc.fontSize(10).font('Helvetica-Bold').text('Timeline: ').font('Helvetica').text(`${feasibilityData.timeline} months`);
+        doc.fontSize(10).font('Helvetica-Bold').text('Projected ROI: ').font('Helvetica').text(`${feasibilityData.projectedROI.toFixed(1)}x`);
+        doc.fontSize(10).font('Helvetica-Bold').text('Recruitment Rate: ').font('Helvetica').text(`${(feasibilityData.recruitmentRate * 100).toFixed(0)}%`);
+        doc.fontSize(10).font('Helvetica-Bold').text('Completion Risk: ').font('Helvetica').text(`${(feasibilityData.completionRisk * 100).toFixed(0)}%`);
         doc.moveDown();
         
         // SWOT Analysis
         doc.fontSize(12).font('Helvetica-Bold').text('SWOT Analysis', { underline: true });
         doc.moveDown(0.5);
         
+        // Type assertion for SWOT analysis
+        const swotAnalysis = concept.swotAnalysis as {
+          strengths: string[];
+          weaknesses: string[];
+          opportunities: string[];
+          threats: string[];
+        };
+        
         // Strengths
         doc.fontSize(10).font('Helvetica-Bold').text('Strengths:');
-        concept.swotAnalysis.strengths.forEach(strength => {
+        swotAnalysis.strengths.forEach((strength: string) => {
           doc.fontSize(9).font('Helvetica').text(`• ${strength}`);
         });
         doc.moveDown(0.5);
         
         // Weaknesses
         doc.fontSize(10).font('Helvetica-Bold').text('Weaknesses:');
-        concept.swotAnalysis.weaknesses.forEach(weakness => {
+        swotAnalysis.weaknesses.forEach((weakness: string) => {
           doc.fontSize(9).font('Helvetica').text(`• ${weakness}`);
         });
         doc.moveDown(0.5);
         
         // Opportunities
         doc.fontSize(10).font('Helvetica-Bold').text('Opportunities:');
-        concept.swotAnalysis.opportunities.forEach(opportunity => {
+        swotAnalysis.opportunities.forEach((opportunity: string) => {
           doc.fontSize(9).font('Helvetica').text(`• ${opportunity}`);
         });
         doc.moveDown(0.5);
         
         // Threats
         doc.fontSize(10).font('Helvetica-Bold').text('Threats:');
-        concept.swotAnalysis.threats.forEach(threat => {
+        swotAnalysis.threats.forEach((threat: string) => {
           doc.fontSize(9).font('Helvetica').text(`• ${threat}`);
         });
         doc.moveDown();
