@@ -53,7 +53,7 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
   ).toISOString();
   
   // Default regional LOE data if not provided
-  const defaultRegionalData = regionalLoeData?.length ? regionalLoeData : [
+  const defaultRegionalData: RegionalLoeData[] = regionalLoeData?.length ? regionalLoeData : [
     {
       region: 'United States',
       loeDate: defaultLoeDate,
@@ -81,12 +81,26 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
 
   // Determine color based on time to LOE
   const getLoeStatusColor = () => {
-    if (!timeToLoe || typeof timeToLoe !== 'number' || isNaN(timeToLoe)) {
+    const effectiveTimeToLoe = defaultTimeToLoe;
+    
+    if (!effectiveTimeToLoe || typeof effectiveTimeToLoe !== 'number' || isNaN(effectiveTimeToLoe)) {
       return 'bg-neutral-100 text-neutral-700';
     }
-    if (timeToLoe < 24) return 'bg-red-100 text-red-800'; // < 2 years: urgent
-    if (timeToLoe < 60) return 'bg-yellow-100 text-yellow-800'; // < 5 years: warning
+    if (effectiveTimeToLoe < 24) return 'bg-red-100 text-red-800'; // < 2 years: urgent
+    if (effectiveTimeToLoe < 60) return 'bg-yellow-100 text-yellow-800'; // < 5 years: warning
     return 'bg-green-100 text-green-800'; // > 5 years: good
+  };
+  
+  // Helper to format time to LOE
+  const formatTimeToLoe = (months?: number) => {
+    const effectiveMonths = months || defaultTimeToLoe;
+    if (!effectiveMonths || isNaN(effectiveMonths)) return 'Unknown';
+    if (effectiveMonths < 12) return `${effectiveMonths} months`;
+    const years = Math.floor(effectiveMonths / 12);
+    const remainingMonths = effectiveMonths % 12;
+    return remainingMonths > 0 ? 
+      `${years} year${years > 1 ? 's' : ''}, ${remainingMonths} month${remainingMonths > 1 ? 's' : ''}` : 
+      `${years} year${years > 1 ? 's' : ''}`;
   };
 
   return (
@@ -104,16 +118,16 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
             <div className="space-y-2">
               <div className="text-sm font-medium text-neutral-dark">Global LOE Date</div>
               <div className="text-sm">
-                {formatDate(globalLoeDate)}
+                {formatDate(defaultLoeDate)}
               </div>
             </div>
             <div className="space-y-2">
               <div className="text-sm font-medium text-neutral-dark">Time Until LOE</div>
               <div className="flex items-center">
                 <Badge variant="outline" className={getLoeStatusColor()}>
-                  {timeToLoe != null ? `${timeToLoe} months` : 'Unknown'}
+                  {formatTimeToLoe(defaultTimeToLoe)}
                 </Badge>
-                {typeof timeToLoe === 'number' && !isNaN(timeToLoe) && timeToLoe < 36 && (
+                {defaultTimeToLoe < 36 && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -133,49 +147,45 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
           </div>
 
           {/* Post-LOE value retention */}
-          {postLoeValue != null && typeof postLoeValue === 'number' && !isNaN(postLoeValue) && (
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-neutral-dark">Post-LOE Value Retention</div>
-              <div className="flex items-center">
-                <Badge variant="outline" className="bg-blue-50 text-blue-800">
-                  {Math.round(Math.max(0, Math.min(1, postLoeValue)) * 100)}% of peak value
-                </Badge>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="ml-2 text-xs text-neutral-medium cursor-help">(i)</div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="w-[200px] text-xs">
-                        Estimated percentage of annual revenue retained after patent expiration.
-                        Higher values mean better sustainability after generic entry.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-neutral-dark">Post-LOE Value Retention</div>
+            <div className="flex items-center">
+              <Badge variant="outline" className="bg-blue-50 text-blue-800">
+                {Math.round(Math.max(0, Math.min(1, safePostLoeValue)) * 100)}% of peak value
+              </Badge>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="ml-2 text-xs text-neutral-medium cursor-help">(i)</div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="w-[200px] text-xs">
+                      Estimated percentage of annual revenue retained after patent expiration.
+                      Higher values mean better sustainability after generic entry.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
-          )}
+          </div>
 
           {/* FPI estimation */}
-          {estimatedFpiDate && (
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-neutral-dark">Estimated FPI Date</div>
-              <div className="flex items-center gap-1 text-sm">
-                <Clock className="h-4 w-4 text-primary" />
-                {formatDate(estimatedFpiDate)}
-              </div>
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-neutral-dark">Estimated FPI Date</div>
+            <div className="flex items-center gap-1 text-sm">
+              <Clock className="h-4 w-4 text-primary" />
+              {formatDate(defaultFpiDate)}
             </div>
-          )}
+          </div>
 
           {/* Regional LOE info */}
-          {regionalLoeData && regionalLoeData.length > 0 && (
+          {defaultRegionalData && defaultRegionalData.length > 0 && (
             <>
               <Separator className="my-2" />
               <div className="space-y-2">
                 <div className="text-sm font-medium text-neutral-dark">Regional LOE Dates</div>
                 <div className="grid grid-cols-3 gap-2">
-                  {regionalLoeData.map((region, index) => (
+                  {defaultRegionalData.map((region, index) => (
                     <div key={index} className="p-2 rounded-md border border-neutral-100 text-xs">
                       <div className="font-semibold">{region.region}</div>
                       <div>{formatDate(region.loeDate)}</div>
