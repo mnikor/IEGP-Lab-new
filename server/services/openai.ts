@@ -41,29 +41,49 @@ export async function analyzeWithOpenAI(
       temperature: 0.7,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    // Parse the JSON response carefully
+    let result;
+    try {
+      result = JSON.parse(response.choices[0].message.content || "{}");
+      console.log("OpenAI result type:", typeof result, Array.isArray(result) ? "array" : "not an array");
+    } catch (error) {
+      console.error("Error parsing OpenAI response:", error);
+      result = isValidation ? {} : [];
+    }
 
     // Process evidence sources with citations
     if (!isValidation) {
-      // Check if result is an array (for concepts) or an object (for validation)
-      if (Array.isArray(result)) {
-        result.forEach((concept: any) => {
-          if (concept.evidenceSources && Array.isArray(concept.evidenceSources)) {
-            concept.evidenceSources = concept.evidenceSources.map((source: any, index: number) => {
-              return {
-                ...source,
-                citation: source.citation || `${source.title}${source.authors ? `, ${source.authors}` : ""}${source.publication ? `. ${source.publication}` : ""}${source.year ? ` (${source.year})` : ""}`,
-                url: searchResults.citations[index] || source.url || ""
-              };
-            });
+      // For concept generation, ensure we have an array
+      if (!Array.isArray(result)) {
+        console.log("Converting non-array result to array");
+        // If it's an object with a concepts property that's an array, use that
+        if (result.concepts && Array.isArray(result.concepts)) {
+          result = result.concepts;
+        } else {
+          // Otherwise, wrap it in an array if it's an object with expected properties
+          if (typeof result === 'object' && result !== null && result.title) {
+            result = [result];
           } else {
-            concept.evidenceSources = [];
+            // Last resort - create an empty array
+            result = [];
           }
-        });
-      } else {
-        // If it's not an array, return it as is
-        console.log("Result is not an array. Got:", typeof result);
+        }
       }
+      
+      // Now we know result is an array
+      result.forEach((concept: any) => {
+        if (!concept.evidenceSources || !Array.isArray(concept.evidenceSources)) {
+          concept.evidenceSources = [];
+        }
+        
+        concept.evidenceSources = concept.evidenceSources.map((source: any, index: number) => {
+          return {
+            ...source,
+            citation: source.citation || `${source.title || 'Unknown'}${source.authors ? `, ${source.authors}` : ""}${source.publication ? `. ${source.publication}` : ""}${source.year ? ` (${source.year})` : ""}`,
+            url: searchResults.citations[index] || source.url || ""
+          };
+        });
+      });
     }
 
     return result;

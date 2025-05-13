@@ -1,6 +1,6 @@
 import { StudyConcept, SynopsisValidation } from "@shared/schema";
 import PDFDocument from 'pdfkit';
-import * as PresentationBuilder from 'pptxgenjs';
+import PptxGenJS from 'pptxgenjs';
 import { PassThrough } from 'stream';
 
 /**
@@ -150,7 +150,7 @@ export async function generatePptxReport(concepts: StudyConcept[]): Promise<Buff
   return new Promise((resolve, reject) => {
     try {
       // Create a new presentation
-      const pptx = new PresentationBuilder();
+      const pptx = new PptxGenJS();
       
       // Add title slide
       const titleSlide = pptx.addSlide();
@@ -242,11 +242,15 @@ export async function generatePptxReport(concepts: StudyConcept[]): Promise<Buff
       });
       
       // Generate the presentation as a buffer
-      pptx.writeFile({ outputType: 'nodebuffer' }).then((buffer: Buffer) => {
-        resolve(buffer);
-      }).catch((err: Error) => {
-        reject(err);
-      });
+      // For pptxgenjs, we need to use the Write method and handle the Buffer ourselves
+      const stream = new PassThrough();
+      const chunks: Buffer[] = [];
+      
+      stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+      stream.on('end', () => resolve(Buffer.concat(chunks)));
+      stream.on('error', (err) => reject(err));
+      
+      pptx.write('nodebuffer', stream);
     } catch (error) {
       reject(error);
     }
