@@ -408,7 +408,7 @@ function calculateCompletionRisk(
  */
 function calculateProjectedROI(
   concept: ConceptWithFeasibility,
-  requestData: Partial<GenerateConceptRequest>
+  requestData: Partial<ExtendedGenerateConceptRequest>
 ): number {
   // Get feasibility data if it exists
   const feasibilityData = concept.feasibilityData as FeasibilityData | undefined;
@@ -533,7 +533,7 @@ function calculateProjectedROI(
  */
 function calculateLoeData(
   concept: ConceptWithFeasibility,
-  requestData: Partial<GenerateConceptRequest>,
+  requestData: Partial<ExtendedGenerateConceptRequest>,
   timeline: number
 ): {
   globalLoeDate: string;
