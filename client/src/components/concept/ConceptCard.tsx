@@ -2,13 +2,19 @@ import React, { useState } from "react";
 import { StudyConcept } from "@/lib/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, ChevronDown, ChevronUp } from "lucide-react";
+import { Star, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
 import PicoFramework from "@/components/shared/PicoFramework";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
 import FeasibilityChart from "@/components/shared/FeasibilityChart";
 import FeasibilityDetails from "@/components/shared/FeasibilityDetails";
 import CurrentEvidence from "@/components/shared/CurrentEvidence";
 import { Button } from "@/components/ui/button";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ConceptCardProps {
   concept: StudyConcept;
@@ -64,7 +70,28 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
 
         {/* Scores */}
         <div className="mb-4">
-          <h4 className="text-sm font-medium text-neutral-dark mb-2">MCDA Scores</h4>
+          <div className="flex items-center mb-2">
+            <h4 className="text-sm font-medium text-neutral-dark">MCDA Scores</h4>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="ml-1 inline-flex text-neutral-medium cursor-help">
+                    <HelpCircle className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="font-semibold">Multi-Criteria Decision Analysis</p>
+                  <p className="text-xs mt-1">Evaluates study concepts across multiple dimensions:</p>
+                  <ul className="text-xs mt-1 list-disc pl-4 space-y-1">
+                    <li><span className="font-medium">Scientific Validity:</span> Soundness of methodology and design</li>
+                    <li><span className="font-medium">Clinical Impact:</span> Potential effect on patient outcomes</li>
+                    <li><span className="font-medium">Commercial Value:</span> Business implications and ROI</li>
+                    <li><span className="font-medium">Feasibility:</span> Practicality of execution</li>
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="p-3 bg-blue-50 rounded-md">
               <div className="flex items-center justify-between">
