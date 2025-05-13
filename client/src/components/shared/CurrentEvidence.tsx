@@ -13,12 +13,31 @@ interface CurrentEvidenceProps {
  * - Converts ### or #### to <h3> or <h4> tags with proper styling
  * - Makes section headers and study names bold
  * - Preserves line breaks
+ * - Fixes special text-formatting placeholders from Perplexity API
  */
 const formatMarkdownTitles = (text: string): string => {
   if (!text) return '';
   
-  // First handle markdown-like headers
+  // First clean up the text to handle Perplexity API text-formatting placeholders
   let formattedText = text
+    // Replace text-base, text-sm, text-* placeholders with proper HTML
+    .replace(/text-base font-bold my-2>(.*?)(?=<|$)/g, '<strong>$1</strong>')
+    .replace(/text-sm font-bold my->/g, '<strong>')
+    .replace(/text-sm font-bold my-2>(.*?)(?=<|$)/g, '<strong>$1</strong>')
+    .replace(/text-base font-bold my->/g, '<strong>')
+    // Clean up formatting tags
+    .replace(/my-\d+>/g, '>')
+    .replace(/my-\d+->/g, '>')
+    // Handle "text-sm font-bold" patterns
+    .replace(/text-sm font-bold\s+(.*?)(?=\n|$)/g, '<strong>$1</strong>')
+    .replace(/text-base font-bold\s+(.*?)(?=\n|$)/g, '<strong>$1</strong>')
+    // Clean up any leftover markers
+    .replace(/text-.*?>/g, '>')
+    .replace(/font-bold/g, '<strong>')
+    .replace(/<\/font-bold>/g, '</strong>');
+  
+  // Now handle markdown-like headers
+  formattedText = formattedText
     .replace(/#{4}\s+(.*?)(?:\n|$)/g, '<h4 class="text-sm font-bold my-2">$1</h4>')
     .replace(/#{3}\s+(.*?)(?:\n|$)/g, '<h3 class="text-base font-bold my-2">$1</h3>')
     .replace(/#{1,2}\s+(.*?)(?:\n|$)/g, '<h2 class="text-lg font-bold my-2">$1</h2>');
