@@ -536,7 +536,7 @@ export async function generateValidationPdfReport(validation: SynopsisValidation
       // Strengths
       doc.fontSize(12).font('Helvetica-Bold').fillColor('107C10').text('Strengths:');
       doc.fillColor('black');
-      validation.swotAnalysis.strengths.forEach(strength => {
+      validationSwot.strengths.forEach((strength: string) => {
         doc.fontSize(10).font('Helvetica').text(`• ${strength}`);
       });
       doc.moveDown();
@@ -544,7 +544,7 @@ export async function generateValidationPdfReport(validation: SynopsisValidation
       // Weaknesses
       doc.fontSize(12).font('Helvetica-Bold').fillColor('D83B01').text('Weaknesses:');
       doc.fillColor('black');
-      validation.swotAnalysis.weaknesses.forEach(weakness => {
+      validationSwot.weaknesses.forEach((weakness: string) => {
         doc.fontSize(10).font('Helvetica').text(`• ${weakness}`);
       });
       doc.moveDown();
@@ -552,7 +552,7 @@ export async function generateValidationPdfReport(validation: SynopsisValidation
       // Opportunities
       doc.fontSize(12).font('Helvetica-Bold').fillColor('0078D4').text('Opportunities:');
       doc.fillColor('black');
-      validation.swotAnalysis.opportunities.forEach(opportunity => {
+      validationSwot.opportunities.forEach((opportunity: string) => {
         doc.fontSize(10).font('Helvetica').text(`• ${opportunity}`);
       });
       doc.moveDown();
@@ -560,7 +560,7 @@ export async function generateValidationPdfReport(validation: SynopsisValidation
       // Threats
       doc.fontSize(12).font('Helvetica-Bold').fillColor('E81123').text('Threats:');
       doc.fillColor('black');
-      validation.swotAnalysis.threats.forEach(threat => {
+      validationSwot.threats.forEach((threat: string) => {
         doc.fontSize(10).font('Helvetica').text(`• ${threat}`);
       });
       
