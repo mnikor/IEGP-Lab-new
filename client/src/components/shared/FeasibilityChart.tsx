@@ -11,33 +11,33 @@ const FeasibilityChart: React.FC<FeasibilityChartProps> = ({ feasibilityData }) 
   const chartData = [
     {
       name: 'Cost',
-      value: feasibilityData.estimatedCost / 1000000, // Convert to millions
+      value: feasibilityData.estimatedCost != null ? feasibilityData.estimatedCost / 1000000 : 0, // Convert to millions
       unit: 'M €',
-      display: `${(feasibilityData.estimatedCost / 1000000).toFixed(1)}M €`,
+      display: feasibilityData.estimatedCost != null ? `${(feasibilityData.estimatedCost / 1000000).toFixed(1)}M €` : 'N/A',
     },
     {
       name: 'Timeline',
-      value: feasibilityData.timeline,
+      value: feasibilityData.timeline != null ? feasibilityData.timeline : 0,
       unit: 'mo',
-      display: `${feasibilityData.timeline} months`,
+      display: feasibilityData.timeline != null ? `${feasibilityData.timeline} months` : 'N/A',
     },
     {
       name: 'ROI',
-      value: feasibilityData.projectedROI,
+      value: feasibilityData.projectedROI != null ? feasibilityData.projectedROI : 0,
       unit: 'x',
-      display: `${feasibilityData.projectedROI.toFixed(1)}x`,
+      display: feasibilityData.projectedROI != null ? `${feasibilityData.projectedROI.toFixed(1)}x` : 'N/A',
     },
     {
       name: 'Recruitment',
-      value: feasibilityData.recruitmentRate * 100, // Convert to percentage
+      value: feasibilityData.recruitmentRate != null ? feasibilityData.recruitmentRate * 100 : 0, // Convert to percentage
       unit: '%',
-      display: `${(feasibilityData.recruitmentRate * 100).toFixed(0)}%`,
+      display: feasibilityData.recruitmentRate != null ? `${(feasibilityData.recruitmentRate * 100).toFixed(0)}%` : 'N/A',
     },
     {
       name: 'Completion Risk',
-      value: (1 - feasibilityData.completionRisk) * 100, // Convert to success percentage
+      value: feasibilityData.completionRisk != null ? (1 - feasibilityData.completionRisk) * 100 : 0, // Convert to success percentage
       unit: '%',
-      display: `${((1 - feasibilityData.completionRisk) * 100).toFixed(0)}%`,
+      display: feasibilityData.completionRisk != null ? `${((1 - feasibilityData.completionRisk) * 100).toFixed(0)}%` : 'N/A',
     },
   ];
 
