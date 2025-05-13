@@ -1,0 +1,214 @@
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ValidationResults as ValidationResultsType } from "@/lib/types";
+import PicoFramework from "@/components/shared/PicoFramework";
+import SwotAnalysis from "@/components/shared/SwotAnalysis";
+import { Badge } from "@/components/ui/badge";
+import { AlertTriangle, ArrowRight, CheckCircle, Download, FileDown } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+
+interface ValidationResultsProps {
+  results: ValidationResultsType;
+}
+
+const ValidationResults: React.FC<ValidationResultsProps> = ({ results }) => {
+  const { toast } = useToast();
+
+  const exportPDF = async () => {
+    try {
+      if (!results.id) {
+        toast({
+          title: "Export Failed",
+          description: "Cannot export unsaved validation results",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const response = await apiRequest("GET", `/api/export/validation-pdf?id=${results.id}`, undefined);
+      
+      // Create a blob from the PDF Stream
+      const blob = await response.blob();
+      
+      // Create a link element, use it to download the blob, then remove it
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+      link.download = `validation-report-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Export Successful",
+        description: "The PDF has been downloaded to your device",
+      });
+    } catch (error) {
+      console.error("Failed to export PDF:", error);
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting the PDF",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <h2 className="text-xl font-semibold text-neutral-dark">Validation Results</h2>
+        <div className="flex space-x-3">
+          <Button variant="outline" onClick={exportPDF}>
+            <FileDown className="mr-2 h-4 w-4" />
+            Export PDF
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          <div className="bg-neutral-lightest p-4 rounded-lg">
+            <h3 className="text-lg font-medium text-neutral-dark mb-2">{results.title}</h3>
+            <p className="text-sm text-neutral-medium">
+              Original file: {results.originalFileName}
+            </p>
+          </div>
+
+          {/* Extracted PICO */}
+          <div>
+            <h3 className="text-md font-medium text-neutral-dark mb-3">Extracted PICO Framework</h3>
+            <PicoFramework picoData={results.extractedPico} />
+          </div>
+
+          {/* Benchmark Deltas */}
+          <div>
+            <h3 className="text-md font-medium text-neutral-dark mb-3">Benchmark Deltas</h3>
+            <div className="space-y-2">
+              {results.benchmarkDeltas.map((delta, index) => (
+                <div key={index} className="p-3 border rounded-md">
+                  <h4 className="text-sm font-medium text-neutral-dark mb-1">{delta.aspect}</h4>
+                  <div className="flex items-center text-sm">
+                    <div className="text-neutral-medium">{delta.current}</div>
+                    <ArrowRight className="mx-2 h-4 w-4 text-neutral-medium" />
+                    <div className={`
+                      ${delta.impact === 'positive' ? 'text-green-600' : ''}
+                      ${delta.impact === 'negative' ? 'text-red-600' : ''}
+                      ${delta.impact === 'neutral' ? 'text-blue-600' : ''}
+                    `}>
+                      {delta.suggested}
+                    </div>
+                    <Badge 
+                      variant="outline" 
+                      className={`ml-2 
+                        ${delta.impact === 'positive' ? 'bg-green-50 text-green-600 border-green-200' : ''}
+                        ${delta.impact === 'negative' ? 'bg-red-50 text-red-600 border-red-200' : ''}
+                        ${delta.impact === 'neutral' ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}
+                      `}
+                    >
+                      {delta.impact}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Risk Flags */}
+          <div>
+            <h3 className="text-md font-medium text-neutral-dark mb-3">Risk Flags</h3>
+            <div className="space-y-2">
+              {results.riskFlags.map((flag, index) => (
+                <div key={index} className="p-3 border rounded-md">
+                  <div className="flex items-start">
+                    <AlertTriangle className={`h-5 w-5 mr-2 
+                      ${flag.severity === 'high' ? 'text-red-500' : ''}
+                      ${flag.severity === 'medium' ? 'text-amber-500' : ''}
+                      ${flag.severity === 'low' ? 'text-yellow-500' : ''}
+                    `} />
+                    <div>
+                      <h4 className="text-sm font-medium text-neutral-dark">{flag.category}</h4>
+                      <p className="text-sm text-neutral-medium mt-1">{flag.description}</p>
+                      {flag.mitigation && (
+                        <div className="mt-2 p-2 bg-neutral-lightest rounded text-sm">
+                          <span className="font-medium">Mitigation: </span>{flag.mitigation}
+                        </div>
+                      )}
+                    </div>
+                    <Badge 
+                      className={`ml-auto
+                        ${flag.severity === 'high' ? 'bg-red-100 text-red-700' : ''}
+                        ${flag.severity === 'medium' ? 'bg-amber-100 text-amber-700' : ''}
+                        ${flag.severity === 'low' ? 'bg-yellow-100 text-yellow-700' : ''}
+                      `}
+                    >
+                      {flag.severity}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Revised Economics */}
+          <div>
+            <h3 className="text-md font-medium text-neutral-dark mb-3">Revised Economics</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="p-3 border rounded-md">
+                <h4 className="text-sm font-medium text-neutral-dark mb-1">Cost Estimate</h4>
+                <div className="flex items-center">
+                  {results.revisedEconomics.originalCost && (
+                    <span className="text-sm line-through text-neutral-medium mr-2">
+                      €{(results.revisedEconomics.originalCost / 1000000).toFixed(1)}M
+                    </span>
+                  )}
+                  <span className="text-lg font-medium text-primary">
+                    €{(results.revisedEconomics.revisedCost / 1000000).toFixed(1)}M
+                  </span>
+                </div>
+              </div>
+              <div className="p-3 border rounded-md">
+                <h4 className="text-sm font-medium text-neutral-dark mb-1">Timeline</h4>
+                <div className="flex items-center">
+                  {results.revisedEconomics.originalTimeline && (
+                    <span className="text-sm line-through text-neutral-medium mr-2">
+                      {results.revisedEconomics.originalTimeline} months
+                    </span>
+                  )}
+                  <span className="text-lg font-medium text-primary">
+                    {results.revisedEconomics.revisedTimeline} months
+                  </span>
+                </div>
+              </div>
+              <div className="p-3 border rounded-md">
+                <h4 className="text-sm font-medium text-neutral-dark mb-1">ROI Estimate</h4>
+                <div className="flex items-center">
+                  {results.revisedEconomics.originalROI && (
+                    <span className="text-sm line-through text-neutral-medium mr-2">
+                      {results.revisedEconomics.originalROI.toFixed(1)}x
+                    </span>
+                  )}
+                  <span className="text-lg font-medium text-primary">
+                    {results.revisedEconomics.revisedROI.toFixed(1)}x
+                  </span>
+                </div>
+              </div>
+            </div>
+            {results.revisedEconomics.notes && (
+              <div className="mt-2 p-3 bg-neutral-lightest rounded text-sm">
+                <p>{results.revisedEconomics.notes}</p>
+              </div>
+            )}
+          </div>
+
+          {/* SWOT Analysis */}
+          <div>
+            <h3 className="text-md font-medium text-neutral-dark mb-3">SWOT Analysis</h3>
+            <SwotAnalysis swotAnalysis={results.swotAnalysis} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default ValidationResults;
