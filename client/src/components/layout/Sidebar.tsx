@@ -43,26 +43,29 @@ const Sidebar: React.FC = () => {
         
         <div className="space-y-1 px-2 flex-1">
           {navItems.map((item) => (
-            <Link key={item.path} href={item.path}>
-              <a className={cn(
+            <Link
+              key={item.path}
+              href={item.path}
+              className={cn(
                 "flex items-center justify-center md:justify-start p-2 rounded-md group",
                 location === item.path 
                   ? "text-primary bg-blue-50" 
                   : "text-neutral-medium hover:text-primary hover:bg-blue-50"
-              )}>
-                <item.icon className="h-5 w-5" />
-                <span className="ml-3 hidden md:inline-block">{item.label}</span>
-              </a>
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="ml-3 hidden md:inline-block">{item.label}</span>
             </Link>
           ))}
         </div>
         
         <div className="px-2 mt-6">
-          <Link href="/settings">
-            <a className="flex items-center justify-center md:justify-start p-2 text-neutral-medium hover:text-primary hover:bg-blue-50 rounded-md group">
-              <SettingsIcon className="h-5 w-5" />
-              <span className="ml-3 hidden md:inline-block">Settings</span>
-            </a>
+          <Link 
+            href="/settings"
+            className="flex items-center justify-center md:justify-start p-2 text-neutral-medium hover:text-primary hover:bg-blue-50 rounded-md group"
+          >
+            <SettingsIcon className="h-5 w-5" />
+            <span className="ml-3 hidden md:inline-block">Settings</span>
           </Link>
         </div>
       </nav>
