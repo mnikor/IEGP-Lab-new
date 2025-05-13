@@ -25,6 +25,13 @@ export interface SwotAnalysis {
   threats: string[];
 }
 
+export interface RegionalLoeData {
+  region: string;           // e.g., "US", "EU", "Japan"
+  loeDate: string;          // ISO date string format
+  extensionPotential: boolean; // Whether study could extend exclusivity
+  extensionMonths?: number;    // Potential months of extension
+}
+
 export interface FeasibilityData {
   // Core metrics
   estimatedCost: number;
@@ -40,6 +47,13 @@ export interface FeasibilityData {
   numberOfCountries: number;
   recruitmentPeriodMonths: number;
   followUpPeriodMonths: number;
+  
+  // Loss of Exclusivity data
+  globalLoeDate?: string;      // ISO date string for primary/global LOE
+  regionalLoeData?: RegionalLoeData[]; // Region-specific LOE information
+  timeToLoe?: number;          // Months from now until LOE
+  postLoeValue?: number;       // Estimated value retention post-LOE (0-1 scale)
+  estimatedFpiDate?: string;   // ISO date string for estimated FPI
   
   // Cost breakdown
   siteCosts: number;
@@ -110,6 +124,14 @@ export interface GenerateConceptRequest {
   budgetCeilingEur?: number;
   timelineCeilingMonths?: number;
   salesImpactThreshold?: number;
+  
+  // LOE (Loss of Exclusivity) information
+  globalLoeDate?: string;       // ISO date string for primary LOE
+  regionalLoeDates?: {          // Region-specific LOE dates
+    region: string;
+    date: string;              // ISO date string
+  }[];
+  hasPatentExtensionPotential?: boolean; // Whether the study could extend exclusivity
 }
 
 export interface EvidenceFile {

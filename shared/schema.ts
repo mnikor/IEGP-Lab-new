@@ -74,6 +74,14 @@ export const generateConceptRequestSchema = z.object({
   budgetCeilingEur: z.number().positive().optional(),
   timelineCeilingMonths: z.number().positive().optional(),
   salesImpactThreshold: z.number().positive().optional(),
+  
+  // LOE (Loss of Exclusivity) information
+  globalLoeDate: z.string().optional(), // ISO date string
+  regionalLoeDates: z.array(z.object({
+    region: z.string(),
+    date: z.string()
+  })).optional(),
+  hasPatentExtensionPotential: z.boolean().optional(),
 });
 
 export const validateSynopsisRequestSchema = z.object({
