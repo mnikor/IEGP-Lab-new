@@ -75,6 +75,9 @@ export const generateConceptRequestSchema = z.object({
   timelineCeilingMonths: z.number().positive().optional(),
   salesImpactThreshold: z.number().positive().optional(),
   
+  // Study timeline information
+  anticipatedFpiDate: z.string().optional(), // ISO date string for First Patient In
+  
   // LOE (Loss of Exclusivity) information
   globalLoeDate: z.string().optional(), // ISO date string
   regionalLoeDates: z.array(z.object({

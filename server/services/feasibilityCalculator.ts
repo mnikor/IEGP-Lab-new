@@ -540,11 +540,20 @@ function calculateLoeData(
   // Current date for FPI calculations
   const currentDate = new Date();
   
-  // Realistically, FPI (First Patient In) will be at least 3-6 months from now
-  // due to study startup activities (site selection, contracts, IRB approvals, etc.)
-  const studyStartupTimeMonths = 4; // Average 4 months for study startup
-  const estimatedFpiDate = new Date(currentDate.getTime());
-  estimatedFpiDate.setMonth(currentDate.getMonth() + studyStartupTimeMonths);
+  // For FPI (First Patient In) date calculation:
+  // - If user provided an anticipated FPI date, use it
+  // - Otherwise, default to a realistic 12 months from now for study startup
+  // (includes protocol development, site selection, contracts, IRB approvals, site activation)
+  let estimatedFpiDate: Date;
+  
+  if (requestData.anticipatedFpiDate) {
+    // Use user-provided FPI date if available
+    estimatedFpiDate = new Date(requestData.anticipatedFpiDate);
+  } else {
+    // Realistic default: 12 months from now for study startup
+    estimatedFpiDate = new Date(currentDate.getTime());
+    estimatedFpiDate.setMonth(currentDate.getMonth() + 12);
+  }
   
   // Default LOE to 10 years from now if not provided
   let globalLoeDate: Date = new Date(currentDate.getTime());

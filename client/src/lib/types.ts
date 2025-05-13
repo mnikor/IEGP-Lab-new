@@ -129,6 +129,9 @@ export interface GenerateConceptRequest {
   timelineCeilingMonths?: number;
   salesImpactThreshold?: number;
   
+  // Study timeline information
+  anticipatedFpiDate?: string;  // ISO date string for anticipated First Patient In date
+  
   // LOE (Loss of Exclusivity) information
   globalLoeDate?: string;       // ISO date string for primary LOE
   regionalLoeDates?: {          // Region-specific LOE dates
