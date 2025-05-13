@@ -81,6 +81,9 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
           </div>
           <div className="mt-1">
             <p className="text-xs text-neutral-medium">
+              Total timeline is from FPI (First Patient In) to completion of follow-up
+            </p>
+            <p className="text-xs text-neutral-medium mt-1">
               Expected recruitment rate: {feasibilityData.recruitmentRate ? (feasibilityData.recruitmentRate * 100).toFixed(0) : '0'}% of target
               {feasibilityData.dropoutRate > 0 && ` • Estimated dropout rate: ${(feasibilityData.dropoutRate * 100).toFixed(0)}%`}
             </p>

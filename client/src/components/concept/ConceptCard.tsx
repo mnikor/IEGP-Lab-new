@@ -182,7 +182,7 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
                   ? `${concept.feasibilityData.timeline} months`
                   : 'N/A'}
               </span>
-              <span className="ml-1 text-xs text-neutral-medium">(from initiation)</span>
+              <span className="ml-1 text-xs text-neutral-medium">(from FPI: First Patient In)</span>
             </div>
           </div>
           <div className="p-3 border border-neutral-light rounded-md">
@@ -203,7 +203,7 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
                       <li>2.0x = double your investment</li>
                       <li>3.0x+ = strong financial performance</li>
                     </ul>
-                    <p className="text-xs mt-1">Based on 5-year projections accounting for market impact, study duration, and risk factors.</p>
+                    <p className="text-xs mt-1">Based on 5-year projections starting from the primary endpoint readout date (not from study initiation).</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
