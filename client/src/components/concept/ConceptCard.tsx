@@ -1,12 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { StudyConcept } from "@/lib/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star } from "lucide-react";
+import { Star, ChevronDown, ChevronUp } from "lucide-react";
 import PicoFramework from "@/components/shared/PicoFramework";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
 import FeasibilityChart from "@/components/shared/FeasibilityChart";
+import FeasibilityDetails from "@/components/shared/FeasibilityDetails";
 import CurrentEvidence from "@/components/shared/CurrentEvidence";
+import { Button } from "@/components/ui/button";
 
 interface ConceptCardProps {
   concept: StudyConcept;
@@ -14,6 +16,8 @@ interface ConceptCardProps {
 }
 
 const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
+  const [showFeasibilityDetails, setShowFeasibilityDetails] = useState(false);
+  
   return (
     <Card className="border border-neutral-light rounded-lg overflow-hidden">
       <CardHeader className="bg-neutral-lightest p-4 border-b border-neutral-light flex flex-row items-center justify-between">
@@ -89,8 +93,31 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
 
         {/* Chart */}
         <div className="mb-4">
-          <h4 className="text-sm font-medium text-neutral-dark mb-2">Feasibility Analysis</h4>
-          <FeasibilityChart feasibilityData={concept.feasibilityData} />
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-medium text-neutral-dark mb-2">Feasibility Analysis</h4>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 p-1"
+              onClick={() => setShowFeasibilityDetails(!showFeasibilityDetails)}
+            >
+              {showFeasibilityDetails ? (
+                <><ChevronUp className="h-4 w-4 mr-1" /> Less Detail</>
+              ) : (
+                <><ChevronDown className="h-4 w-4 mr-1" /> More Detail</>
+              )}
+            </Button>
+          </div>
+          
+          {/* Chart View */}
+          {!showFeasibilityDetails && (
+            <FeasibilityChart feasibilityData={concept.feasibilityData} />
+          )}
+          
+          {/* Detailed View */}
+          {showFeasibilityDetails && (
+            <FeasibilityDetails feasibilityData={concept.feasibilityData} />
+          )}
         </div>
 
         {/* SWOT Analysis */}

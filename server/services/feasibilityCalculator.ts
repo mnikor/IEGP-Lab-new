@@ -1,12 +1,10 @@
 import { StudyConcept, GenerateConceptRequest } from "@shared/schema";
 import { FeasibilityData } from "@/lib/types";
 
-// Type augmentation to handle feasibilityData property correctly
-declare module "@shared/schema" {
-  interface StudyConcept {
-    feasibilityData?: FeasibilityData;
-  }
-}
+// Type assertion helper for feasibilityData
+type ConceptWithFeasibility = Partial<StudyConcept> & {
+  feasibilityData?: FeasibilityData;
+};
 
 /**
  * Calculates feasibility metrics for a study concept
@@ -15,7 +13,7 @@ declare module "@shared/schema" {
  * @param requestData The original request data for context
  * @returns Feasibility data object
  */
-export function calculateFeasibility(concept: Partial<StudyConcept>, requestData: Partial<GenerateConceptRequest>): FeasibilityData {
+export function calculateFeasibility(concept: ConceptWithFeasibility, requestData: Partial<GenerateConceptRequest>): FeasibilityData {
   // Step 1: Determine the study phase and complexity factors
   const studyPhase = concept.studyPhase || 'any';
   const isRealWorldEvidence = concept.strategicGoal === 'real_world_evidence';
@@ -214,7 +212,7 @@ export function calculateFeasibility(concept: Partial<StudyConcept>, requestData
 /**
  * Calculates the recruitment rate for a study
  */
-function calculateRecruitmentRate(concept: Partial<StudyConcept>, studyPhase: string): number {
+function calculateRecruitmentRate(concept: ConceptWithFeasibility, studyPhase: string): number {
   let baseRate = 0.7; // Default 70% recruitment rate
   
   // Adjust based on phase
@@ -251,7 +249,7 @@ function calculateRecruitmentRate(concept: Partial<StudyConcept>, studyPhase: st
  * Calculates the completion risk for a study
  */
 function calculateCompletionRisk(
-  concept: Partial<StudyConcept>, 
+  concept: ConceptWithFeasibility, 
   studyPhase: string,
   requestData: Partial<GenerateConceptRequest>
 ): number {
@@ -318,7 +316,7 @@ function calculateCompletionRisk(
  * @returns Projected ROI as a multiple (e.g., 2.5x means 2.5 times the investment)
  */
 function calculateProjectedROI(
-  concept: Partial<StudyConcept>,
+  concept: ConceptWithFeasibility,
   requestData: Partial<GenerateConceptRequest>
 ): number {
   // Get feasibility data if it exists
