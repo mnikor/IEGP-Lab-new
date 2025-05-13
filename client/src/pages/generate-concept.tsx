@@ -32,23 +32,21 @@ const GenerateConcept: React.FC = () => {
               <a href="/reports">Reports</a>
             </TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="generate" forceMount className={activeTab !== "generate" ? "hidden" : ""}>
+            <ConceptForm 
+              onGenerateSuccess={handleConceptGeneration} 
+              isGenerating={isGenerating}
+              setIsGenerating={setIsGenerating}
+            />
+          </TabsContent>
+          
+          <TabsContent value="results" forceMount className={activeTab !== "results" ? "hidden" : ""}>
+            {generatedConcepts && (
+              <ResultsSection concepts={generatedConcepts} />
+            )}
+          </TabsContent>
         </Tabs>
-      </div>
-
-      <div>
-        <TabsContent value="generate" forceMount className={activeTab !== "generate" ? "hidden" : ""}>
-          <ConceptForm 
-            onGenerateSuccess={handleConceptGeneration} 
-            isGenerating={isGenerating}
-            setIsGenerating={setIsGenerating}
-          />
-        </TabsContent>
-        
-        <TabsContent value="results" forceMount className={activeTab !== "results" ? "hidden" : ""}>
-          {generatedConcepts && (
-            <ResultsSection concepts={generatedConcepts} />
-          )}
-        </TabsContent>
       </div>
     </>
   );

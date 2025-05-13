@@ -32,23 +32,21 @@ const ValidateSynopsis: React.FC = () => {
               <a href="/reports">Reports</a>
             </TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="upload" forceMount className={activeTab !== "upload" ? "hidden" : ""}>
+            <SynopsisUploader
+              onValidationSuccess={handleValidationSuccess}
+              isValidating={isValidating}
+              setIsValidating={setIsValidating}
+            />
+          </TabsContent>
+          
+          <TabsContent value="results" forceMount className={activeTab !== "results" ? "hidden" : ""}>
+            {validationResults && (
+              <ValidationResults results={validationResults} />
+            )}
+          </TabsContent>
         </Tabs>
-      </div>
-
-      <div>
-        <TabsContent value="upload" forceMount className={activeTab !== "upload" ? "hidden" : ""}>
-          <SynopsisUploader
-            onValidationSuccess={handleValidationSuccess}
-            isValidating={isValidating}
-            setIsValidating={setIsValidating}
-          />
-        </TabsContent>
-        
-        <TabsContent value="results" forceMount className={activeTab !== "results" ? "hidden" : ""}>
-          {validationResults && (
-            <ValidationResults results={validationResults} />
-          )}
-        </TabsContent>
       </div>
     </>
   );
