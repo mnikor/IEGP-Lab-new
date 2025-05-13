@@ -258,7 +258,7 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
     // Core metrics
     estimatedCost: totalCost,
     timeline: Math.round(timeline),
-    projectedROI: parseFloat(projectedROI.toFixed(1)),
+    projectedROI: projectedROI !== undefined ? parseFloat(projectedROI.toFixed(1)) : 2.5,
     recruitmentRate: parseFloat(recruitmentRate.toFixed(2)),
     completionRisk: parseFloat(completionRisk.toFixed(2)),
     
