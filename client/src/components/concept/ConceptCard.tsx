@@ -8,6 +8,7 @@ import SwotAnalysis from "@/components/shared/SwotAnalysis";
 import FeasibilityChart from "@/components/shared/FeasibilityChart";
 import FeasibilityDetails from "@/components/shared/FeasibilityDetails";
 import CurrentEvidence from "@/components/shared/CurrentEvidence";
+import LoeDetails from "@/components/shared/LoeDetails";
 import { Button } from "@/components/ui/button";
 import { 
   Tooltip,

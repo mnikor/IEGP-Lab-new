@@ -1,5 +1,5 @@
 import { StudyConcept, GenerateConceptRequest } from "@shared/schema";
-import { FeasibilityData } from "@/lib/types";
+import { FeasibilityData, RegionalLoeData } from "@/lib/types";
 
 // Type assertion helper for feasibilityData
 type ConceptWithFeasibility = Partial<StudyConcept> & {
@@ -177,6 +177,9 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   // Step 6: Calculate recruitment rate (0-1 scale)
   const recruitmentRate = calculateRecruitmentRate(concept, studyPhase);
   
+  // Get LOE (Loss of Exclusivity) data from the request if available
+  const loeData = calculateLoeData(concept, requestData, timeline);
+  
   // Create initial feasibility data for completion risk calculation
   const initialFeasibilityData: FeasibilityData = {
     estimatedCost: Math.round(estimatedCost),
@@ -190,6 +193,14 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
     numberOfCountries: geographyCount,
     recruitmentPeriodMonths: recruitmentPeriod,
     followUpPeriodMonths: Math.round(timeline - recruitmentPeriod),
+    
+    // LOE data from calculations
+    globalLoeDate: loeData.globalLoeDate,
+    regionalLoeData: loeData.regionalLoeData,
+    timeToLoe: loeData.timeToLoe,
+    postLoeValue: loeData.postLoeValue,
+    estimatedFpiDate: loeData.estimatedFpiDate,
+    
     siteCosts: 0,
     personnelCosts: 0,
     materialCosts: 0,
@@ -446,17 +457,51 @@ function calculateProjectedROI(
   const discountRate = 0.1; // 10% annual discount rate
   const discountFactor = 1 / Math.pow(1 + discountRate, timeToImpact);
   
+  // Check LOE impact on revenue projections
+  const currentDate = new Date();
+  const totalYearsToProject = 5; // Base projection period of 5 years
+  
+  // Calculate months until LOE from now
+  let monthsUntilLoe = 120; // Default 10 years if no LOE data available
+  let postLoeValueRetention = 0.2; // Default value retention after LOE (20%)
+  
+  if (feasibilityData.timeToLoe !== undefined) {
+    monthsUntilLoe = feasibilityData.timeToLoe;
+  } else if (feasibilityData.globalLoeDate) {
+    const loeDate = new Date(feasibilityData.globalLoeDate);
+    monthsUntilLoe = Math.max(0, 
+      Math.round((loeDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24 * 30.5))
+    );
+  }
+  
+  if (feasibilityData.postLoeValue !== undefined) {
+    postLoeValueRetention = feasibilityData.postLoeValue;
+  }
+  
+  // Calculate years until LOE (from study completion)
+  const yearsFromResultsToLoe = (monthsUntilLoe / 12) - timeToImpact;
+  
   // Revenue over 5 years after primary endpoint readout (not from study initiation)
   // We assume primary endpoint readout is at study completion
   let totalDiscountedRevenue = 0;
-  for (let year = 1; year <= 5; year++) {
+  for (let year = 1; year <= totalYearsToProject; year++) {
     // Revenue ramps up over time
     const yearlyRevenue = potentialRevenue * Math.min(1.0, year * 0.3);
+    
+    // Adjust for LOE (if it occurs within our projection window)
+    let adjustedYearlyRevenue = yearlyRevenue;
+    if (year > yearsFromResultsToLoe && yearsFromResultsToLoe > 0) {
+      // Apply post-LOE value retention
+      const yearsPostLoe = year - yearsFromResultsToLoe;
+      const loeImpactFactor = Math.max(postLoeValueRetention, 1.0 - (yearsPostLoe * 0.2));
+      adjustedYearlyRevenue = yearlyRevenue * loeImpactFactor;
+    }
+    
     // Calculate discount based on when the revenue will be received: 
     // timeToImpact represents time to primary endpoint readout, after which we calculate 5 years
     const yearsFromNow = timeToImpact + year;
     const yearDiscountFactor = 1 / Math.pow(1 + discountRate, yearsFromNow);
-    totalDiscountedRevenue += yearlyRevenue * yearDiscountFactor;
+    totalDiscountedRevenue += adjustedYearlyRevenue * yearDiscountFactor;
   }
   
   // Step 7: Calculate ROI
@@ -470,4 +515,123 @@ function calculateProjectedROI(
   
   // Ensure ROI is within realistic bounds
   return Math.max(0.5, Math.min(10, parseFloat(riskAdjustedROI.toFixed(1))));
+}
+
+/**
+ * Calculates LOE data including estimated First Patient In date, 
+ * time to LOE, and regional LOE information
+ * 
+ * @param concept The study concept
+ * @param requestData The original request data
+ * @param timeline The calculated timeline in months
+ * @returns LOE data object
+ */
+function calculateLoeData(
+  concept: ConceptWithFeasibility,
+  requestData: Partial<GenerateConceptRequest>,
+  timeline: number
+): {
+  globalLoeDate: string;
+  regionalLoeData: RegionalLoeData[];
+  timeToLoe: number;
+  postLoeValue: number;
+  estimatedFpiDate: string;
+} {
+  // Current date for FPI calculations
+  const currentDate = new Date();
+  
+  // Realistically, FPI (First Patient In) will be at least 3-6 months from now
+  // due to study startup activities (site selection, contracts, IRB approvals, etc.)
+  const studyStartupTimeMonths = 4; // Average 4 months for study startup
+  const estimatedFpiDate = new Date(currentDate.getTime());
+  estimatedFpiDate.setMonth(currentDate.getMonth() + studyStartupTimeMonths);
+  
+  // Default LOE to 10 years from now if not provided
+  let globalLoeDate: Date = new Date(currentDate.getTime());
+  globalLoeDate.setFullYear(globalLoeDate.getFullYear() + 10);
+  
+  // Check if user provided a global LOE date
+  if (requestData.globalLoeDate) {
+    globalLoeDate = new Date(requestData.globalLoeDate);
+  }
+  
+  // Initialize regional LOE data
+  const regionalLoeData: RegionalLoeData[] = [];
+  
+  // Process regional LOE dates if provided
+  if (requestData.regionalLoeDates && requestData.regionalLoeDates.length > 0) {
+    for (const regionalDate of requestData.regionalLoeDates) {
+      regionalLoeData.push({
+        region: regionalDate.region,
+        loeDate: regionalDate.date,
+        extensionPotential: requestData.hasPatentExtensionPotential || false
+      });
+    }
+  } else {
+    // If no regional data provided, create entries based on geography
+    const geography = concept.geography || requestData.geography || [];
+    for (const region of geography) {
+      // Create region-specific LOE date (slightly different for each region)
+      const regionLoeDate = new Date(globalLoeDate.getTime());
+      
+      // Adjust dates slightly by region (for variety)
+      if (region === "US") {
+        // US patent extension opportunities are often stronger
+        regionLoeDate.setMonth(regionLoeDate.getMonth() + 3);
+      } else if (region === "EU" || region.startsWith("E")) {
+        // EU patents may expire slightly earlier
+        regionLoeDate.setMonth(regionLoeDate.getMonth() - 2);
+      } else if (region === "JP") {
+        // Japan may have different patent terms
+        regionLoeDate.setMonth(regionLoeDate.getMonth() + 1);
+      }
+      
+      regionalLoeData.push({
+        region,
+        loeDate: regionLoeDate.toISOString().split('T')[0],
+        extensionPotential: requestData.hasPatentExtensionPotential || false,
+        extensionMonths: requestData.hasPatentExtensionPotential ? 6 : undefined
+      });
+    }
+  }
+  
+  // Calculate time to LOE in months from now
+  const timeToGlobalLoe = Math.max(0, 
+    Math.round((globalLoeDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24 * 30.5))
+  );
+  
+  // Calculate post-LOE value (0-1 scale, how much value remains after LOE)
+  // Factors that increase post-LOE value:
+  // - RWE studies (tend to support value proposition even after LOE)
+  // - Studies in areas with less generic competition
+  // - Extension potential
+  let postLoeValue = 0.15; // Base value (15% of pre-LOE)
+  
+  if (concept.strategicGoal === 'real_world_evidence') {
+    postLoeValue += 0.1; // RWE studies have more enduring value
+  }
+  
+  if (concept.strategicGoal === 'defend_share') {
+    postLoeValue += 0.05; // Studies designed to defend market share may have some enduring impact
+  }
+  
+  if (requestData.hasPatentExtensionPotential) {
+    postLoeValue += 0.2; // Potential for extended exclusivity
+  }
+  
+  // Oncology drugs often retain more value post-LOE due to complex biosimilar requirements
+  const isOncology = (concept.indication || '').toLowerCase().includes('cancer') || 
+                    (concept.indication || '').toLowerCase().includes('oncol');
+  if (isOncology) {
+    postLoeValue += 0.1;
+  }
+  
+  // Return the LOE data
+  return {
+    globalLoeDate: globalLoeDate.toISOString().split('T')[0],
+    regionalLoeData,
+    timeToLoe: timeToGlobalLoe,
+    postLoeValue: Math.min(0.7, postLoeValue), // Cap at 70% value retention
+    estimatedFpiDate: estimatedFpiDate.toISOString().split('T')[0]
+  };
 }
