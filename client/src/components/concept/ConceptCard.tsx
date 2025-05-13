@@ -116,7 +116,9 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
             <h4 className="text-sm font-medium text-neutral-dark mb-1">Timeline</h4>
             <div className="flex items-baseline">
               <span className="text-lg font-medium text-primary">
-                {concept.feasibilityData.timeline} months
+                {concept.feasibilityData && concept.feasibilityData.timeline != null
+                  ? `${concept.feasibilityData.timeline} months`
+                  : 'N/A'}
               </span>
               <span className="ml-1 text-xs text-neutral-medium">(from initiation)</span>
             </div>
