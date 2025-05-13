@@ -12,7 +12,10 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
     return null;
   }
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | undefined) => {
+    if (value === undefined || value === null) {
+      return '€0';
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'EUR',
@@ -22,8 +25,11 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
   };
 
   // Calculate total cost and percentages
-  const totalCost = feasibilityData.estimatedCost;
-  const getCostPercentage = (cost: number) => Math.round((cost / totalCost) * 100);
+  const totalCost = feasibilityData.estimatedCost || 0;
+  const getCostPercentage = (cost: number | undefined) => {
+    if (!cost || !totalCost) return 0;
+    return Math.round((cost / totalCost) * 100);
+  };
 
   return (
     <div className={`${className} space-y-4`}>
