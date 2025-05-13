@@ -181,7 +181,7 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   const initialFeasibilityData: FeasibilityData = {
     estimatedCost: Math.round(estimatedCost),
     timeline: Math.round(timeline),
-    projectedROI: 0,
+    projectedROI: 2.5, // Default ROI of 2.5x (meaning 2.5 times return on investment)
     recruitmentRate: parseFloat(recruitmentRate.toFixed(2)),
     completionRisk: 0,
     sampleSize: patientCount,
