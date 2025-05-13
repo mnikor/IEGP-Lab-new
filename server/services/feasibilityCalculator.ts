@@ -564,6 +564,7 @@ function calculateLoeData(
       regionalLoeData.push({
         region: regionalDate.region,
         loeDate: regionalDate.date,
+        hasPatentExtension: false,
         extensionPotential: requestData.hasPatentExtensionPotential || false
       });
     }
@@ -589,6 +590,7 @@ function calculateLoeData(
       regionalLoeData.push({
         region,
         loeDate: regionLoeDate.toISOString().split('T')[0],
+        hasPatentExtension: false,
         extensionPotential: requestData.hasPatentExtensionPotential || false,
         extensionMonths: requestData.hasPatentExtensionPotential ? 6 : undefined
       });

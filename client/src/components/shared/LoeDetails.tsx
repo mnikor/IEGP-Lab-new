@@ -58,12 +58,14 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
       region: 'United States',
       loeDate: defaultLoeDate,
       hasPatentExtension: false,
+      extensionPotential: false,
       notes: 'Estimated LOE date based on standard patent duration'
     },
     {
       region: 'European Union',
       loeDate: defaultLoeDate,
       hasPatentExtension: false,
+      extensionPotential: false,
       notes: 'Estimated LOE date based on standard patent duration'
     }
   ];

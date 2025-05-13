@@ -18,6 +18,15 @@ export interface McDAScore {
   overall: number;
 }
 
+export interface RegionalLoeData {
+  region: string;            // e.g., "US", "EU", "Japan"
+  loeDate: string;           // ISO date string format
+  hasPatentExtension: boolean; // Whether the patent currently has an extension
+  extensionPotential: boolean; // Whether study could extend exclusivity
+  extensionMonths?: number;    // Potential months of extension
+  notes?: string;            // Any additional information about the LOE
+}
+
 export interface SwotAnalysis {
   strengths: string[];
   weaknesses: string[];
@@ -25,12 +34,7 @@ export interface SwotAnalysis {
   threats: string[];
 }
 
-export interface RegionalLoeData {
-  region: string;           // e.g., "US", "EU", "Japan"
-  loeDate: string;          // ISO date string format
-  extensionPotential: boolean; // Whether study could extend exclusivity
-  extensionMonths?: number;    // Potential months of extension
-}
+// Note: RegionalLoeData interface is now unified and defined above
 
 export interface FeasibilityData {
   // Core metrics
