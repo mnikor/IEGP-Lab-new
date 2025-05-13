@@ -1,5 +1,6 @@
 import OpenAI from "openai";
-import { GenerateConceptRequest, PicoData, StudyConcept } from "@shared/schema";
+import { GenerateConceptRequest, StudyConcept } from "@shared/schema";
+import { PicoData } from "@/lib/types";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -44,15 +45,25 @@ export async function analyzeWithOpenAI(
 
     // Process evidence sources with citations
     if (!isValidation) {
-      result.forEach((concept: any) => {
-        concept.evidenceSources = concept.evidenceSources.map((source: any, index: number) => {
-          return {
-            ...source,
-            citation: source.citation || `${source.title}${source.authors ? `, ${source.authors}` : ""}${source.publication ? `. ${source.publication}` : ""}${source.year ? ` (${source.year})` : ""}`,
-            url: searchResults.citations[index] || source.url || ""
-          };
+      // Check if result is an array (for concepts) or an object (for validation)
+      if (Array.isArray(result)) {
+        result.forEach((concept: any) => {
+          if (concept.evidenceSources && Array.isArray(concept.evidenceSources)) {
+            concept.evidenceSources = concept.evidenceSources.map((source: any, index: number) => {
+              return {
+                ...source,
+                citation: source.citation || `${source.title}${source.authors ? `, ${source.authors}` : ""}${source.publication ? `. ${source.publication}` : ""}${source.year ? ` (${source.year})` : ""}`,
+                url: searchResults.citations[index] || source.url || ""
+              };
+            });
+          } else {
+            concept.evidenceSources = [];
+          }
         });
-      });
+      } else {
+        // If it's not an array, return it as is
+        console.log("Result is not an array. Got:", typeof result);
+      }
     }
 
     return result;
