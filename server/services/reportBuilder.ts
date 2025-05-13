@@ -390,20 +390,28 @@ export async function generateValidationPdfReport(validation: SynopsisValidation
       doc.fontSize(16).font('Helvetica-Bold').text('Extracted PICO Framework');
       doc.moveDown();
       
+      // Type assertion for PICO data in validation
+      const validationPico = validation.extractedPico as {
+        population: string;
+        intervention: string;
+        comparator: string;
+        outcomes: string;
+      };
+      
       doc.fontSize(12).font('Helvetica-Bold').text('Population: ');
-      doc.fontSize(10).font('Helvetica').text(validation.extractedPico.population);
+      doc.fontSize(10).font('Helvetica').text(validationPico.population);
       doc.moveDown();
       
       doc.fontSize(12).font('Helvetica-Bold').text('Intervention: ');
-      doc.fontSize(10).font('Helvetica').text(validation.extractedPico.intervention);
+      doc.fontSize(10).font('Helvetica').text(validationPico.intervention);
       doc.moveDown();
       
       doc.fontSize(12).font('Helvetica-Bold').text('Comparator: ');
-      doc.fontSize(10).font('Helvetica').text(validation.extractedPico.comparator);
+      doc.fontSize(10).font('Helvetica').text(validationPico.comparator);
       doc.moveDown();
       
       doc.fontSize(12).font('Helvetica-Bold').text('Outcomes: ');
-      doc.fontSize(10).font('Helvetica').text(validation.extractedPico.outcomes);
+      doc.fontSize(10).font('Helvetica').text(validationPico.outcomes);
       doc.moveDown(2);
       
       // Benchmark Deltas
