@@ -45,6 +45,8 @@ const formSchema = z.object({
     .refine(val => val === undefined || (val !== undefined && !isNaN(val) && val > 0), {
       message: "Sales impact threshold must be a positive number",
     }),
+  globalLoeDate: z.string().optional(),
+  hasPatentExtensionPotential: z.boolean().optional().default(false),
 });
 
 const ConceptForm: React.FC<ConceptFormProps> = ({ 
@@ -57,6 +59,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
   const [comparatorDrugs, setComparatorDrugs] = useState<string[]>(["Standard of Care"]);
   const [newComparatorDrug, setNewComparatorDrug] = useState<string>("");
   const [evidenceFiles, setEvidenceFiles] = useState<EvidenceFile[]>([]);
+  const [regionalLoeDates, setRegionalLoeDates] = useState<{region: string; date: string}[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -69,6 +72,8 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
       budgetCeilingEur: "",
       timelineCeilingMonths: "",
       salesImpactThreshold: "",
+      globalLoeDate: "",
+      hasPatentExtensionPotential: false,
     },
   });
 
@@ -371,6 +376,55 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                       </FormItem>
                     )}
                   />
+                </div>
+                
+                {/* LOE (Loss of Exclusivity) Section */}
+                <div className="mt-6 border-t pt-4 border-neutral-light">
+                  <h3 className="text-sm font-medium mb-4">Patent Exclusivity Information</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <FormField
+                      control={form.control}
+                      name="globalLoeDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Global LOE Date</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <p className="text-xs text-neutral-medium mt-1">
+                            When will the drug lose patent exclusivity?
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="hasPatentExtensionPotential"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-8">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={field.value}
+                              onChange={field.onChange}
+                              className="h-4 w-4 text-primary border-neutral-medium rounded"
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              Patent Extension Potential
+                            </FormLabel>
+                            <p className="text-xs text-neutral-medium">
+                              Could this study potentially extend patent exclusivity?
+                            </p>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 <div className="border-t border-neutral-light pt-4 flex justify-end">

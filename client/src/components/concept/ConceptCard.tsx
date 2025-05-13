@@ -220,6 +220,19 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
           </div>
         </div>
 
+        {/* LOE Details */}
+        {concept.feasibilityData && (
+          <div className="mb-4">
+            <LoeDetails 
+              globalLoeDate={concept.feasibilityData.globalLoeDate}
+              regionalLoeData={concept.feasibilityData.regionalLoeData}
+              timeToLoe={concept.feasibilityData.timeToLoe}
+              postLoeValue={concept.feasibilityData.postLoeValue}
+              estimatedFpiDate={concept.feasibilityData.estimatedFpiDate}
+            />
+          </div>
+        )}
+        
         {/* Current Evidence */}
         {concept.currentEvidence && (
           <div className="mb-4">
