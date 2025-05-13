@@ -1,5 +1,5 @@
 import { StudyConcept, SynopsisValidation } from "@shared/schema";
-import * as pdfkit from 'pdfkit';
+import PDFDocument from 'pdfkit';
 import * as PresentationBuilder from 'pptxgenjs';
 import { PassThrough } from 'stream';
 
@@ -13,7 +13,7 @@ export async function generatePdfReport(concepts: StudyConcept[]): Promise<Buffe
   return new Promise((resolve, reject) => {
     try {
       // Create a new PDF document
-      const doc = new pdfkit({ margin: 50 });
+      const doc = new PDFDocument({ margin: 50 });
       const buffers: Buffer[] = [];
       const stream = new PassThrough();
 
@@ -263,7 +263,7 @@ export async function generateValidationPdfReport(validation: SynopsisValidation
   return new Promise((resolve, reject) => {
     try {
       // Create a new PDF document
-      const doc = new pdfkit({ margin: 50 });
+      const doc = new PDFDocument({ margin: 50 });
       const buffers: Buffer[] = [];
       const stream = new PassThrough();
 
