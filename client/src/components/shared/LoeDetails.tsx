@@ -134,7 +134,7 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
             <div className="space-y-2">
               <div className="text-sm font-medium text-neutral-dark">Global LOE Date</div>
               <div className="text-sm">
-                {formatDate(defaultLoeDate)}
+                {formatDate(formattedLoeDate)}
               </div>
             </div>
             <div className="space-y-2">

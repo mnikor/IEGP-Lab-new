@@ -199,19 +199,20 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
     recruitmentPeriodMonths: recruitmentPeriod,
     followUpPeriodMonths: Math.round(timeline - recruitmentPeriod),
     
-    // LOE data from calculations
-    globalLoeDate: loeData.globalLoeDate,
+    // LOE data from calculations - IMPORTANT: use user-provided values when available
+    globalLoeDate: requestData.globalLoeDate || loeData.globalLoeDate,
     regionalLoeData: loeData.regionalLoeData,
     timeToLoe: loeData.timeToLoe,
     postLoeValue: loeData.postLoeValue,
-    estimatedFpiDate: loeData.estimatedFpiDate,
+    estimatedFpiDate: requestData.anticipatedFpiDate || loeData.estimatedFpiDate,
     
-    siteCosts: 0,
-    personnelCosts: 0,
-    materialCosts: 0,
-    monitoringCosts: 0,
-    dataCosts: 0,
-    regulatoryCosts: 0,
+    // Cost breakdown with realistic default values for UI
+    siteCosts: Math.round(totalSites * siteSetupCost),
+    personnelCosts: Math.round(estimatedCost * 0.3),  // 30% personnel costs
+    materialCosts: Math.round(estimatedCost * 0.15),  // 15% material costs
+    monitoringCosts: Math.round(estimatedCost * 0.2), // 20% monitoring costs 
+    dataCosts: Math.round(estimatedCost * 0.15),      // 15% data management costs
+    regulatoryCosts: Math.round(regulatoryCost),      // Regulatory costs
     dropoutRate: 0,
     complexityFactor: 0
   };
