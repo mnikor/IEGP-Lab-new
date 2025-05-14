@@ -4,7 +4,7 @@ import StudyIdeaUploader from "@/components/validation/StudyIdeaUploader";
 import ValidationResults from "@/components/validation/ValidationResults";
 import { ValidationResults as ValidationResultsType } from "@/lib/types";
 
-const ValidateSynopsis: React.FC = () => {
+const ValidateStudyIdea: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("upload");
   const [validationResults, setValidationResults] = useState<ValidationResultsType | null>(null);
   const [isValidating, setIsValidating] = useState<boolean>(false);
@@ -52,4 +52,4 @@ const ValidateSynopsis: React.FC = () => {
   );
 };
 
-export default ValidateSynopsis;
+export default ValidateStudyIdea;

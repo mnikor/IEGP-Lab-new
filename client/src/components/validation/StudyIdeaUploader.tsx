@@ -437,9 +437,9 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
                       <FormLabel htmlFor="otherStrategicGoalText" className="text-sm">Please specify other strategic goal</FormLabel>
                       <Input
                         id="otherStrategicGoalText"
-                        placeholder="Enter your custom strategic goal"
                         value={otherStrategicGoalText}
                         onChange={(e) => setOtherStrategicGoalText(e.target.value)}
+                        placeholder="Enter custom strategic goal"
                         className="mt-1"
                       />
                     </div>
@@ -447,259 +447,14 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
                 </div>
                 
                 <div>
-                  <FormLabel>Geography</FormLabel>
-                  <div className="flex flex-wrap gap-2 mt-1 mb-2">
-                    {selectedGeographies.map(geo => (
-                      <Badge key={geo} variant="secondary" className="bg-blue-100 text-primary hover:bg-blue-200">
-                        {geo}
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-4 w-4 p-0 ml-1 text-blue-500 hover:text-blue-700 hover:bg-transparent"
-                          onClick={() => removeGeography(geo)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    ))}
-                    <Select onValueChange={(value) => addGeography(value)}>
-                      <SelectTrigger className="w-auto border-dashed">
-                        <span className="text-xs">+ Add</span>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[
-                          { code: "US", name: "United States" },
-                          { code: "EU", name: "European Union" },
-                          { code: "JP", name: "Japan" },
-                          { code: "CN", name: "China" },
-                          { code: "UK", name: "United Kingdom" },
-                          { code: "CA", name: "Canada" },
-                          { code: "AU", name: "Australia" },
-                          { code: "BR", name: "Brazil" },
-                        ]
-                          .filter(g => !selectedGeographies.includes(g.code))
-                          .map(geo => (
-                            <SelectItem key={geo.code} value={geo.code}>
-                              {geo.name} ({geo.code})
-                            </SelectItem>
-                          ))
-                        }
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {selectedGeographies.length === 0 && (
-                    <p className="text-sm text-destructive">Please select at least one geography</p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="studyPhasePref"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Study Phase Preference</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a phase" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="any">Any Phase</SelectItem>
-                            <SelectItem value="I">Phase I</SelectItem>
-                            <SelectItem value="II">Phase II</SelectItem>
-                            <SelectItem value="III">Phase III</SelectItem>
-                            <SelectItem value="IV">Phase IV</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="targetSubpopulation"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Target Subpopulation (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Elderly patients with comorbidities" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div>
-                  <FormLabel>Comparator Drugs (Optional)</FormLabel>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <Input
-                      value={newComparatorDrug}
-                      onChange={(e) => setNewComparatorDrug(e.target.value)}
-                      placeholder="Add a comparator drug"
-                      className="flex-1"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addComparatorDrug();
-                        }
-                      }}
-                    />
-                    <Button type="button" onClick={addComparatorDrug}>
-                      Add
-                    </Button>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {comparatorDrugs.map(drug => (
-                      <Badge key={drug} variant="secondary" className="bg-blue-100 text-primary hover:bg-blue-200">
-                        {drug}
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-4 w-4 p-0 ml-1 text-blue-500 hover:text-blue-700 hover:bg-transparent"
-                          onClick={() => removeComparatorDrug(drug)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="budgetCeilingEur"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Budget Ceiling (EUR)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 2000000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="timelineCeilingMonths"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Timeline Ceiling (Months)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 24" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="salesImpactThreshold"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sales Impact Threshold</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 10000000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                {/* Study Timeline Section */}
-                <div className="mt-6 border-t pt-4 border-neutral-light">
-                  <h3 className="text-sm font-medium mb-4">Study Timeline Information</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <FormField
-                      control={form.control}
-                      name="anticipatedFpiDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Anticipated FPI Date</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="date" 
-                              {...field}
-                            />
-                          </FormControl>
-                          <p className="text-xs text-neutral-medium mt-1">
-                            When do you expect First Patient In (FPI)? If not provided, defaults to 12 months from now.
-                          </p>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* LOE (Loss of Exclusivity) Section */}
-                <div className="mt-6 border-t pt-4 border-neutral-light">
-                  <h3 className="text-sm font-medium mb-4">Patent Exclusivity Information</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <FormField
-                      control={form.control}
-                      name="globalLoeDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Global LOE Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <p className="text-xs text-neutral-medium mt-1">
-                            When will the drug lose patent exclusivity?
-                          </p>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="hasPatentExtensionPotential"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-8">
-                          <FormControl>
-                            <input
-                              type="checkbox"
-                              checked={field.value}
-                              onChange={field.onChange}
-                              className="h-4 w-4 text-primary border-neutral-medium rounded"
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>
-                              Patent Extension Potential
-                            </FormLabel>
-                            <p className="text-xs text-neutral-medium">
-                              Could this study potentially extend patent exclusivity?
-                            </p>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <Tabs value={inputMethod} onValueChange={setInputMethod} className="mt-4">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="file">Upload File</TabsTrigger>
-                    <TabsTrigger value="text">Enter Text</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="file" className="mt-4">
-                    <div>
-                      <div
-                        className={`border-2 border-dashed rounded-lg p-6 text-center ${
-                          dragActive ? "border-primary bg-blue-50" : "border-neutral-light"
-                        }`}
+                  <Tabs defaultValue="file" onValueChange={(value) => setInputMethod(value)}>
+                    <TabsList className="mb-4">
+                      <TabsTrigger value="file">File Upload</TabsTrigger>
+                      <TabsTrigger value="text">Text Input</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="file">
+                      <div 
+                        className={`border-2 border-dashed rounded-md p-6 text-center ${dragActive ? 'border-primary bg-blue-50' : 'border-gray-300'}`}
                         onDragEnter={handleDrag}
                         onDragLeave={handleDrag}
                         onDragOver={handleDrag}
@@ -715,69 +470,272 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
                             browse
                             <input
                               type="file"
-                              className="hidden"
+                              className="sr-only"
                               onChange={handleFileInput}
-                              accept=".pdf,.doc,.docx,.ppt,.pptx"
+                              accept=".pdf,.docx,.doc,.pptx,.ppt"
                             />
                           </label>
                         </p>
                         <p className="mt-2 text-xs text-neutral-medium">
-                          Supports PDF, DOCX, DOC, PPTX, PPT files
+                          PDF, DOCX, DOC, PPTX, or PPT up to 10MB
                         </p>
                       </div>
-                    </div>
-
-                    {selectedFile && (
-                      <Alert className="mt-4">
-                        <FileText className="h-4 w-4" />
-                        <AlertTitle>File Selected</AlertTitle>
-                        <AlertDescription>
-                          {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
-                        </AlertDescription>
-                      </Alert>
+                    </TabsContent>
+                    <TabsContent value="text">
+                      <FormField
+                        control={form.control}
+                        name="studyIdeaText"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Study Idea Description</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Describe your study idea or paste your study text here..." 
+                                className="h-40 resize-none"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </TabsContent>
+                  </Tabs>
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="additionalContext"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Additional Context</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Include any additional information such as target submission date, regulatory requirements, etc." 
+                          className="h-20 resize-none"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="mt-6">
+                  <h3 className="font-medium text-neutral-dark mb-2">Geographic Focus</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedGeographies.map(geo => (
+                      <Badge key={geo} variant="secondary" className="bg-blue-100 text-primary hover:bg-blue-200">
+                        {geo}
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-4 w-4 p-0 ml-1 text-blue-500 hover:text-blue-700 hover:bg-transparent"
+                          onClick={() => removeGeography(geo)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                    <Select 
+                      onValueChange={addGeography}
+                      value=""
+                    >
+                      <SelectTrigger className="w-auto border-dashed">
+                        <span className="text-xs">+ Add</span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["US", "EU", "Japan", "China", "Global"]
+                          .filter(geo => !selectedGeographies.includes(geo))
+                          .map(geo => (
+                            <SelectItem key={geo} value={geo}>{geo}</SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="studyPhasePref"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preferred Study Phase</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select phase" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="I">Phase I</SelectItem>
+                            <SelectItem value="II">Phase II</SelectItem>
+                            <SelectItem value="III">Phase III</SelectItem>
+                            <SelectItem value="IV">Phase IV</SelectItem>
+                            <SelectItem value="any">Any</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                  </TabsContent>
+                  />
                   
-                  <TabsContent value="text" className="mt-4 space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="studyIdeaText"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Study Idea Description</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Describe your study idea or paste your study text here..." 
-                              className="h-40 resize-none"
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                  <FormField
+                    control={form.control}
+                    name="targetSubpopulation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Target Subpopulation (optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., PD-L1 high expressors" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div>
+                  <h3 className="font-medium text-neutral-dark mb-2">Comparator Drugs</h3>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {comparatorDrugs.map(drug => (
+                      <Badge key={drug} variant="secondary" className="bg-blue-100 text-primary hover:bg-blue-200">
+                        {drug}
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-4 w-4 p-0 ml-1 text-blue-500 hover:text-blue-700 hover:bg-transparent"
+                          onClick={() => removeComparatorDrug(drug)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      placeholder="Add comparator drug"
+                      value={newComparatorDrug}
+                      onChange={(e) => setNewComparatorDrug(e.target.value)}
+                      className="max-w-xs"
                     />
-                    
-                    <FormField
-                      control={form.control}
-                      name="additionalContext"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Additional Context</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Regulatory approval is expected on date ..., market access it expected in key markets on ....date" 
-                              className="h-24 resize-none"
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TabsContent>
-                </Tabs>
-
-                <div className="border-t border-neutral-light pt-4 flex justify-end">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={addComparatorDrug}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="budgetCeilingEur"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Budget Ceiling (EUR)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g., 5000000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="timelineCeilingMonths"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Timeline Ceiling (months)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g., 36" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="salesImpactThreshold"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sales Impact Threshold (EUR)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g., 10000000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="anticipatedFpiDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Anticipated FPI Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="globalLoeDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Global LOE Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="hasPatentExtensionPotential"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="h-4 w-4 mt-1"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Patent Extension Potential</FormLabel>
+                        <p className="text-sm text-neutral-medium">
+                          Indicates if this study could potentially result in patent extensions
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex justify-end pt-2">
                   <Button type="button" variant="outline" className="mr-3">
                     Cancel
                   </Button>
@@ -790,8 +748,8 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
           </CardContent>
         </Card>
       </div>
-
-      <div>
+      
+      <div className="lg:col-span-1">
         <Card>
           <CardHeader>
             <CardTitle>Validation Process</CardTitle>
@@ -812,36 +770,25 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
                 <div className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-primary text-sm font-medium">
                   2
                 </div>
-                <p className="ml-3 text-sm text-neutral-medium">AI extracts PICO framework and key elements</p>
+                <p className="ml-3 text-sm text-neutral-medium">The system extracts PICO elements</p>
               </div>
               <div className="flex items-start">
                 <div className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-primary text-sm font-medium">
                   3
                 </div>
-                <p className="ml-3 text-sm text-neutral-medium">System benchmarks against current evidence</p>
+                <p className="ml-3 text-sm text-neutral-medium">Enhanced AI validates your study design</p>
               </div>
               <div className="flex items-start">
                 <div className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-primary text-sm font-medium">
                   4
                 </div>
-                <p className="ml-3 text-sm text-neutral-medium">Identifies risk factors and improvement areas</p>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-primary text-sm font-medium">
-                  5
-                </div>
-                <p className="ml-3 text-sm text-neutral-medium">Provides revised economics and SWOT analysis</p>
+                <p className="ml-3 text-sm text-neutral-medium">Review validation results and improvement suggestions</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>File Requirements</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm text-neutral-medium">
+            
+            <div className="mt-6">
+              <h3 className="font-medium text-neutral-dark mb-2">Tips for Success</h3>
+              <ul className="space-y-2 text-xs">
               <li className="flex items-start">
                 <AlertCircle className="h-4 w-4 mr-2 mt-0.5 text-primary" />
                 Supported formats: PDF, DOCX, DOC, PPTX, PPT
@@ -859,6 +806,7 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
                 Ensure document is not password protected
               </li>
             </ul>
+            </div>
           </CardContent>
         </Card>
       </div>
