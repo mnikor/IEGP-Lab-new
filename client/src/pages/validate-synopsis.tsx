@@ -17,8 +17,8 @@ const ValidateSynopsis: React.FC = () => {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-neutral-dark">Synopsis Validator</h1>
-        <p className="text-neutral-medium mt-1">Upload and validate your clinical study synopsis with AI analysis</p>
+        <h1 className="text-2xl font-semibold text-neutral-dark">Study Idea Validator</h1>
+        <p className="text-neutral-medium mt-1">Upload and validate your clinical study idea with AI analysis</p>
       </div>
 
       <div className="mb-6 border-b border-neutral-light">
