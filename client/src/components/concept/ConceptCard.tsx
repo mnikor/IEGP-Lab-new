@@ -223,22 +223,26 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
         </div>
 
         {/* LOE Details */}
-        {concept.feasibilityData && (
-          <div className="mb-4">
-            {/* Debug logging using a self-executing function to avoid React node issues */}
-            {(() => {
-              console.log('ConceptCard passing globalLoeDate:', concept.feasibilityData.globalLoeDate);
-              return null;
-            })()}
-            <LoeDetails 
-              globalLoeDate={concept.feasibilityData.globalLoeDate}
-              regionalLoeData={concept.feasibilityData.regionalLoeData}
-              timeToLoe={concept.feasibilityData.timeToLoe}
-              postLoeValue={concept.feasibilityData.postLoeValue}
-              estimatedFpiDate={concept.feasibilityData.estimatedFpiDate}
-            />
-          </div>
-        )}
+        <div className="mb-4">
+          {/* Debug logging using a self-executing function to avoid React node issues */}
+          {(() => {
+            console.log('ConceptCard LOE data:', {
+              topLevelGlobalLoeDate: concept.globalLoeDate,
+              topLevelTimeToLoe: concept.timeToLoe,
+              nestedGlobalLoeDate: concept.feasibilityData?.globalLoeDate,
+              nestedTimeToLoe: concept.feasibilityData?.timeToLoe
+            });
+            return null;
+          })()}
+          <LoeDetails 
+            // First try the top-level value, then try the nested value
+            globalLoeDate={concept.globalLoeDate || concept.feasibilityData?.globalLoeDate}
+            regionalLoeData={concept.feasibilityData?.regionalLoeData}
+            timeToLoe={concept.timeToLoe || concept.feasibilityData?.timeToLoe}
+            postLoeValue={concept.feasibilityData?.postLoeValue}
+            estimatedFpiDate={concept.feasibilityData?.estimatedFpiDate}
+          />
+        </div>
         
         {/* Current Evidence */}
         {concept.currentEvidence && (

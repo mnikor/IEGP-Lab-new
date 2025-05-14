@@ -166,6 +166,8 @@ export class MemStorage implements IStorage {
       studyPhase: "III",
       targetSubpopulation: "PD-L1 positive patients",
       comparatorDrugs: ["Standard of Care"],
+      globalLoeDate: "2032-06-15", // Add explicit LOE date at the concept level (top level)
+      timeToLoe: 84, // Add explicit timeToLoe value at the concept level (top level)
       picoData: {
         population: "Adult patients (≥18 years) with stage IV non-small cell lung cancer (NSCLC), confirmed PD-L1 expression ≥1%, and at least one measurable brain metastasis (5-30mm).",
         intervention: "Pembrolizumab (200mg IV, q3w) plus platinum-based doublet chemotherapy for up to 35 cycles or disease progression.",
@@ -206,7 +208,27 @@ export class MemStorage implements IStorage {
         timeline: 32,
         projectedROI: 3.8,
         recruitmentRate: 0.65,
-        completionRisk: 0.35
+        completionRisk: 0.35,
+        timeToLoe: 84, // 7 years from data readout
+        globalLoeDate: "2032-06-15", // Set a fixed LOE date as a sample
+        estimatedFpiDate: "2025-06-15", // Set a sample FPI date
+        regionalLoeData: [
+          {
+            region: "United States",
+            loeDate: "2032-06-15",
+            hasPatentExtension: false,
+            extensionPotential: true,
+            notes: "Primary patent expires 2032"
+          },
+          {
+            region: "European Union",
+            loeDate: "2032-08-30",
+            hasPatentExtension: true,
+            extensionPotential: false,
+            notes: "SPC extension granted until 2032"
+          }
+        ],
+        postLoeValue: 0.25 // 25% value retention after LOE
       },
       evidenceSources: [
         {
