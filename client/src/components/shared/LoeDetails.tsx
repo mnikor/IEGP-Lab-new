@@ -45,14 +45,15 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
   const safePostLoeValue = postLoeValue !== undefined && !isNaN(postLoeValue) ? 
     postLoeValue : 0.2; // Default to 20%
 
-  // Default FPI date (current date plus 3 months for setup)
-  // Use the provided FPI date if available, otherwise use a default 12 months from now
+  // IMPORTANT: Always prioritize the estimatedFpiDate from feasibilityData
+  // This is the date that was either provided by the user or calculated in the backend
   const defaultFpiDate = estimatedFpiDate || new Date(
     today.getFullYear(),
     today.getMonth() + 12,
     today.getDate()
   ).toISOString().split('T')[0];
   
+  // Log for debugging
   console.log('LoeDetails using estimatedFpiDate:', estimatedFpiDate, 'defaultFpiDate:', defaultFpiDate);
   
   // Default regional LOE data if not provided
