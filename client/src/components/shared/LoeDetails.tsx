@@ -46,11 +46,14 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
     postLoeValue : 0.2; // Default to 20%
 
   // Default FPI date (current date plus 3 months for setup)
+  // Use the provided FPI date if available, otherwise use a default 12 months from now
   const defaultFpiDate = estimatedFpiDate || new Date(
     today.getFullYear(),
-    today.getMonth() + 3,
+    today.getMonth() + 12,
     today.getDate()
-  ).toISOString();
+  ).toISOString().split('T')[0];
+  
+  console.log('LoeDetails using estimatedFpiDate:', estimatedFpiDate, 'defaultFpiDate:', defaultFpiDate);
   
   // Default regional LOE data if not provided
   const defaultRegionalData: RegionalLoeData[] = regionalLoeData?.length ? regionalLoeData : [
@@ -74,9 +77,14 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
+    // Ensure date is valid before formatting
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date:', dateString);
+      return 'Invalid Date';
+    }
     return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
+      year: 'numeric',
+      month: 'long', 
       day: 'numeric' 
     });
   };

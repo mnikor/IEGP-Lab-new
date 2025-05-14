@@ -113,7 +113,11 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
             </p>
             {feasibilityData.estimatedFpiDate && (
               <p className="text-xs text-primary-dark font-medium mt-1">
-                Estimated FPI Date: {new Date(feasibilityData.estimatedFpiDate).toLocaleDateString()}
+                Estimated FPI Date: {new Date(feasibilityData.estimatedFpiDate).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
               </p>
             )}
             <p className="text-xs text-neutral-medium mt-1">
