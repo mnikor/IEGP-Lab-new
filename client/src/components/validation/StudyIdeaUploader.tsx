@@ -77,12 +77,20 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
   // Strategic goals handling
   const addStrategicGoal = (goal: StrategicGoal) => {
     if (!selectedStrategicGoals.includes(goal)) {
-      setSelectedStrategicGoals([...selectedStrategicGoals, goal]);
+      const updatedGoals = [...selectedStrategicGoals, goal];
+      setSelectedStrategicGoals(updatedGoals);
+      
+      // Update the form value too
+      form.setValue('strategicGoals', updatedGoals);
     }
   };
   
   const removeStrategicGoal = (goal: StrategicGoal) => {
-    setSelectedStrategicGoals(selectedStrategicGoals.filter(g => g !== goal));
+    const updatedGoals = selectedStrategicGoals.filter(g => g !== goal);
+    setSelectedStrategicGoals(updatedGoals);
+    
+    // Update the form value too
+    form.setValue('strategicGoals', updatedGoals);
   };
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -177,51 +185,66 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    // If using file upload method, check for file
-    if (inputMethod === "file" && !selectedFile) {
-      toast({
-        title: "No File Selected",
-        description: "Please upload a study idea document to validate.",
-        variant: "destructive",
-      });
-      return;
-    }
+    try {
+      console.log("FORM SUBMIT TRIGGERED");
+      console.log("Form values:", values);
+      console.log("Form strategicGoals:", values.strategicGoals);
+      console.log("Selected strategic goals:", selectedStrategicGoals);
+      
+      // If using file upload method, check for file
+      if (inputMethod === "file" && !selectedFile) {
+        toast({
+          title: "No File Selected",
+          description: "Please upload a study idea document to validate.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // If using text input method, check for text
-    if (inputMethod === "text" && !values.studyIdeaText?.trim()) {
+      // If using text input method, check for text
+      if (inputMethod === "text" && !values.studyIdeaText?.trim()) {
+        toast({
+          title: "No Study Idea Provided",
+          description: "Please enter your study idea text to validate.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Check for geography selection
+      if (selectedGeographies.length === 0) {
+        toast({
+          title: "Validation Error",
+          description: "Please select at least one geography",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // For the form to validate, these values should be in sync
+      if (values.strategicGoals.length === 0) {
+        toast({
+          title: "Validation Error",
+          description: "Please select at least one strategic goal",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Check for "other" strategic goal text if "other" is selected
+      if (selectedStrategicGoals.includes("other") && !otherStrategicGoalText.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Please specify your custom strategic goal",
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Error in form pre-submission validation:", error);
       toast({
-        title: "No Study Idea Provided",
-        description: "Please enter your study idea text to validate.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Check for geography selection
-    if (selectedGeographies.length === 0) {
-      toast({
-        title: "Validation Error",
-        description: "Please select at least one geography",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Check for strategic goals selection
-    if (selectedStrategicGoals.length === 0) {
-      toast({
-        title: "Validation Error",
-        description: "Please select at least one strategic goal",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Check for "other" strategic goal text if "other" is selected
-    if (selectedStrategicGoals.includes("other") && !otherStrategicGoalText.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Please specify your custom strategic goal",
+        title: "Form Error",
+        description: "An error occurred while validating the form",
         variant: "destructive",
       });
       return;
@@ -260,7 +283,11 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
       formData.append('indication', values.indication);
       
       // Append strategic goals as an array
-      selectedStrategicGoals.forEach(goal => {
+      // Make sure we use the values from the form, which should be synced with state
+      const goalsToSend = values.strategicGoals.length > 0 ? values.strategicGoals : selectedStrategicGoals;
+      console.log("Sending strategic goals:", goalsToSend);
+      
+      goalsToSend.forEach(goal => {
         formData.append('strategicGoals[]', goal);
       });
       
@@ -321,7 +348,14 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
       
       formData.append('hasPatentExtensionPotential', values.hasPatentExtensionPotential ? 'true' : 'false');
 
+      // Log formData for debugging
+      console.log("Submitting form with data:");
+      for (const pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+      
       // Make the API call
+      console.log("Making API call to /api/study-idea-validations/validate");
       const response = await fetch('/api/study-idea-validations/validate', {
         method: 'POST',
         body: formData,
