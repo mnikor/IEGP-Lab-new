@@ -7,7 +7,7 @@ channel = "stable-24_05"
 packages = ["jq"]
 
 [env]
-NODE_OPTIONS = "--experimental-json-modules"
+NODE_OPTIONS = "--experimental-json-modules --experimental-specifier-resolution=node"
 
 [deployment]
 deploymentTarget = "autoscale"
