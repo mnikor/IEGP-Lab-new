@@ -34,14 +34,24 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
   const defaultLoeYears = 10;
   const today = new Date();
   
-  // IMPORTANT - Simply use the globalLoeDate provided, don't override
-  const formattedLoeDate = globalLoeDate || new Date(
-    today.getFullYear() + defaultLoeYears,
-    today.getMonth(),
-    today.getDate()
-  ).toISOString();
+  // IMPORTANT - We must check if globalLoeDate is present and not empty
+  // This is the critical fix for the LOE date display issue
+  console.log('LoeDetails component received globalLoeDate:', globalLoeDate);
   
-  console.log('LoeDetails using globalLoeDate directly:', globalLoeDate);
+  let formattedLoeDate: string;
+  if (globalLoeDate && globalLoeDate.trim() !== '') {
+    // If we have a valid globalLoeDate, use it directly
+    formattedLoeDate = globalLoeDate;
+    console.log('Using user-provided globalLoeDate:', globalLoeDate);
+  } else {
+    // Only if globalLoeDate is empty or undefined, use default
+    formattedLoeDate = new Date(
+      today.getFullYear() + defaultLoeYears,
+      today.getMonth(),
+      today.getDate()
+    ).toISOString();
+    console.log('Using default LOE date:', formattedLoeDate);
+  }
   
   // Default time to LOE (in months)
   const defaultTimeToLoe = timeToLoe || (defaultLoeYears * 12);

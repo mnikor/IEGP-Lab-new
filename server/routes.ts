@@ -100,14 +100,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Step 3: For each concept, calculate feasibility, MCDA scores, and SWOT analysis
       // Added debug logs for anticipatedFpiDate
-      console.log("Before calculation - data.anticipatedFpiDate:", data.anticipatedFpiDate);
+      console.log("Request data - data.anticipatedFpiDate:", data.anticipatedFpiDate);
+      console.log("Request data - data.globalLoeDate:", data.globalLoeDate);
       
       const enrichedConcepts = concepts.map((concept: Partial<StudyConcept>) => {
         // Debug each concept
         console.log("Processing concept:", concept.title);
         
         const feasibilityData = calculateFeasibility(concept, data);
+        
+        // Add more debugging for LOE date
         console.log("After calculation - feasibilityData.estimatedFpiDate:", feasibilityData.estimatedFpiDate);
+        console.log("After calculation - feasibilityData.globalLoeDate:", feasibilityData.globalLoeDate);
         
         const mcdaScores = scoreMcda(concept, data);
         const swotAnalysis = generateSwot(concept, searchResults);
