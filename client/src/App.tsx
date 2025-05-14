@@ -7,7 +7,7 @@ import NotFound from "@/pages/not-found";
 import AppShell from "@/components/layout/AppShell";
 import Dashboard from "@/pages/dashboard";
 import GenerateConcept from "@/pages/generate-concept";
-import ValidateSynopsis from "@/pages/validate-synopsis";
+import ValidateStudyIdea from "@/pages/validate-study-idea";
 import Reports from "@/pages/reports";
 
 function Router() {
@@ -16,7 +16,13 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/generate-concept" component={GenerateConcept} />
-        <Route path="/validate-synopsis" component={ValidateSynopsis} />
+        <Route path="/validate-study-idea" component={ValidateStudyIdea} />
+        <Route path="/validate-synopsis">
+          {() => {
+            window.location.href = "/validate-study-idea";
+            return null;
+          }}
+        </Route>
         <Route path="/reports" component={Reports} />
         <Route component={NotFound} />
       </Switch>

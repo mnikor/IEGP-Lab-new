@@ -19,7 +19,7 @@ const Sidebar: React.FC = () => {
     { path: "/", icon: HomeIcon, label: "Dashboard" },
     { path: "/projects", icon: FileTextIcon, label: "Projects" },
     { path: "/generate-concept", icon: FilePlus2Icon, label: "New Concept" },
-    { path: "/validate-synopsis", icon: FileTextIcon, label: "Validate Study Idea" },
+    { path: "/validate-study-idea", icon: FileTextIcon, label: "Validate Study Idea" },
     { path: "/reports", icon: BarChartIcon, label: "Reports" },
     { path: "/help", icon: HelpCircleIcon, label: "Help" },
   ];

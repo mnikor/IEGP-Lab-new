@@ -166,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API Endpoints for synopsis validations
-  app.get("/api/synopsis-validations", async (req, res) => {
+  app.get("/api/study-idea-validations", async (req, res) => {
     try {
       const validations = await storage.getAllSynopsisValidations();
       res.json(validations);
@@ -176,7 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/synopsis-validations/recent", async (req, res) => {
+  app.get("/api/study-idea-validations/recent", async (req, res) => {
     try {
       const validations = await storage.getRecentSynopsisValidations(5);
       res.json(validations);
@@ -186,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/synopsis-validations/:id", async (req, res) => {
+  app.get("/api/study-idea-validations/:id", async (req, res) => {
     try {
       const validation = await storage.getSynopsisValidation(parseInt(req.params.id));
       if (!validation) {
