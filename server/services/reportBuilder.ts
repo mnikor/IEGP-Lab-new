@@ -1,9 +1,18 @@
 import { StudyConcept, SynopsisValidation } from "@shared/schema";
 import PDFDocument from 'pdfkit';
-import * as PptxGenJSModule from 'pptxgenjs';
-// Handle both ESM and CommonJS import styles
-const PptxGenJS = (PptxGenJSModule.default || PptxGenJSModule) as any;
+// Use dynamic import for pptxgenjs to ensure proper module loading
+let PptxGenJS: any;
+try {
+  // First try ES module import
+  const PptxGenJSModule = await import('pptxgenjs');
+  PptxGenJS = PptxGenJSModule.default || PptxGenJSModule;
+} catch (error) {
+  console.error('Error importing pptxgenjs:', error);
+  throw new Error('Failed to import pptxgenjs module');
+}
 import { PassThrough } from 'stream';
+// Import JSZip dynamically when needed
+// This avoids direct import issues
 
 /**
  * Generates a PDF report for study concepts
