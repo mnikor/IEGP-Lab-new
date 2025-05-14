@@ -210,6 +210,7 @@ export interface ValidationResults {
   revisedEconomics: RevisedEconomics;
   swotAnalysis: SwotAnalysis;
   strategicGoals: StrategicGoal[];
+  otherStrategicGoalText?: string;
   globalLoeDate?: string;
   timeToLoe?: number;
   
@@ -224,6 +225,7 @@ export interface ValidationResults {
 export interface ValidateSynopsisRequest {
   drugName: string;
   indication: string;
-  strategicGoal: StrategicGoal;
+  strategicGoals: StrategicGoal[];
+  otherStrategicGoalText?: string;
   // File is handled separately through FormData
 }
