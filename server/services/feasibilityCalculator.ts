@@ -553,12 +553,16 @@ function calculateLoeData(
   
   if (requestData.anticipatedFpiDate) {
     // Use user-provided FPI date if available
+    console.log("Using user-provided FPI date:", requestData.anticipatedFpiDate);
     estimatedFpiDate = new Date(requestData.anticipatedFpiDate);
   } else {
     // Realistic default: 12 months from now for study startup
+    console.log("No user-provided FPI date, using default 12 months from now");
     estimatedFpiDate = new Date(currentDate.getTime());
-    estimatedFpiDate.setMonth(currentDate.getMonth() + 12);
+    estimatedFpiDate.setMonth(currentDate.getMonth() +
+     12);
   }
+  console.log("Final estimatedFpiDate:", estimatedFpiDate);
   
   // Default LOE to 10 years from now if not provided
   let globalLoeDate: Date = new Date(currentDate.getTime());
