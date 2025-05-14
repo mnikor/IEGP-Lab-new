@@ -20,7 +20,7 @@ export const studyConcepts = pgTable("study_concepts", {
   title: text("title").notNull(),
   drugName: text("drug_name").notNull(),
   indication: text("indication").notNull(),
-  strategicGoal: text("strategic_goal").notNull(),
+  strategicGoals: text("strategic_goals").array().notNull(),
   geography: text("geography").array().notNull(),
   studyPhase: text("study_phase").notNull(),
   targetSubpopulation: text("target_subpopulation"),
@@ -52,7 +52,7 @@ export const synopsisValidations = pgTable("synopsis_validations", {
   title: text("title").notNull(),
   drugName: text("drug_name").notNull(),
   indication: text("indication").notNull(),
-  strategicGoal: text("strategic_goal").notNull(),
+  strategicGoals: text("strategic_goals").array().notNull(),
   originalFileName: text("original_file_name"), // Optional now, since we allow text input
   
   // Fields for text-based study ideas

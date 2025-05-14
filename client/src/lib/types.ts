@@ -105,7 +105,7 @@ export interface StudyConcept {
   title: string;
   drugName: string;
   indication: string;
-  strategicGoal: StrategicGoal;
+  strategicGoals: StrategicGoal[];
   geography: string[];
   studyPhase: StudyPhase;
   targetSubpopulation?: string;
@@ -127,7 +127,7 @@ export interface StudyConcept {
 export interface GenerateConceptRequest {
   drugName: string;
   indication: string;
-  strategicGoal: StrategicGoal;
+  strategicGoals: StrategicGoal[];
   geography: string[];
   studyPhasePref: StudyPhase;
   currentEvidenceRefs?: string[];
@@ -189,6 +189,9 @@ export interface ValidationResults {
   riskFlags: RiskFlag[];
   revisedEconomics: RevisedEconomics;
   swotAnalysis: SwotAnalysis;
+  strategicGoals: StrategicGoal[];
+  globalLoeDate?: string;
+  timeToLoe?: number;
   
   // New fields to match New Concept tab
   mcdaScores?: McDAScore;
