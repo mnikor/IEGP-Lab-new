@@ -61,16 +61,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/study-concepts/generate", async (req, res) => {
+    console.log("=== CONCEPT GENERATION ENDPOINT HIT ===");
+    console.log("Request body:", JSON.stringify(req.body));
+    
     try {
       // Validate request body
+      console.log("Attempting to validate request data...");
       const validationResult = generateConceptRequestSchema.safeParse(req.body);
       if (!validationResult.success) {
+        console.error("Validation failed:", validationResult.error.errors);
         return res.status(400).json({ 
           message: "Invalid request parameters", 
           errors: validationResult.error.errors 
         });
       }
 
+      console.log("Request validation successful");
       const data = validationResult.data;
       
       // Log the incoming request data to debug anticipatedFpiDate
@@ -161,7 +167,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(savedConcepts);
     } catch (error) {
       console.error("Error generating study concepts:", error);
-      res.status(500).json({ message: "Failed to generate study concepts" });
+      
+      // More detailed error logging
+      if (error instanceof Error) {
+        console.error("Error name:", error.name);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to generate study concepts", 
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 

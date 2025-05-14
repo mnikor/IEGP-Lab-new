@@ -136,8 +136,11 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    // Debug log for form submission
+    // Debug log for form submission - enhanced for troubleshooting
+    console.log("FORM SUBMIT TRIGGERED");
     console.log("Form submitted with values:", values);
+    console.log("Selected strategic goals:", selectedStrategicGoals);
+    console.log("Selected geographies:", selectedGeographies);
     console.log("globalLoeDate value at submission:", values.globalLoeDate);
     
     if (selectedGeographies.length === 0) {
@@ -278,7 +281,17 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={(e) => {
+                console.log("Form submit event triggered");
+                e.preventDefault();
+                // Check form validation state before submitting
+                const isValid = form.formState.isValid;
+                console.log("Form validation state:", isValid);
+                console.log("Form errors:", form.formState.errors);
+                
+                // Proceed with form submission
+                form.handleSubmit(onSubmit)(e);
+              }} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
