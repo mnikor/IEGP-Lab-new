@@ -20,33 +20,47 @@ const formatMarkdownTitles = (text: string): string => {
   
   // First clean up the text by removing raw formatting tags that might appear in headings/titles
   let formattedText = text
-    // Remove raw formatting tags completely from the beginning of sentences
-    .replace(/^text-base font-bold my-\d+>/gm, '')
-    .replace(/^text-sm font-bold my-\d+>/gm, '')
-    .replace(/^text-\w+ font-bold my-\d+>/gm, '')
+    // Handle the specific formatting issues shown in the example
+    .replace(/text-sm font-bold my-2>/g, '')
+    .replace(/text-base font-bold my-2>/g, '')
     
-    // Remove any HTML tags that might have been included in the response
+    // Add more specific patterns for the exact issues observed
+    .replace(/(\d+\.\s*)(text-sm font-bold my-2>)(.+)$/gm, '$1<strong>$3</strong>')
+    .replace(/^(text-sm font-bold my-2>)(.+)$/gm, '<strong>$2</strong>')
+    .replace(/^(text-base font-bold my-2>)(.+)$/gm, '<strong>$2</strong>')
+    
+    // More aggressively remove all variants of text formatting tags at line beginnings
+    .replace(/^text-\w+ font-\w+ my-\d+>/gm, '')
+    .replace(/^text-\w+ font-\w+>/gm, '')
+    
+    // Remove HTML tags that might be included in the response
     .replace(/<div.*?>/g, '')
     .replace(/<\/div>/g, '')
     .replace(/<span.*?>/g, '')
     .replace(/<\/span>/g, '')
     
-    // Replace text-base, text-sm, text-* placeholders with proper HTML
+    // Replace text-base, text-sm, text-* placeholders with proper HTML formatting
     .replace(/text-base font-bold my-2>(.*?)(?=<|$)/g, '<strong>$1</strong>')
-    .replace(/text-sm font-bold my->/g, '<strong>')
     .replace(/text-sm font-bold my-2>(.*?)(?=<|$)/g, '<strong>$1</strong>')
+    .replace(/text-\w+ font-bold my-\d+>(.*?)(?=<|$)/g, '<strong>$1</strong>')
+    // Handle the specific patterns you're seeing in the output
+    .replace(/(^|\n)text-\w+ font-bold my-\d+>([^\n]+)/gm, '$1<strong>$2</strong>')
+    .replace(/text-sm font-bold my->/g, '<strong>')
     .replace(/text-base font-bold my->/g, '<strong>')
+    
+    // Handle span classes for formatting
     .replace(/<span class="text-base font-bold.*?">(.*?)<\/span>/g, '<strong>$1</strong>')
     .replace(/<span class="text-sm font-bold.*?">(.*?)<\/span>/g, '<strong>$1</strong>')
     
-    // Clean up formatting tags
+    // Clean up formatting tags and attributes
     .replace(/my-\d+>/g, '')
     .replace(/my-\d+->/g, '')
     .replace(/class=".*?"/g, '')
     
-    // Handle "text-sm font-bold" patterns
+    // Handle "text-sm font-bold" patterns in the middle of text
     .replace(/text-sm font-bold\s+(.*?)(?=\n|$)/g, '<strong>$1</strong>')
     .replace(/text-base font-bold\s+(.*?)(?=\n|$)/g, '<strong>$1</strong>')
+    .replace(/text-\w+ font-bold\s+(.*?)(?=\n|$)/g, '<strong>$1</strong>')
     
     // Clean up any leftover markers
     .replace(/text-.*?>/g, '')
@@ -55,7 +69,11 @@ const formatMarkdownTitles = (text: string): string => {
     
     // Fix double line breaks or excessive spacing
     .replace(/\n\s*\n\s*\n/g, '\n\n')
-    .replace(/\s{3,}/g, ' ');
+    .replace(/\s{3,}/g, ' ')
+    
+    // Final pass to remove any remaining formatting markers
+    .replace(/text-\w+ font-bold my-\d+>/g, '')
+    .replace(/text-\w+ font-\w+ my-\d+(>|-)(.*)$/gm, '$2');
   
   // Now handle markdown-like headers
   formattedText = formattedText
@@ -105,9 +123,12 @@ const CurrentEvidence: React.FC<CurrentEvidenceProps> = ({ currentEvidence, clas
           <div className="bg-blue-50 p-3 rounded-md mb-4">
             <h4 className="text-sm font-semibold text-blue-800 mb-2">Existing Research Summary</h4>
             {currentEvidence.summary ? (
-              <div className="whitespace-pre-line text-blue-700 prose prose-sm max-w-none" dangerouslySetInnerHTML={{
-                __html: formatMarkdownTitles(currentEvidence.summary)
-              }} />
+              <div 
+                className="whitespace-pre-line text-blue-700 prose prose-sm max-w-none prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1" 
+                dangerouslySetInnerHTML={{
+                  __html: formatMarkdownTitles(currentEvidence.summary)
+                }} 
+              />
             ) : (
               <div className="whitespace-pre-line text-blue-700 prose prose-sm max-w-none">
                 <p>No summary information available for this evidence.</p>
