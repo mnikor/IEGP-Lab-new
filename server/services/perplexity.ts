@@ -1,22 +1,26 @@
 import axios from 'axios';
 
+interface PerplexitySearchResult {
+  content: string;
+  citations: string[];
+}
+
 /**
- * Performs a web search using the Perplexity API
+ * Performs a single web search using the Perplexity API
  * 
  * @param question The search query to send to Perplexity
  * @param domains Optional array of domains to focus search on
  * @returns The search response content and citations
  */
-export async function perplexityWebSearch(question: string, domains: string[] | null = null): Promise<{
-  content: string;
-  citations: string[];
-}> {
+async function performSingleSearch(question: string, domains: string[] | null = null): Promise<PerplexitySearchResult> {
   try {
     const apiKey = process.env.PPLX_API_KEY;
     if (!apiKey) {
       throw new Error("PPLX_API_KEY environment variable not found");
     }
 
+    console.log(`Performing Perplexity search with query: "${question}"`);
+    
     const payload = {
       model: "llama-3.1-sonar-small-128k-online",
       messages: [
@@ -58,6 +62,61 @@ export async function perplexityWebSearch(question: string, domains: string[] | 
     };
   } catch (error) {
     console.error("Error calling Perplexity API:", error);
+    throw error;
+  }
+}
+
+/**
+ * Performs multiple rounds of web searches using the Perplexity API,
+ * with each search focusing on a specific aspect of the clinical research
+ * 
+ * @param baseQuery The base query information (drug, indication, strategic goal)
+ * @param domains Optional array of domains to focus search on
+ * @returns The combined search results with consolidated citations
+ */
+export async function perplexityWebSearch(baseQuery: string, domains: string[] | null = null): Promise<PerplexitySearchResult> {
+  try {
+    // Create focused search queries for different aspects
+    const searchQueries = [
+      // General evidence search
+      baseQuery,
+      
+      // Regulatory status search
+      `What is the current regulatory approval status for ${baseQuery.replace('Provide clinical evidence benchmarks for', '')}? Include details about FDA, EMA, and other regulatory bodies approvals, specific indications, and any limitations.`,
+      
+      // Competitive landscape search
+      `What is the competitive landscape and standard of care for ${baseQuery.replace('Provide clinical evidence benchmarks for', '')}? Include information about other treatments, their efficacy, safety profiles, and market positioning.`,
+      
+      // Recent trials and emerging evidence
+      `What are the most recent clinical trials and emerging evidence for ${baseQuery.replace('Provide clinical evidence benchmarks for', '')}? Focus on studies from the last 2-3 years.`
+    ];
+    
+    console.log("Starting multi-round Perplexity search with focused queries...");
+    
+    // Execute all searches in parallel
+    const searchResults = await Promise.all(
+      searchQueries.map(query => performSingleSearch(query, domains))
+    );
+    
+    // Combine the results
+    const combinedContent = searchResults.map((result, index) => {
+      return `## Search Round ${index + 1}: ${index === 0 ? 'Clinical Evidence' : 
+              index === 1 ? 'Regulatory Status' : 
+              index === 2 ? 'Competitive Landscape' : 'Recent Trials'}\n\n${result.content}\n\n`;
+    }).join('');
+    
+    // Consolidate citations, removing duplicates
+    const allCitations = searchResults.flatMap(result => result.citations);
+    const uniqueCitations = [...new Set(allCitations)];
+    
+    console.log(`Multi-round search completed. Found ${uniqueCitations.length} unique citations.`);
+    
+    return {
+      content: combinedContent,
+      citations: uniqueCitations
+    };
+  } catch (error) {
+    console.error("Error in multi-round Perplexity search:", error);
     throw error;
   }
 }
