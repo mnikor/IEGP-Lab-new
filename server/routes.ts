@@ -2,7 +2,12 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
-import { generateConceptRequestSchema, validateSynopsisRequestSchema } from "@shared/schema";
+import { 
+  generateConceptRequestSchema, 
+  validateSynopsisRequestSchema,
+  StudyConcept,
+  SynopsisValidation
+} from "@shared/schema";
 import { perplexityWebSearch } from "./services/perplexity";
 import { analyzeWithOpenAI, extractPicoFromText } from "./services/openai";
 import { extractTextFromDocument } from "./services/documentParser";
@@ -146,7 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Step 4: Save the concepts to the database
       const savedConcepts = await Promise.all(
-        enrichedConcepts.map(concept => storage.createStudyConcept(concept))
+        enrichedConcepts.map((concept: Partial<StudyConcept>) => storage.createStudyConcept(concept))
       );
 
       res.json(savedConcepts);

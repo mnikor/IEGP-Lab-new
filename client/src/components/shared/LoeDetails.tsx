@@ -26,91 +26,86 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
   estimatedFpiDate,
   className = ''
 }) => {
-  // Always render the component with default values if no LOE data is available
-  // Calculate reasonable defaults
+  // Console log received props for debugging
+  console.log('LoeDetails received props:', {
+    globalLoeDate, 
+    timeToLoe,
+    estimatedFpiDate
+  });
 
-  // Use the provided global LOE date if available (this comes from the feasibilityData
-  // and is based on user input), otherwise use a default date 10 years from now
-  const defaultLoeYears = 10;
+  // Set up default values
   const today = new Date();
+  const defaultLoeYears = 10;
   
-  // IMPORTANT - We must check if globalLoeDate is present and not empty
-  // This is the critical fix for the LOE date display issue
-  console.log('LoeDetails component received globalLoeDate:', globalLoeDate);
-  
-  let formattedLoeDate: string;
-  if (globalLoeDate && globalLoeDate.trim() !== '') {
-    // If we have a valid globalLoeDate, use it directly
-    formattedLoeDate = globalLoeDate;
-    console.log('Using user-provided globalLoeDate:', globalLoeDate);
-  } else {
-    // Only if globalLoeDate is empty or undefined, use default
-    formattedLoeDate = new Date(
-      today.getFullYear() + defaultLoeYears,
-      today.getMonth(),
-      today.getDate()
-    ).toISOString();
-    console.log('Using default LOE date:', formattedLoeDate);
-  }
-  
-  // Time to LOE (in months)
-  // IMPORTANT: Always prioritize the calculated timeToLoe value from the backend
-  // This value is already calculated from data readout to LOE date
-  console.log('Time to LOE value received from backend:', timeToLoe);
-  
-  // Calculate an estimated data readout date based on FPI date first
-  // This needs to be moved up because it's used in the time to LOE calculation
-  // Default to 24 months study duration if not specified
-  const studyDuration = 24; // months
-  const estimatedReadoutDate = estimatedFpiDate ? 
-    (() => {
-      const date = new Date(estimatedFpiDate);
-      date.setMonth(date.getMonth() + studyDuration);
-      return date.toISOString().split('T')[0];
-    })() : 
-    (() => {
-      const date = new Date(defaultFpiDate);
-      date.setMonth(date.getMonth() + studyDuration);
-      return date.toISOString().split('T')[0];
-    })();
-    
-  // Only use the default calculation if no timeToLoe is provided
-  const defaultTimeToLoe = timeToLoe !== undefined && !isNaN(timeToLoe) 
-    ? timeToLoe 
-    : (() => {
-        // Calculate months between estimated readout date and LOE date as fallback
-        try {
-          const readoutDate = new Date(estimatedReadoutDate);
-          const loeDate = new Date(formattedLoeDate);
-          const diffMonths = Math.max(0, 
-            Math.round((loeDate.getTime() - readoutDate.getTime()) / (1000 * 60 * 60 * 24 * 30.5))
-          );
-          console.log('Calculated fallback time to LOE (months):', diffMonths);
-          return diffMonths;
-        } catch (e) {
-          console.error('Error calculating time to LOE:', e);
-          return defaultLoeYears * 12; // Last resort fallback
-        }
-      })();
-  
-  // Default post-LOE value (percentage)
-  const safePostLoeValue = postLoeValue !== undefined && !isNaN(postLoeValue) ? 
-    postLoeValue : 0.2; // Default to 20%
-
-  // IMPORTANT: Always prioritize the estimatedFpiDate from feasibilityData
-  // This is the date that was either provided by the user or calculated in the backend
+  // STEP 1: Handle First Patient In (FPI) date
   const defaultFpiDate = estimatedFpiDate || new Date(
     today.getFullYear(),
     today.getMonth() + 12,
     today.getDate()
   ).toISOString().split('T')[0];
   
-  // Log for debugging
-  console.log('LoeDetails using estimatedFpiDate:', estimatedFpiDate, 
-              'defaultFpiDate:', defaultFpiDate, 
-              'estimatedReadoutDate:', estimatedReadoutDate);
+  // STEP 2: Handle global LOE date - critical to preserve user input
+  let formattedLoeDate: string;
+  if (globalLoeDate && globalLoeDate.trim() !== '') {
+    // Use user-provided LOE date directly
+    formattedLoeDate = globalLoeDate;
+    console.log('Using user-provided globalLoeDate:', globalLoeDate);
+  } else {
+    // Only if user didn't provide LOE date, use default
+    formattedLoeDate = new Date(
+      today.getFullYear() + defaultLoeYears,
+      today.getMonth(),
+      today.getDate()
+    ).toISOString().split('T')[0];
+    console.log('Using default LOE date:', formattedLoeDate);
+  }
   
-  // Default regional LOE data if not provided
+  // STEP 3: Calculate estimated data readout date
+  const studyDuration = 24; // months (default study duration)
+  const fpiDate = new Date(defaultFpiDate);
+  const readoutDate = new Date(fpiDate);
+  readoutDate.setMonth(fpiDate.getMonth() + studyDuration);
+  const estimatedReadoutDate = readoutDate.toISOString().split('T')[0];
+  
+  console.log('Milestone dates:', {
+    fpi: defaultFpiDate,
+    readout: estimatedReadoutDate,
+    loe: formattedLoeDate
+  });
+  
+  // STEP 4: Calculate time to LOE from data readout
+  // Always prioritize the timeToLoe from backend if available
+  const calculatedTimeToLoe = (() => {
+    // If backend provided a value, use it
+    if (timeToLoe !== undefined && !isNaN(timeToLoe)) {
+      console.log('Using backend-calculated timeToLoe:', timeToLoe);
+      return timeToLoe;
+    }
+    
+    // Otherwise calculate it ourselves
+    try {
+      const readoutMs = new Date(estimatedReadoutDate).getTime();
+      const loeMs = new Date(formattedLoeDate).getTime();
+      if (isNaN(readoutMs) || isNaN(loeMs)) {
+        throw new Error('Invalid date for time-to-LOE calculation');
+      }
+      
+      const diffMonths = Math.max(0, 
+        Math.round((loeMs - readoutMs) / (1000 * 60 * 60 * 24 * 30.5))
+      );
+      console.log('Calculated time-to-LOE:', diffMonths, 'months');
+      return diffMonths;
+    } catch (e) {
+      console.error('Error calculating time-to-LOE:', e);
+      return defaultLoeYears * 12; // Last resort fallback
+    }
+  })();
+  
+  // STEP 5: Handle post-LOE value
+  const safePostLoeValue = postLoeValue !== undefined && !isNaN(postLoeValue) ? 
+    postLoeValue : 0.2; // Default to 20%
+  
+  // STEP 6: Handle regional LOE data
   const defaultRegionalData: RegionalLoeData[] = regionalLoeData?.length ? regionalLoeData : [
     {
       region: 'United States',
@@ -144,22 +139,21 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
     });
   };
 
-  // Determine color based on time to LOE
+  // Helper to determine badge color based on timeToLoe
   const getLoeStatusColor = () => {
-    const effectiveTimeToLoe = defaultTimeToLoe;
-    
-    if (!effectiveTimeToLoe || typeof effectiveTimeToLoe !== 'number' || isNaN(effectiveTimeToLoe)) {
+    if (typeof calculatedTimeToLoe !== 'number' || isNaN(calculatedTimeToLoe)) {
       return 'bg-neutral-100 text-neutral-700';
     }
-    if (effectiveTimeToLoe < 24) return 'bg-red-100 text-red-800'; // < 2 years: urgent
-    if (effectiveTimeToLoe < 60) return 'bg-yellow-100 text-yellow-800'; // < 5 years: warning
+    if (calculatedTimeToLoe < 24) return 'bg-red-100 text-red-800'; // < 2 years: urgent
+    if (calculatedTimeToLoe < 60) return 'bg-yellow-100 text-yellow-800'; // < 5 years: warning
     return 'bg-green-100 text-green-800'; // > 5 years: good
   };
   
-  // Helper to format time to LOE
+  // Helper to format time to LOE in a user-friendly way
   const formatTimeToLoe = (months?: number) => {
-    const effectiveMonths = months || defaultTimeToLoe;
-    if (!effectiveMonths || isNaN(effectiveMonths)) return 'Unknown';
+    const effectiveMonths = months || calculatedTimeToLoe;
+    if (typeof effectiveMonths !== 'number' || isNaN(effectiveMonths)) return 'Unknown';
+    
     if (effectiveMonths < 12) return `${effectiveMonths} months`;
     const years = Math.floor(effectiveMonths / 12);
     const remainingMonths = effectiveMonths % 12;
@@ -190,7 +184,7 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
               <div className="text-sm font-medium text-neutral-dark">Time Until LOE from Data Readout</div>
               <div className="flex items-center">
                 <Badge variant="outline" className={getLoeStatusColor()}>
-                  {formatTimeToLoe(defaultTimeToLoe)}
+                  {formatTimeToLoe(calculatedTimeToLoe)}
                 </Badge>
                 <TooltipProvider>
                   <Tooltip>
@@ -204,7 +198,7 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                {defaultTimeToLoe < 36 && (
+                {calculatedTimeToLoe < 36 && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
