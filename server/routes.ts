@@ -165,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API Endpoints for synopsis validations
+  // API Endpoints for study idea validations
   app.get("/api/study-idea-validations", async (req, res) => {
     try {
       const validations = await storage.getAllSynopsisValidations();
@@ -284,7 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(savedValidation);
     } catch (error) {
       console.error("Error validating study idea:", error);
-      res.status(500).json({ message: "Failed to validate synopsis" });
+      res.status(500).json({ message: "Failed to validate study idea" });
     }
   });
 
@@ -339,6 +339,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error generating PPTX:", error);
       res.status(500).json({ message: "Failed to generate PPTX presentation" });
     }
+  });
+
+  // Backward compatibility routes to ensure existing API calls continue to work
+  app.get("/api/synopsis-validations", (req, res) => {
+    res.redirect(307, '/api/study-idea-validations'); // 307 preserves the HTTP method
+  });
+  
+  app.get("/api/synopsis-validations/recent", (req, res) => {
+    res.redirect(307, '/api/study-idea-validations/recent');
+  });
+  
+  app.get("/api/synopsis-validations/:id", (req, res) => {
+    res.redirect(307, `/api/study-idea-validations/${req.params.id}`);
+  });
+  
+  app.post("/api/synopsis-validations/validate", upload.single('file'), (req, res, next) => {
+    // Simple redirect to the new endpoint by modifying the request URL
+    req.url = '/api/study-idea-validations/validate';
+    next();
   });
 
   app.get("/api/export/validation-pdf", async (req, res) => {
