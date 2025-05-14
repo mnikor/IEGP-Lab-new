@@ -44,7 +44,10 @@ const formatMarkdownTitles = (text: string): string => {
     .replace(/\bfont-\w+\b/g, '')
     .replace(/\bmy-\d+\b/g, '')
     
-    // Convert markdown headers to HTML
+    // Format search round headers specially 
+    .replace(/#{2}\s+Search\s+Round\s+(\d+):\s+(.*?)(?:\n|$)/g, '<h3 class="text-base font-bold mt-4 mb-2 text-blue-800 border-b border-blue-200 pb-1">Search Round $1: $2</h3>')
+    
+    // Convert other markdown headers to HTML
     .replace(/#{4}\s+(.*?)(?:\n|$)/g, '<h4 class="text-sm font-bold my-2">$1</h4>')
     .replace(/#{3}\s+(.*?)(?:\n|$)/g, '<h3 class="text-base font-bold my-2">$1</h3>')
     .replace(/#{1,2}\s+(.*?)(?:\n|$)/g, '<h2 class="text-lg font-bold my-2">$1</h2>')
@@ -75,16 +78,12 @@ const CurrentEvidence: React.FC<CurrentEvidenceProps> = ({ currentEvidence, clas
       <CardContent>
         <div className="text-sm text-neutral-dark">
           <div className="bg-blue-50 p-3 rounded-md mb-4">
-            <h4 className="text-sm font-semibold text-blue-800 mb-2">Existing Research Summary</h4>
+            <h4 className="text-sm font-semibold text-blue-800 mb-3">Research Evidence from Multiple Search Rounds</h4>
             {currentEvidence.summary ? (
               <div 
                 className="whitespace-pre-line text-blue-700 prose prose-sm max-w-none prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1" 
                 dangerouslySetInnerHTML={{
                   __html: formatMarkdownTitles(currentEvidence.summary)
-                    // Format search round headers
-                    .replace(/##\s+Search\s+Round\s+(\d+):\s+([\w\s]+)/g, '<h3 class="text-base font-bold mt-4 mb-2 text-blue-800 border-b border-blue-200 pb-1">Search Round $1: $2</h3>')
-                    // Add some spacing between sections
-                    .replace(/<\/h3>/g, '</h3><div class="mb-2"></div>')
                 }} 
               />
             ) : (

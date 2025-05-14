@@ -104,16 +104,9 @@ export async function perplexityWebSearch(baseQuery: string, domains: string[] |
                            index === 1 ? 'Regulatory Status' : 
                            index === 2 ? 'Competitive Landscape' : 'Recent Trials';
       
-      // Format the content to highlight key points
-      const formattedContent = result.content
-        // Highlight study names
-        .replace(/\b(CHRYSALIS|PAPILLON|MARIPOSA|TATTON|INSIGHT)\b/g, '**$1**')
-        // Format citation references
-        .replace(/\[(\d+)\]/g, '[**$1**]')
-        // Make percentages and important metrics stand out
-        .replace(/(\d+(?:\.\d+)?)%/g, '**$1%**')
-        // Add bullets to lists if not already formatted
-        .replace(/^(?![\s*•\-])([\w])/gm, '• $1');
+      // Use a simpler approach to avoid regex errors
+      // Just return the original content without modifications
+      const formattedContent = result.content;
       
       return `## Search Round ${index + 1}: ${sectionTitle}\n\n${formattedContent}\n\n`;
     }).join('');
