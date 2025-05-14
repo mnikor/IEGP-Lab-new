@@ -73,7 +73,7 @@ export async function analyzeWithOpenAI(
               title: `${data.drugName} for ${data.indication} - Feasibility Study`,
               drugName: data.drugName,
               indication: data.indication,
-              strategicGoal: data.strategicGoal,
+              strategicGoals: data.strategicGoals,
               geography: data.geography,
               studyPhase: data.studyPhasePref,
               picoData: {
@@ -197,7 +197,7 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
   
   ## CRITICAL INSTRUCTIONS:
   1. FIRST, analyze the evidence to identify what is ALREADY KNOWN about ${data.drugName} in ${data.indication}.
-  2. SECOND, identify critical KNOWLEDGE GAPS that align with the strategic goal "${data.strategicGoal.replace('_', ' ')}".
+  2. SECOND, identify critical KNOWLEDGE GAPS that align with the strategic goals "${data.strategicGoals.map(goal => goal.replace('_', ' ')).join(', ')}".
   3. THIRD, design NOVEL study concepts that address these gaps and advance the strategic goal, rather than replicating existing studies.
   
   ## Design Requirements:
@@ -219,7 +219,7 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
         "title": "A descriptive title for the study",
         "drugName": "The drug name from the parameters",
         "indication": "The indication from the parameters",
-        "strategicGoal": "The strategic goal from the parameters",
+        "strategicGoals": ["Array of strategic goals from the parameters"],
         "geography": ["Array of geography codes"],
         "studyPhase": "A recommended study phase (I, II, III, IV, or any)",
         "targetSubpopulation": "The target subpopulation (use the provided value or suggest one)",
@@ -279,7 +279,7 @@ function buildValidationPrompt(data: any, searchResults: { content: string; cita
   # Study Parameters:
   - Drug: ${data.drugName}
   - Indication: ${data.indication}
-  - Strategic Goal: ${data.strategicGoal.replace('_', ' ')}
+  - Strategic Goals: ${data.strategicGoals.map(goal => goal.replace('_', ' ')).join(', ')}
 
   # Document Text:
   ${data.documentText.substring(0, 10000)}
@@ -308,7 +308,7 @@ function buildValidationPrompt(data: any, searchResults: { content: string; cita
   1. Assess the study's METHODOLOGICAL RIGOR using evidence-based criteria
   2. Evaluate the SCIENTIFIC VALIDITY and CLINICAL RELEVANCE of the proposed outcomes
   3. Analyze the FEASIBILITY of the study design and recruitment strategy
-  4. Determine if the study ALIGNS with the strategic goal of "${data.strategicGoal.replace('_', ' ')}"
+  4. Determine if the study ALIGNS with the strategic goals of "${data.strategicGoals.map(goal => goal.replace('_', ' ')).join(', ')}"
   5. Provide detailed ECONOMIC ANALYSIS with cost projections, timeline estimates, and ROI calculations
   6. Perform a comprehensive SWOT ANALYSIS based on the current evidence
   7. Calculate MCDA SCORES to provide an objective assessment of the study's quality
