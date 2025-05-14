@@ -181,6 +181,12 @@ export interface ValidationResults {
   riskFlags: RiskFlag[];
   revisedEconomics: RevisedEconomics;
   swotAnalysis: SwotAnalysis;
+  
+  // New fields to match New Concept tab
+  mcdaScores?: McDAScore;
+  feasibilityData?: FeasibilityData;
+  currentEvidence?: CurrentEvidence;
+  
   createdAt?: string;
 }
 

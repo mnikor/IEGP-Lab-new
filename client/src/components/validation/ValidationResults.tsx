@@ -61,7 +61,18 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results }) => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <h2 className="text-xl font-semibold text-neutral-dark">Validation Results</h2>
-        <div className="flex space-x-3">
+        <div className="flex items-center space-x-3">
+          {/* Display MCDA Score if it exists */}
+          {results.mcdaScores && results.mcdaScores.overall && (
+            <div className="flex items-center">
+              <Star className="h-5 w-5 text-yellow-400 fill-current" />
+              <span className="ml-1 text-sm font-medium text-neutral-dark">
+                {typeof results.mcdaScores.overall === 'number' 
+                  ? results.mcdaScores.overall.toFixed(1)
+                  : results.mcdaScores.overall}/5
+              </span>
+            </div>
+          )}
           <Button variant="outline" onClick={exportPDF}>
             <FileDown className="mr-2 h-4 w-4" />
             Export PDF
@@ -212,6 +223,63 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results }) => {
             <h3 className="text-md font-medium text-neutral-dark mb-3">SWOT Analysis</h3>
             <SwotAnalysis swotAnalysis={results.swotAnalysis} />
           </div>
+
+          {/* Current Evidence (if available) */}
+          {results.currentEvidence && (
+            <div>
+              <h3 className="text-md font-medium text-neutral-dark mb-3">Current Evidence</h3>
+              <CurrentEvidence currentEvidence={results.currentEvidence} />
+            </div>
+          )}
+
+          {/* MCDA Scores Breakdown (if available) */}
+          {results.mcdaScores && (
+            <div>
+              <h3 className="text-md font-medium text-neutral-dark mb-3">MCDA Scores</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="border rounded-md p-3">
+                  <div className="text-sm text-neutral-medium">Scientific Validity</div>
+                  <div className="text-lg font-medium text-neutral-dark mt-1">
+                    {typeof results.mcdaScores.scientificValidity === 'number' 
+                      ? results.mcdaScores.scientificValidity.toFixed(1) 
+                      : results.mcdaScores.scientificValidity}/5
+                  </div>
+                </div>
+                <div className="border rounded-md p-3">
+                  <div className="text-sm text-neutral-medium">Clinical Impact</div>
+                  <div className="text-lg font-medium text-neutral-dark mt-1">
+                    {typeof results.mcdaScores.clinicalImpact === 'number' 
+                      ? results.mcdaScores.clinicalImpact.toFixed(1) 
+                      : results.mcdaScores.clinicalImpact}/5
+                  </div>
+                </div>
+                <div className="border rounded-md p-3">
+                  <div className="text-sm text-neutral-medium">Commercial Value</div>
+                  <div className="text-lg font-medium text-neutral-dark mt-1">
+                    {typeof results.mcdaScores.commercialValue === 'number' 
+                      ? results.mcdaScores.commercialValue.toFixed(1) 
+                      : results.mcdaScores.commercialValue}/5
+                  </div>
+                </div>
+                <div className="border rounded-md p-3">
+                  <div className="text-sm text-neutral-medium">Feasibility</div>
+                  <div className="text-lg font-medium text-neutral-dark mt-1">
+                    {typeof results.mcdaScores.feasibility === 'number' 
+                      ? results.mcdaScores.feasibility.toFixed(1) 
+                      : results.mcdaScores.feasibility}/5
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Feasibility Details (if available) */}
+          {results.feasibilityData && (
+            <div>
+              <h3 className="text-md font-medium text-neutral-dark mb-3">Feasibility Analysis</h3>
+              <FeasibilityDetails feasibilityData={results.feasibilityData} />
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

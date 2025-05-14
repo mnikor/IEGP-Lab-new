@@ -56,6 +56,12 @@ export const synopsisValidations = pgTable("synopsis_validations", {
   riskFlags: json("risk_flags").notNull(),
   revisedEconomics: json("revised_economics").notNull(),
   swotAnalysis: json("swot_analysis").notNull(),
+  
+  // New fields to match the concept generation output
+  mcdaScores: json("mcda_scores"),
+  feasibilityData: json("feasibility_data"),
+  currentEvidence: json("current_evidence"),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
