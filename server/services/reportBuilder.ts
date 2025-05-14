@@ -11,8 +11,17 @@ try {
   throw new Error('Failed to import pptxgenjs module');
 }
 import { PassThrough } from 'stream';
-// Import JSZip dynamically when needed
-// This avoids direct import issues
+
+// Dynamic import function for JSZip to be used when needed
+async function getJSZip() {
+  try {
+    const JSZipModule = await import('jszip');
+    return JSZipModule.default || JSZipModule;
+  } catch (error) {
+    console.error('Error importing JSZip:', error);
+    throw new Error('Failed to import JSZip module');
+  }
+}
 
 /**
  * Generates a PDF report for study concepts
