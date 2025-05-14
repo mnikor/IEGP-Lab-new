@@ -286,12 +286,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const extractedPico = await extractPicoFromText(text);
       
       // Step 3: Perform web search to gather evidence for benchmarking
+      // Create a more detailed query similar to the one used in concept generation
+      const isOncology = (data.indication || '').toLowerCase().includes('cancer') || 
+                         (data.indication || '').toLowerCase().includes('oncol') ||
+                         (data.indication || '').toLowerCase().includes('tumor');
+                         
       const strategicGoalsFocus = data.strategicGoals.map(goal => goal.replace('_', ' ')).join(' and ');
-      const searchQuery = `Provide clinical evidence benchmarks for ${data.drugName} in ${data.indication} focusing on ${strategicGoalsFocus}`;
+      
+      // Use a more detailed query similar to concept generation
+      const searchQuery = `Provide clinical evidence benchmarks for ${data.drugName} in ${data.indication} focusing on ${strategicGoalsFocus}. 
+      Include details about: 
+      1. Optimal study design${data.studyPhasePref ? ` (Phase ${data.studyPhasePref})` : ''} 
+      2. Typical patient populations and sample sizes 
+      3. Common comparators used in similar studies
+      4. Standard endpoints and outcomes
+      5. Average costs and durations for similar trials${isOncology ? ' in oncology' : ''}
+      6. Common inclusion/exclusion criteria 
+      7. Geographic patterns/differences in conducting these trials`;
+      
+      // Use the same comprehensive domain list as concept generation
       const searchResults = await perplexityWebSearch(searchQuery, [
         "pubmed.ncbi.nlm.nih.gov",
-        "clinicaltrials.gov",
-        "nejm.org"
+        "clinicaltrials.gov", 
+        "nejm.org",
+        "accessdata.fda.gov",
+        "ema.europa.eu",
+        "nature.com"
       ]);
       
       // Include additional context in analysis if provided
@@ -306,6 +326,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         documentText: enrichedText,
         extractedPico
       }, true);
+      
+      // Make sure we have the current evidence field using the search results
+      // This ensures the multi-round search results are properly displayed
+      if (!validationResults.currentEvidence) {
+        validationResults.currentEvidence = {
+          summary: searchResults.content,
+          citations: searchResults.citations.map((citation, index) => ({
+            id: `${index + 1}`,
+            title: citation,
+            url: citation
+          }))
+        };
+      }
       
       // Step 5: Save the validation to the database
       const savedValidation = await storage.createSynopsisValidation({
