@@ -12,6 +12,7 @@ import { perplexityWebSearch } from "./services/perplexity";
 import { analyzeWithOpenAI, extractPicoFromText } from "./services/openai";
 import { extractTextFromDocument } from "./services/documentParser";
 import { calculateFeasibility } from "./services/feasibilityCalculator";
+import type { ConceptWithFeasibility } from "./services/feasibilityCalculator";
 import { scoreMcda } from "./services/mcdaScorer";
 import { generateSwot } from "./services/swotGenerator";
 import { generatePdfReport, generatePptxReport, generateValidationPdfReport } from "./services/reportBuilder";

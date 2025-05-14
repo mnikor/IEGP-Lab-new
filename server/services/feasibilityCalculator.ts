@@ -7,7 +7,7 @@ interface ExtendedGenerateConceptRequest extends GenerateConceptRequest {
 }
 
 // Type assertion helper for feasibilityData
-type ConceptWithFeasibility = Partial<StudyConcept> & {
+export type ConceptWithFeasibility = Partial<StudyConcept> & {
   feasibilityData?: FeasibilityData;
 };
 
