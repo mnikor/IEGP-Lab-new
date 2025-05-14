@@ -82,6 +82,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
     defaultValues: {
       drugName: "",
       indication: "",
+      // Initialize with empty array, but we'll sync this with selectedStrategicGoals
       strategicGoals: [],
       additionalContext: "",
       studyPhasePref: "any",
@@ -116,15 +117,23 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
     setSelectedGeographies(selectedGeographies.filter(g => g !== geo));
   };
   
-  // Strategic goals functions
+  // Strategic goals functions - with form updates
   const addStrategicGoal = (goal: StrategicGoal) => {
     if (!selectedStrategicGoals.includes(goal)) {
-      setSelectedStrategicGoals([...selectedStrategicGoals, goal]);
+      const updatedGoals = [...selectedStrategicGoals, goal];
+      setSelectedStrategicGoals(updatedGoals);
+      
+      // Update the form value too
+      form.setValue('strategicGoals', updatedGoals);
     }
   };
 
   const removeStrategicGoal = (goal: StrategicGoal) => {
-    setSelectedStrategicGoals(selectedStrategicGoals.filter(g => g !== goal));
+    const updatedGoals = selectedStrategicGoals.filter(g => g !== goal);
+    setSelectedStrategicGoals(updatedGoals);
+    
+    // Update the form value too
+    form.setValue('strategicGoals', updatedGoals);
   };
 
   const handleEvidenceUpload = (files: EvidenceFile[]) => {
@@ -136,35 +145,47 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    // Debug log for form submission - enhanced for troubleshooting
-    console.log("FORM SUBMIT TRIGGERED");
-    console.log("Form submitted with values:", values);
-    console.log("Selected strategic goals:", selectedStrategicGoals);
-    console.log("Selected geographies:", selectedGeographies);
-    console.log("globalLoeDate value at submission:", values.globalLoeDate);
-    
-    if (selectedGeographies.length === 0) {
+    try {
+      // Debug log for form submission - enhanced for troubleshooting
+      console.log("FORM SUBMIT TRIGGERED");
+      console.log("Form submitted with values:", values);
+      console.log("Form strategicGoals:", values.strategicGoals);
+      console.log("Selected strategic goals:", selectedStrategicGoals);
+      console.log("Selected geographies:", selectedGeographies);
+      console.log("globalLoeDate value at submission:", values.globalLoeDate);
+      
+      if (selectedGeographies.length === 0) {
+        toast({
+          title: "Validation Error",
+          description: "Please select at least one geography",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // For the form to validate, these values should be in sync
+      if (values.strategicGoals.length === 0) {
+        toast({
+          title: "Validation Error",
+          description: "Please select at least one strategic goal",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (selectedStrategicGoals.includes("other") && !otherStrategicGoalText.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Please specify your custom strategic goal",
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Error in form pre-submission validation:", error);
       toast({
-        title: "Validation Error",
-        description: "Please select at least one geography",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (selectedStrategicGoals.length === 0) {
-      toast({
-        title: "Validation Error",
-        description: "Please select at least one strategic goal",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (selectedStrategicGoals.includes("other") && !otherStrategicGoalText.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Please specify your custom strategic goal",
+        title: "Form Error",
+        description: "An error occurred while validating the form",
         variant: "destructive",
       });
       return;
@@ -224,7 +245,8 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
         
       const requestData: GenerateConceptRequest = {
         ...values,
-        strategicGoals: selectedStrategicGoals,
+        // Form should already have the strategic goals, but ensure we use the latest state
+        strategicGoals: selectedStrategicGoals.length > 0 ? selectedStrategicGoals : values.strategicGoals,
         otherStrategicGoalText: selectedStrategicGoals.includes("other") ? otherStrategicGoalText : undefined,
         geography: selectedGeographies,
         comparatorDrugs: comparatorDrugs.length > 0 ? comparatorDrugs : undefined,
@@ -233,6 +255,9 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
         regionalLoeDates: values.globalLoeDate ? processedRegionalLoeDates : undefined,
         anticipatedFpiDate: formattedFpiDate,
       };
+      
+      // More detailed logging for the request
+      console.log("Final request payload:", JSON.stringify(requestData, null, 2));
       
       // Critical debug log for LOE date in final request
       console.log("Final globalLoeDate in request:", requestData.globalLoeDate);
