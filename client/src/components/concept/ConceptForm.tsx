@@ -154,6 +154,15 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
       });
       return;
     }
+    
+    if (selectedStrategicGoals.includes("other") && !otherStrategicGoalText.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please specify your custom strategic goal",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setIsGenerating(true);
@@ -334,6 +343,19 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                   </div>
                   {selectedStrategicGoals.length === 0 && (
                     <p className="text-sm text-destructive">Please select at least one strategic goal</p>
+                  )}
+                  
+                  {selectedStrategicGoals.includes("other") && (
+                    <div className="mt-2">
+                      <FormLabel htmlFor="otherStrategicGoalText" className="text-sm">Please specify other strategic goal</FormLabel>
+                      <Input
+                        id="otherStrategicGoalText"
+                        placeholder="Enter your custom strategic goal"
+                        value={otherStrategicGoalText}
+                        onChange={(e) => setOtherStrategicGoalText(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
                   )}
                 </div>
 

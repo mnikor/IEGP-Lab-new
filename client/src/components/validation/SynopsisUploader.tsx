@@ -24,7 +24,19 @@ interface SynopsisUploaderProps {
 const formSchema = z.object({
   drugName: z.string().min(1, "Drug name is required"),
   indication: z.string().min(1, "Indication is required"),
-  strategicGoals: z.array(z.enum(["expand_label", "defend_share", "accelerate_uptake", "real_world_evidence"])).min(1, "Please select at least one strategic goal"),
+  strategicGoals: z.array(z.enum([
+    "expand_label", 
+    "defend_market_share", 
+    "accelerate_uptake", 
+    "facilitate_market_access", 
+    "real_world_evidence", 
+    "dosing_optimization", 
+    "biomarker_validation", 
+    "safety_risk_management", 
+    "combination_extension", 
+    "other"
+  ])).min(1, "Please select at least one strategic goal"),
+  otherStrategicGoalText: z.string().optional(),
   studyIdeaText: z.string().optional(),
   additionalContext: z.string().optional(),
   
