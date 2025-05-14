@@ -70,6 +70,7 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
   // Geography handling
   const [selectedGeographies, setSelectedGeographies] = useState<string[]>(["US", "EU"]);
   const [selectedStrategicGoals, setSelectedStrategicGoals] = useState<StrategicGoal[]>([]);
+  const [otherStrategicGoalText, setOtherStrategicGoalText] = useState<string>("");
   const [comparatorDrugs, setComparatorDrugs] = useState<string[]>(["Standard of Care"]);
   const [newComparatorDrug, setNewComparatorDrug] = useState<string>("");
   
@@ -215,6 +216,16 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
       });
       return;
     }
+    
+    // Check for "other" strategic goal text if "other" is selected
+    if (selectedStrategicGoals.includes("other") && !otherStrategicGoalText.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please specify your custom strategic goal",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setIsValidating(true);
@@ -252,6 +263,11 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
       selectedStrategicGoals.forEach(goal => {
         formData.append('strategicGoals[]', goal);
       });
+      
+      // If "other" strategic goal is selected, append the text
+      if (selectedStrategicGoals.includes("other")) {
+        formData.append('otherStrategicGoalText', otherStrategicGoalText);
+      }
       
       // For text input method, ensure studyIdeaText is sent
       if (inputMethod === "text") {
@@ -414,6 +430,19 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
                   </div>
                   {selectedStrategicGoals.length === 0 && (
                     <p className="text-sm text-destructive">Please select at least one strategic goal</p>
+                  )}
+                  
+                  {selectedStrategicGoals.includes("other") && (
+                    <div className="mt-2">
+                      <FormLabel htmlFor="otherStrategicGoalText" className="text-sm">Please specify other strategic goal</FormLabel>
+                      <Input
+                        id="otherStrategicGoalText"
+                        placeholder="Enter your custom strategic goal"
+                        value={otherStrategicGoalText}
+                        onChange={(e) => setOtherStrategicGoalText(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
                   )}
                 </div>
                 
