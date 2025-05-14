@@ -171,8 +171,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validations = await storage.getAllSynopsisValidations();
       res.json(validations);
     } catch (error) {
-      console.error("Error fetching synopsis validations:", error);
-      res.status(500).json({ message: "Failed to fetch synopsis validations" });
+      console.error("Error fetching study idea validations:", error);
+      res.status(500).json({ message: "Failed to fetch study idea validations" });
     }
   });
 
@@ -181,8 +181,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validations = await storage.getRecentSynopsisValidations(5);
       res.json(validations);
     } catch (error) {
-      console.error("Error fetching recent synopsis validations:", error);
-      res.status(500).json({ message: "Failed to fetch recent synopsis validations" });
+      console.error("Error fetching recent study idea validations:", error);
+      res.status(500).json({ message: "Failed to fetch recent study idea validations" });
     }
   });
 
@@ -190,18 +190,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validation = await storage.getSynopsisValidation(parseInt(req.params.id));
       if (!validation) {
-        return res.status(404).json({ message: "Synopsis validation not found" });
+        return res.status(404).json({ message: "Study idea validation not found" });
       }
       res.json(validation);
     } catch (error) {
-      console.error("Error fetching synopsis validation:", error);
-      res.status(500).json({ message: "Failed to fetch synopsis validation" });
+      console.error("Error fetching study idea validation:", error);
+      res.status(500).json({ message: "Failed to fetch study idea validation" });
     }
   });
 
-  app.post("/api/synopsis-validations/validate", upload.single('file'), async (req, res) => {
+  app.post("/api/study-idea-validations/validate", upload.single('file'), async (req, res) => {
     try {
-      console.log("Validating synopsis with body:", {
+      console.log("Validating study idea with body:", {
         drugName: req.body.drugName,
         indication: req.body.indication,
         strategicGoal: req.body.strategicGoal,
@@ -283,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(savedValidation);
     } catch (error) {
-      console.error("Error validating synopsis:", error);
+      console.error("Error validating study idea:", error);
       res.status(500).json({ message: "Failed to validate synopsis" });
     }
   });
