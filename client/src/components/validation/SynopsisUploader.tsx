@@ -193,6 +193,16 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
       });
       return;
     }
+    
+    // Check for strategic goals selection
+    if (selectedStrategicGoals.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one strategic goal",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setIsValidating(true);
@@ -225,7 +235,11 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
       // Always append basic form fields
       formData.append('drugName', values.drugName);
       formData.append('indication', values.indication);
-      formData.append('strategicGoal', values.strategicGoal);
+      
+      // Append strategic goals as an array
+      selectedStrategicGoals.forEach(goal => {
+        formData.append('strategicGoals[]', goal);
+      });
       
       // For text input method, ensure studyIdeaText is sent
       if (inputMethod === "text") {
