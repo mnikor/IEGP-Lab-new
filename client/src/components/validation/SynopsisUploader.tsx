@@ -15,7 +15,7 @@ import { ValidationResults, StrategicGoal, strategicGoalLabels } from "@/lib/typ
 import { Upload, FileText, AlertCircle, X, UploadCloud } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-interface SynopsisUploaderProps {
+interface StudyIdeaUploaderProps {
   onValidationSuccess: (results: ValidationResults) => void;
   isValidating: boolean;
   setIsValidating: (isValidating: boolean) => void;
@@ -57,7 +57,7 @@ const formSchema = z.object({
   hasPatentExtensionPotential: z.boolean().optional().default(false),
 });
 
-const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({ 
+const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({ 
   onValidationSuccess, 
   isValidating,
   setIsValidating 
@@ -866,4 +866,4 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
   );
 };
 
-export default SynopsisUploader;
+export default StudyIdeaUploader;

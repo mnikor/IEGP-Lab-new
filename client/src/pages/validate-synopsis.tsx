@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import SynopsisUploader from "@/components/validation/SynopsisUploader";
+import StudyIdeaUploader from "@/components/validation/SynopsisUploader";
 import ValidationResults from "@/components/validation/ValidationResults";
 import { ValidationResults as ValidationResultsType } from "@/lib/types";
 
@@ -27,14 +27,14 @@ const ValidateSynopsis: React.FC = () => {
             <TabsTrigger value="generate" asChild>
               <a href="/generate-concept">Generate Concept</a>
             </TabsTrigger>
-            <TabsTrigger value="upload">Validate Synopsis</TabsTrigger>
+            <TabsTrigger value="upload">Validate Study Idea</TabsTrigger>
             <TabsTrigger value="reports" asChild>
               <a href="/reports">Reports</a>
             </TabsTrigger>
           </TabsList>
           
           <TabsContent value="upload" forceMount className={activeTab !== "upload" ? "hidden" : ""}>
-            <SynopsisUploader
+            <StudyIdeaUploader
               onValidationSuccess={handleValidationSuccess}
               isValidating={isValidating}
               setIsValidating={setIsValidating}
