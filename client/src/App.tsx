@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import AppShell from "@/components/layout/AppShell";
-import Dashboard from "@/pages/dashboard";
 import GenerateConcept from "@/pages/generate-concept";
 import ValidateStudyIdea from "@/pages/validate-study-idea";
 import Reports from "@/pages/reports";
@@ -14,7 +13,12 @@ function Router() {
   return (
     <AppShell>
       <Switch>
-        <Route path="/" component={Dashboard} />
+        <Route path="/">
+          {() => {
+            window.location.href = "/generate-concept";
+            return null;
+          }}
+        </Route>
         <Route path="/generate-concept" component={GenerateConcept} />
         <Route path="/validate-study-idea" component={ValidateStudyIdea} />
         <Route path="/validate-synopsis">

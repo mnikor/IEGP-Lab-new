@@ -16,7 +16,6 @@ const Sidebar: React.FC = () => {
   const [location] = useLocation();
 
   const navItems = [
-    { path: "/", icon: HomeIcon, label: "Dashboard" },
     { path: "/projects", icon: FileTextIcon, label: "Projects" },
     { path: "/generate-concept", icon: FilePlus2Icon, label: "New Concept" },
     { path: "/validate-study-idea", icon: FileTextIcon, label: "Validate Study Idea" },
