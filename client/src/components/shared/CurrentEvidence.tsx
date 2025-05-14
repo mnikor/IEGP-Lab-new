@@ -20,44 +20,43 @@ const formatMarkdownTitles = (text: string): string => {
   
   // First directly replace the exact pattern seen in the screenshot
   let formattedText = text
+    // Remove tailwind-style formatting tags
     .replace(/text-base font-bold my-2>/g, '')
     .replace(/text-sm font-bold my-2>/g, '')
+    .replace(/text-base font-bold my-\d+>/g, '')
+    .replace(/text-sm font-bold my-\d+>/g, '')
     .replace(/text-base font-bold/g, '')
     .replace(/text-sm font-bold/g, '')
     
-    // More aggressively remove class patterns
+    // More general replacement patterns for tailwind classes
     .replace(/text-\w+ font-\w+ my-\d+>/g, '')
     .replace(/text-\w+ font-\w+>/g, '')
+    .replace(/text-\w+ font-\w+/g, '')
     
-    // Remove HTML tags
+    // Remove any HTML tags that might be included in the response
     .replace(/<div.*?>/g, '')
     .replace(/<\/div>/g, '')
     .replace(/<span.*?>/g, '')
     .replace(/<\/span>/g, '')
+    
+    // Clean up any remaining tailwind classes
+    .replace(/\btext-\w+\b/g, '')
+    .replace(/\bfont-\w+\b/g, '')
+    .replace(/\bmy-\d+\b/g, '')
     
     // Convert markdown headers to HTML
     .replace(/#{4}\s+(.*?)(?:\n|$)/g, '<h4 class="text-sm font-bold my-2">$1</h4>')
     .replace(/#{3}\s+(.*?)(?:\n|$)/g, '<h3 class="text-base font-bold my-2">$1</h3>')
     .replace(/#{1,2}\s+(.*?)(?:\n|$)/g, '<h2 class="text-lg font-bold my-2">$1</h2>')
     
-    // Format bold text
+    // Make numbered sections bold
+    .replace(/(\d+\.\s*)([A-Z][^.\n]+)/g, '$1<strong>$2</strong>')
+    
+    // Add bold formatting
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
-    
-    // Clean up section titles
-    .replace(/^([A-Z][A-Z\s]+):?$/gm, '<strong>$1</strong>')
-    
-    // Clean up any remaining tailwind markup
-    .replace(/text-\w+/g, '')
-    .replace(/font-\w+/g, '')
-    .replace(/my-\d+>/g, '')
-    .replace(/my-\d+/g, '')
-    
-    // Fix line spacing
-    .replace(/\n\s*\n\s*\n/g, '\n\n')
-    .replace(/\s{3,}/g, ' ');
+    .replace(/\*(.*?)\*/g, '<strong>$1</strong>');
   
-  // Replace newlines with <br> for HTML formatting
+  // Fix line breaks
   formattedText = formattedText.replace(/\n/g, '<br>');
   
   return formattedText;
