@@ -274,7 +274,7 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
  */
 function buildValidationPrompt(data: any, searchResults: { content: string; citations: string[] }): string {
   return `
-  Analyze the provided clinical study synopsis and provide comprehensive, evidence-based validation feedback.
+  Analyze the provided clinical study synopsis and provide comprehensive, evidence-based validation feedback. USE ALL SEARCH RESULTS FROM MULTIPLE ROUNDS to ensure a thorough analysis.
 
   # Study Parameters:
   - Drug: ${data.drugName}
@@ -290,11 +290,19 @@ function buildValidationPrompt(data: any, searchResults: { content: string; cita
   - Comparator: ${data.extractedPico.comparator}
   - Outcomes: ${data.extractedPico.outcomes}
 
-  # Current Evidence from Perplexity Search:
+  # Current Evidence from Multiple Search Rounds:
   ${searchResults.content}
 
   ## Citations:
   ${searchResults.citations.map((citation, index) => `${index + 1}. ${citation}`).join('\n')}
+
+  ## CRITICAL ANALYSIS INSTRUCTIONS:
+  1. FIRST, thoroughly analyze ALL search rounds, paying special attention to:
+     - Current regulatory approval status and indications
+     - Competitive landscape and standard of care
+     - Recent clinical trials and emerging evidence
+  2. SECOND, identify any critical discrepancies between the synopsis and current evidence
+  3. THIRD, ensure validation leverages ALL available evidence, especially regulatory status
 
   ## Validation Guidelines:
   1. Assess the study's METHODOLOGICAL RIGOR using evidence-based criteria
@@ -306,6 +314,8 @@ function buildValidationPrompt(data: any, searchResults: { content: string; cita
   7. Calculate MCDA SCORES to provide an objective assessment of the study's quality
   8. Identify potential SAMPLE SIZE issues and provide recommendations
   9. Evaluate the proposed TIMELINE for realism and suggest optimizations
+  10. Verify if the study population aligns with REGULATORY APPROVALS
+  11. Check if the design considers the COMPETITIVE LANDSCAPE appropriately
 
   Respond with a JSON object containing:
   1. "title": A descriptive title for this validation report
@@ -324,7 +334,20 @@ function buildValidationPrompt(data: any, searchResults: { content: string; cita
      - "followUpPeriodMonths": Expected follow-up period in months (number)
      - "dropoutRate": Expected dropout rate (number between 0-1)
      - "complexityFactor": Study complexity factor (number between 0-1)
-  9. "currentEvidence": Object with "summary" containing a concise summary of the current evidence, and "citations" array with objects containing "id", "url", and "title" fields
+     - "estimatedCost": Total estimated cost (number)
+     - "costBreakdown": Object with various cost components
+     - "timeline": Total timeline in months (number)
+     - "projectedROI": Projected return on investment as a multiple (number)
+     - "recruitmentRate": Expected recruitment rate (number between 0-1)
+     - "completionRisk": Risk of non-completion (number between 0-1)
+  9. "currentEvidence": Object with:
+     - "summary": Concise summary of the current evidence
+     - "regulatoryStatus": Detailed information about current regulatory approvals
+     - "competitiveLandscape": Analysis of competing treatments and standard of care
+     - "recentTrials": Information about recent and ongoing relevant trials
+     - "citations": Array with objects containing "id", "url", "title", and "relevance" fields
 
-  Be critical but constructive. Focus on scientific validity, methodological rigor, feasibility, and alignment with the strategic goal. Provide specific, actionable feedback that would improve the study design.`;
+  Be critical but constructive. Focus on scientific validity, methodological rigor, feasibility, and alignment with the strategic goal. Provide specific, actionable feedback that would improve the study design.
+
+  IMPORTANT: Make sure to identify ANY discrepancies between the study population and currently approved indications/populations. This is CRITICAL for accurate validation.`;
 }

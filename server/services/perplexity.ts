@@ -107,7 +107,8 @@ export async function perplexityWebSearch(baseQuery: string, domains: string[] |
     
     // Consolidate citations, removing duplicates
     const allCitations = searchResults.flatMap(result => result.citations);
-    const uniqueCitations = [...new Set(allCitations)];
+    const uniqueCitationsSet = new Set(allCitations);
+    const uniqueCitations = Array.from(uniqueCitationsSet);
     
     console.log(`Multi-round search completed. Found ${uniqueCitations.length} unique citations.`);
     
