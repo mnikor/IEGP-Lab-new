@@ -68,8 +68,25 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
     today.getDate()
   ).toISOString().split('T')[0];
   
+  // Calculate an estimated data readout date based on FPI date
+  // Default to 24 months study duration if not specified
+  const studyDuration = 24; // months
+  const estimatedReadoutDate = estimatedFpiDate ? 
+    (() => {
+      const date = new Date(estimatedFpiDate);
+      date.setMonth(date.getMonth() + studyDuration);
+      return date.toISOString().split('T')[0];
+    })() : 
+    (() => {
+      const date = new Date(defaultFpiDate);
+      date.setMonth(date.getMonth() + studyDuration);
+      return date.toISOString().split('T')[0];
+    })();
+  
   // Log for debugging
-  console.log('LoeDetails using estimatedFpiDate:', estimatedFpiDate, 'defaultFpiDate:', defaultFpiDate);
+  console.log('LoeDetails using estimatedFpiDate:', estimatedFpiDate, 
+              'defaultFpiDate:', defaultFpiDate, 
+              'estimatedReadoutDate:', estimatedReadoutDate);
   
   // Default regional LOE data if not provided
   const defaultRegionalData: RegionalLoeData[] = regionalLoeData?.length ? regionalLoeData : [
@@ -207,12 +224,38 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
             </div>
           </div>
 
-          {/* FPI estimation */}
+          {/* Key Milestone Dates */}
           <div className="space-y-2">
-            <div className="text-sm font-medium text-neutral-dark">Estimated FPI Date</div>
-            <div className="flex items-center gap-1 text-sm">
-              <Clock className="h-4 w-4 text-primary" />
-              {formatDate(defaultFpiDate)}
+            <div className="text-sm font-medium text-neutral-dark flex items-center">
+              <Clock className="h-4 w-4 mr-1 text-primary-dark" />
+              Key Milestone Dates
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              {/* FPI Date */}
+              <div className="flex justify-between items-center text-sm border-b pb-1 border-neutral-100">
+                <span className="font-medium">First Patient In:</span>
+                <span>{formatDate(defaultFpiDate)}</span>
+              </div>
+              
+              {/* Data Readout Date */}
+              <div className="flex justify-between items-center text-sm border-b pb-1 border-neutral-100">
+                <span className="font-medium">Data Readout:</span>
+                <span className="flex items-center">
+                  {formatDate(estimatedReadoutDate)}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Clock className="h-4 w-4 text-blue-500 ml-2" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="w-[240px] text-xs">
+                          Estimated time when study results will be available. The time until LOE is measured from this date, representing your commercial window.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </span>
+              </div>
             </div>
           </div>
 
