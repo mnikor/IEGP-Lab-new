@@ -27,6 +27,12 @@ function Router() {
             return null;
           }}
         </Route>
+        <Route path="/projects">
+          {() => {
+            window.location.href = "/generate-concept";
+            return null;
+          }}
+        </Route>
         <Route path="/reports" component={Reports} />
         <Route component={NotFound} />
       </Switch>

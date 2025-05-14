@@ -1,8 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { 
-  PlusIcon, 
-  HomeIcon, 
   FileTextIcon, 
   FilePlus2Icon, 
   BarChartIcon, 
@@ -16,7 +14,6 @@ const Sidebar: React.FC = () => {
   const [location] = useLocation();
 
   const navItems = [
-    { path: "/projects", icon: FileTextIcon, label: "Projects" },
     { path: "/generate-concept", icon: FilePlus2Icon, label: "New Concept" },
     { path: "/validate-study-idea", icon: FileTextIcon, label: "Validate Study Idea" },
     { path: "/reports", icon: BarChartIcon, label: "Reports" },
@@ -27,16 +24,8 @@ const Sidebar: React.FC = () => {
     <aside className="w-14 md:w-64 bg-white border-r border-neutral-light flex-shrink-0">
       <nav className="flex flex-col h-full py-4">
         <div className="px-3 mb-6">
-          <div className="relative md:hidden">
-            <Button variant="outline" size="icon" className="w-full flex justify-center text-primary border-primary">
-              <PlusIcon className="h-5 w-5" />
-            </Button>
-          </div>
-          <div className="hidden md:block">
-            <Button className="w-full flex items-center justify-center md:justify-start space-x-2">
-              <PlusIcon className="h-5 w-5" />
-              <span>New Project</span>
-            </Button>
+          <div className="text-center md:text-left font-medium text-lg text-primary px-2 py-1">
+            Clinical Study Ideator
           </div>
         </div>
         
