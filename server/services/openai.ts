@@ -279,7 +279,7 @@ function buildValidationPrompt(data: any, searchResults: { content: string; cita
   # Study Parameters:
   - Drug: ${data.drugName}
   - Indication: ${data.indication}
-  - Strategic Goals: ${data.strategicGoals.map(goal => goal.replace('_', ' ')).join(', ')}
+  - Strategic Goals: ${data.strategicGoals.map((goal: string) => goal.replace('_', ' ')).join(', ')}
 
   # Document Text:
   ${data.documentText.substring(0, 10000)}
@@ -297,7 +297,9 @@ function buildValidationPrompt(data: any, searchResults: { content: string; cita
   ${searchResults.citations.map((citation, index) => `${index + 1}. ${citation}`).join('\n')}
 
   ## CRITICAL ANALYSIS INSTRUCTIONS:
-  1. FIRST, thoroughly analyze ALL search rounds, paying special attention to:
+  1. FIRST, thoroughly analyze ALL search rounds, with particular focus on:
+     - Competitive landscape: Clearly identify current standard of care, direct competitors, emerging alternatives, and key differentiators
+     - Comparative efficacy and safety data between the drug and alternatives
      - Current regulatory approval status and indications
      - Competitive landscape and standard of care
      - Recent clinical trials and emerging evidence
@@ -308,7 +310,7 @@ function buildValidationPrompt(data: any, searchResults: { content: string; cita
   1. Assess the study's METHODOLOGICAL RIGOR using evidence-based criteria
   2. Evaluate the SCIENTIFIC VALIDITY and CLINICAL RELEVANCE of the proposed outcomes
   3. Analyze the FEASIBILITY of the study design and recruitment strategy
-  4. Determine if the study ALIGNS with the strategic goals of "${data.strategicGoals.map(goal => goal.replace('_', ' ')).join(', ')}"
+  4. Determine if the study ALIGNS with the strategic goals of "${data.strategicGoals.map((goal: string) => goal.replace('_', ' ')).join(', ')}"
   5. Provide detailed ECONOMIC ANALYSIS with cost projections, timeline estimates, and ROI calculations
   6. Perform a comprehensive SWOT ANALYSIS based on the current evidence
   7. Calculate MCDA SCORES to provide an objective assessment of the study's quality
@@ -343,7 +345,30 @@ function buildValidationPrompt(data: any, searchResults: { content: string; cita
   9. "currentEvidence": Object with:
      - "summary": Concise summary of the current evidence
      - "regulatoryStatus": Detailed information about current regulatory approvals
-     - "competitiveLandscape": Analysis of competing treatments and standard of care
+     - "competitiveLandscape": {
+        "currentStandardOfCare": "Detailed analysis of current standard of care treatments",
+        "directCompetitors": [
+          {
+            "name": "Name of competing treatment",
+            "mechanismOfAction": "Mechanism of action",
+            "approvalStatus": "Approval status in relevant regions",
+            "efficacyComparison": "Comparative efficacy data vs. the study drug",
+            "safetyComparison": "Comparative safety profile vs. the study drug",
+            "marketPosition": "Current market position and adoption"
+          }
+        ],
+        "emergingCompetitors": [
+          {
+            "name": "Name of emerging competitor",
+            "mechanismOfAction": "Mechanism of action",
+            "developmentStage": "Current clinical development stage",
+            "expectedTimeline": "Expected approval timeline if available",
+            "potentialImpact": "Potential impact on the market"
+          }
+        ],
+        "competitiveAdvantages": ["List of competitive advantages for the study drug"],
+        "competitiveDisadvantages": ["List of competitive disadvantages for the study drug"]
+      },
      - "recentTrials": Information about recent and ongoing relevant trials
      - "citations": Array with objects containing "id", "url", "title", and "relevance" fields
 

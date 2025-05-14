@@ -84,8 +84,16 @@ export async function perplexityWebSearch(baseQuery: string, domains: string[] |
       // Regulatory status search
       `What is the current regulatory approval status for ${baseQuery.replace('Provide clinical evidence benchmarks for', '')}? Include details about FDA, EMA, and other regulatory bodies approvals, specific indications, and any limitations.`,
       
-      // Competitive landscape search
-      `What is the competitive landscape and standard of care for ${baseQuery.replace('Provide clinical evidence benchmarks for', '')}? Include information about other treatments, their efficacy, safety profiles, and market positioning.`,
+      // Competitive landscape search - more specific about competitors
+      `What are the key competitors and alternative treatments to ${baseQuery.replace('Provide clinical evidence benchmarks for', '')}? 
+      Please provide:
+      1. Current standard of care treatments for this indication and patient population
+      2. Direct competitors with similar mechanism of action
+      3. Other treatment approaches in development
+      4. Head-to-head comparison data (if available)
+      5. Market share information
+      6. Competitive advantages and disadvantages compared to alternatives
+      7. Emerging competitors in clinical trials that could impact market position`,
       
       // Recent trials and emerging evidence
       `What are the most recent clinical trials and emerging evidence for ${baseQuery.replace('Provide clinical evidence benchmarks for', '')}? Focus on studies from the last 2-3 years.`
