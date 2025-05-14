@@ -100,6 +100,10 @@ export const validateSynopsisRequestSchema = z.object({
   drugName: z.string().min(1, "Drug name is required"),
   indication: z.string().min(1, "Indication is required"),
   strategicGoal: z.enum(["expand_label", "defend_share", "accelerate_uptake", "real_world_evidence"]),
+  // Study idea can be provided as text or file upload
+  studyIdeaText: z.string().optional(),
+  // Additional context field for regulatory approval dates, market access estimates, etc.
+  additionalContext: z.string().optional(),
   // No file validation here, it's handled separately with multer
 });
 

@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ValidationResults } from "@/lib/types";
 import { Upload, FileText, AlertCircle } from "lucide-react";
@@ -24,6 +26,8 @@ const formSchema = z.object({
   strategicGoal: z.enum(["expand_label", "defend_share", "accelerate_uptake", "real_world_evidence"], {
     required_error: "Please select a strategic goal",
   }),
+  studyIdeaText: z.string().optional(),
+  additionalContext: z.string().optional(),
 });
 
 const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({ 
@@ -34,6 +38,7 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState<boolean>(false);
+  const [inputMethod, setInputMethod] = useState<string>("file");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -41,6 +46,8 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
       drugName: "",
       indication: "",
       strategicGoal: undefined,
+      studyIdeaText: "",
+      additionalContext: "",
     },
   });
 
@@ -94,7 +101,8 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!selectedFile) {
+    // If using file upload method, check for file
+    if (inputMethod === "file" && !selectedFile) {
       toast({
         title: "No File Selected",
         description: "Please upload a synopsis document to validate.",
@@ -103,15 +111,30 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
       return;
     }
 
+    // If using text input method, check for text
+    if (inputMethod === "text" && !values.studyIdeaText?.trim()) {
+      toast({
+        title: "No Study Idea Provided",
+        description: "Please enter your study idea text to validate.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsValidating(true);
 
-      // Create a FormData object to send the file
+      // Create a FormData object to send the data
       const formData = new FormData();
-      formData.append('file', selectedFile);
+      if (inputMethod === "file" && selectedFile) {
+        formData.append('file', selectedFile);
+      }
+      
       formData.append('drugName', values.drugName);
       formData.append('indication', values.indication);
       formData.append('strategicGoal', values.strategicGoal);
+      formData.append('studyIdeaText', values.studyIdeaText || '');
+      formData.append('additionalContext', values.additionalContext || '');
 
       // Make the API call
       const response = await fetch('/api/synopsis-validations/validate', {
@@ -208,47 +231,94 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
                   )}
                 />
 
-                <div>
-                  <div
-                    className={`border-2 border-dashed rounded-lg p-6 text-center ${
-                      dragActive ? "border-primary bg-blue-50" : "border-neutral-light"
-                    }`}
-                    onDragEnter={handleDrag}
-                    onDragLeave={handleDrag}
-                    onDragOver={handleDrag}
-                    onDrop={handleDrop}
-                  >
-                    <Upload className="mx-auto h-12 w-12 text-neutral-medium" />
-                    <h3 className="mt-2 text-sm font-medium text-neutral-dark">
-                      {selectedFile ? selectedFile.name : "Drop your synopsis file here"}
-                    </h3>
-                    <p className="mt-1 text-sm text-neutral-medium">
-                      or{" "}
-                      <label className="text-primary font-medium cursor-pointer">
-                        browse
-                        <input
-                          type="file"
-                          className="hidden"
-                          onChange={handleFileInput}
-                          accept=".pdf,.doc,.docx,.ppt,.pptx"
-                        />
-                      </label>
-                    </p>
-                    <p className="mt-2 text-xs text-neutral-medium">
-                      Supports PDF, DOCX, DOC, PPTX, PPT files
-                    </p>
-                  </div>
-                </div>
+                <Tabs value={inputMethod} onValueChange={setInputMethod} className="mt-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="file">Upload File</TabsTrigger>
+                    <TabsTrigger value="text">Enter Text</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="file" className="mt-4">
+                    <div>
+                      <div
+                        className={`border-2 border-dashed rounded-lg p-6 text-center ${
+                          dragActive ? "border-primary bg-blue-50" : "border-neutral-light"
+                        }`}
+                        onDragEnter={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDragOver={handleDrag}
+                        onDrop={handleDrop}
+                      >
+                        <Upload className="mx-auto h-12 w-12 text-neutral-medium" />
+                        <h3 className="mt-2 text-sm font-medium text-neutral-dark">
+                          {selectedFile ? selectedFile.name : "Drop your synopsis file here"}
+                        </h3>
+                        <p className="mt-1 text-sm text-neutral-medium">
+                          or{" "}
+                          <label className="text-primary font-medium cursor-pointer">
+                            browse
+                            <input
+                              type="file"
+                              className="hidden"
+                              onChange={handleFileInput}
+                              accept=".pdf,.doc,.docx,.ppt,.pptx"
+                            />
+                          </label>
+                        </p>
+                        <p className="mt-2 text-xs text-neutral-medium">
+                          Supports PDF, DOCX, DOC, PPTX, PPT files
+                        </p>
+                      </div>
+                    </div>
 
-                {selectedFile && (
-                  <Alert>
-                    <FileText className="h-4 w-4" />
-                    <AlertTitle>File Selected</AlertTitle>
-                    <AlertDescription>
-                      {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
-                    </AlertDescription>
-                  </Alert>
-                )}
+                    {selectedFile && (
+                      <Alert className="mt-4">
+                        <FileText className="h-4 w-4" />
+                        <AlertTitle>File Selected</AlertTitle>
+                        <AlertDescription>
+                          {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="text" className="mt-4 space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="studyIdeaText"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Study Idea Description</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Describe your study idea or paste your synopsis text here..." 
+                              className="h-40 resize-none"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="additionalContext"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Additional Context</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Regulatory approval is expected on date ..., market access it expected in key markets on ....date" 
+                              className="h-24 resize-none"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                </Tabs>
 
                 <div className="border-t border-neutral-light pt-4 flex justify-end">
                   <Button type="button" variant="outline" className="mr-3">
