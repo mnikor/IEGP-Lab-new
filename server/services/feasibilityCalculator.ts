@@ -671,10 +671,28 @@ function calculateLoeData(
     }
   }
   
-  // Calculate time to LOE in months from now
+  // Calculate estimated data readout date based on timeline and FPI date
+  const estimatedDataReadoutDate = new Date(estimatedFpiDate.getTime());
+  
+  // Get the study duration from either the concept object or use the timeline value
+  // The concept object might have timelineMonths or timeline property depending on the structure
+  const studyDurationMonths = 
+    (concept as any).timelineMonths || 
+    (concept as any).timeline || 
+    timeline || 
+    24; // Default to 24 months if no timeline is available
+    
+  estimatedDataReadoutDate.setMonth(estimatedDataReadoutDate.getMonth() + studyDurationMonths);
+  
+  console.log("Estimated data readout date:", estimatedDataReadoutDate.toISOString());
+  
+  // Calculate time to LOE in months from data readout date (not current date)
+  // This represents the window of opportunity after having study results
   const timeToGlobalLoe = Math.max(0, 
-    Math.round((globalLoeDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24 * 30.5))
+    Math.round((globalLoeDate.getTime() - estimatedDataReadoutDate.getTime()) / (1000 * 60 * 60 * 24 * 30.5))
   );
+  
+  console.log("Time to LOE from data readout (months):", timeToGlobalLoe);
   
   // Calculate post-LOE value (0-1 scale, how much value remains after LOE)
   // Factors that increase post-LOE value:

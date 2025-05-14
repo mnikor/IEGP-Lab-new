@@ -148,11 +148,23 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
               </div>
             </div>
             <div className="space-y-2">
-              <div className="text-sm font-medium text-neutral-dark">Time Until LOE</div>
+              <div className="text-sm font-medium text-neutral-dark">Time Until LOE from Data Readout</div>
               <div className="flex items-center">
                 <Badge variant="outline" className={getLoeStatusColor()}>
                   {formatTimeToLoe(defaultTimeToLoe)}
                 </Badge>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Clock className="h-4 w-4 text-blue-500 ml-2" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="w-[240px] text-xs">
+                        This shows the time between study data readout and Loss of Exclusivity (LOE), representing the commercial window to leverage study results.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 {defaultTimeToLoe < 36 && (
                   <TooltipProvider>
                     <Tooltip>
