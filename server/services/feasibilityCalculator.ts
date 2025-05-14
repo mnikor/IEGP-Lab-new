@@ -648,9 +648,22 @@ function calculateLoeData(
         }
       }
       
+      // If user provided globalLoeDate, use that exact date for all regions
+      // Otherwise use the adjusted region-specific date
+      let regionLoeDateFormatted: string;
+      
+      if (requestData.globalLoeDate) {
+        // Extremely important: Use the user-provided global LOE date for ALL regions
+        regionLoeDateFormatted = globalLoeDate.toISOString().split('T')[0];
+        console.log(`Using user-provided globalLoeDate for ${region}:`, regionLoeDateFormatted);
+      } else {
+        // Only use region-specific date if no user input was provided
+        regionLoeDateFormatted = regionLoeDate.toISOString().split('T')[0];
+      }
+      
       regionalLoeData.push({
         region,
-        loeDate: regionLoeDate.toISOString().split('T')[0],
+        loeDate: regionLoeDateFormatted,
         hasPatentExtension: false,
         extensionPotential: requestData.hasPatentExtensionPotential || false,
         extensionMonths: requestData.hasPatentExtensionPotential ? 6 : undefined

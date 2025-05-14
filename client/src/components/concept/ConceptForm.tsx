@@ -472,18 +472,26 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                     <FormField
                       control={form.control}
                       name="globalLoeDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Global LOE Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <p className="text-xs text-neutral-medium mt-1">
-                            When will the drug lose patent exclusivity?
-                          </p>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        // Add debug logging to trace the LOE date value
+                        console.log("Form field globalLoeDate value:", field.value);
+                        return (
+                          <FormItem>
+                            <FormLabel>Global LOE Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} onChange={(e) => {
+                                field.onChange(e);
+                                // Add debug logging for date changes
+                                console.log("LOE date changed to:", e.target.value);
+                              }} />
+                            </FormControl>
+                            <p className="text-xs text-neutral-medium mt-1">
+                              When will the drug lose patent exclusivity?
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
                     
                     <FormField
