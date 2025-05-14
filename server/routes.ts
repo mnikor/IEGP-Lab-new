@@ -327,18 +327,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         extractedPico
       }, true);
       
-      // Make sure we have the current evidence field using the search results
-      // This ensures the multi-round search results are properly displayed
-      if (!validationResults.currentEvidence) {
-        validationResults.currentEvidence = {
-          summary: searchResults.content,
-          citations: searchResults.citations.map((citation, index) => ({
-            id: `${index + 1}`,
-            title: citation,
-            url: citation
-          }))
-        };
-      }
+      // Always override the current evidence field with the detailed multi-round search results
+      // This ensures all search rounds are properly displayed
+      console.log("Setting detailed evidence with search results length:", searchResults.content.length);
+      
+      // Extract sections from the content for better formatting
+      const sections = searchResults.content.split('## Search Round');
+      const formattedSummary = sections.length > 1 
+        ? sections.map(section => {
+            // For the first section (which doesn't have the prefix)
+            if (!section.includes('Clinical Evidence') && !section.includes('Regulatory Status')) {
+              return section;
+            }
+            // Make the section titles more prominent
+            return section.replace(/(\d+): (.*?)$/m, '**$1: $2**');
+          }).join('\n\n## Search Round')
+        : searchResults.content;
+      
+      validationResults.currentEvidence = {
+        summary: formattedSummary,
+        citations: searchResults.citations.map((citation, index) => ({
+          id: `${index + 1}`,
+          title: citation,
+          url: citation
+        }))
+      };
       
       // Step 5: Save the validation to the database
       const savedValidation = await storage.createSynopsisValidation({

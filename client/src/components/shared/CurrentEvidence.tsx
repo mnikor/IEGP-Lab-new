@@ -81,6 +81,10 @@ const CurrentEvidence: React.FC<CurrentEvidenceProps> = ({ currentEvidence, clas
                 className="whitespace-pre-line text-blue-700 prose prose-sm max-w-none prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1" 
                 dangerouslySetInnerHTML={{
                   __html: formatMarkdownTitles(currentEvidence.summary)
+                    // Format search round headers
+                    .replace(/##\s+Search\s+Round\s+(\d+):\s+([\w\s]+)/g, '<h3 class="text-base font-bold mt-4 mb-2 text-blue-800 border-b border-blue-200 pb-1">Search Round $1: $2</h3>')
+                    // Add some spacing between sections
+                    .replace(/<\/h3>/g, '</h3><div class="mb-2"></div>')
                 }} 
               />
             ) : (

@@ -98,11 +98,24 @@ export async function perplexityWebSearch(baseQuery: string, domains: string[] |
       searchQueries.map(query => performSingleSearch(query, domains))
     );
     
-    // Combine the results
+    // Combine the results with clear section formatting
     const combinedContent = searchResults.map((result, index) => {
-      return `## Search Round ${index + 1}: ${index === 0 ? 'Clinical Evidence' : 
-              index === 1 ? 'Regulatory Status' : 
-              index === 2 ? 'Competitive Landscape' : 'Recent Trials'}\n\n${result.content}\n\n`;
+      const sectionTitle = index === 0 ? 'Clinical Evidence' : 
+                           index === 1 ? 'Regulatory Status' : 
+                           index === 2 ? 'Competitive Landscape' : 'Recent Trials';
+      
+      // Format the content to highlight key points
+      const formattedContent = result.content
+        // Highlight study names
+        .replace(/\b(CHRYSALIS|PAPILLON|MARIPOSA|TATTON|INSIGHT)\b/g, '**$1**')
+        // Format citation references
+        .replace(/\[(\d+)\]/g, '[**$1**]')
+        // Make percentages and important metrics stand out
+        .replace(/(\d+(?:\.\d+)?)%/g, '**$1%**')
+        // Add bullets to lists if not already formatted
+        .replace(/^(?![\s*•\-])([\w])/gm, '• $1');
+      
+      return `## Search Round ${index + 1}: ${sectionTitle}\n\n${formattedContent}\n\n`;
     }).join('');
     
     // Consolidate citations, removing duplicates
