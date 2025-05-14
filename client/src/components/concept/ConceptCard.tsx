@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StudyConcept } from "@/lib/types";
+import { StudyConcept, strategicGoalLabels } from "@/lib/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
@@ -54,7 +54,9 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
         <div className="flex flex-wrap gap-2 mb-3">
           {concept.strategicGoals?.map((goal, index) => (
             <Badge key={index} variant="secondary" className="bg-blue-100 text-primary">
-              {goal.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+              {goal === "other" && concept.otherStrategicGoalText
+                ? `Other: ${concept.otherStrategicGoalText}`
+                : strategicGoalLabels[goal] || goal.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
             </Badge>
           ))}
         </div>

@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ValidationResults as ValidationResultsType } from "@/lib/types";
+import { ValidationResults as ValidationResultsType, strategicGoalLabels } from "@/lib/types";
 import PicoFramework from "@/components/shared/PicoFramework";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
 import FeasibilityDetails from "@/components/shared/FeasibilityDetails";
@@ -97,7 +97,9 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results }) => {
                 <div className="flex flex-wrap gap-2">
                   {results.strategicGoals.map((goal, index) => (
                     <Badge key={index} variant="secondary" className="bg-blue-100 text-primary">
-                      {goal.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                      {goal === "other" && results.otherStrategicGoalText
+                        ? `Other: ${results.otherStrategicGoalText}`
+                        : strategicGoalLabels[goal] || goal.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                     </Badge>
                   ))}
                 </div>
