@@ -24,7 +24,19 @@ const formSchema = z.object({
   drugName: z.string().min(1, "Drug name is required"),
   indication: z.string().min(1, "Indication is required"),
   // Strategic goals is now handled outside the form state
-  strategicGoals: z.array(z.enum(["expand_label", "defend_share", "accelerate_uptake", "real_world_evidence"])).min(1, "Please select at least one strategic goal"),
+  strategicGoals: z.array(z.enum([
+    "expand_label", 
+    "defend_market_share", 
+    "accelerate_uptake", 
+    "facilitate_market_access", 
+    "real_world_evidence", 
+    "dosing_optimization", 
+    "biomarker_validation", 
+    "safety_risk_management", 
+    "combination_extension", 
+    "other"
+  ])).min(1, "Please select at least one strategic goal"),
+  otherStrategicGoalText: z.string().optional(),
   studyPhasePref: z.enum(["I", "II", "III", "IV", "any"], {
     required_error: "Please select a study phase preference",
   }),
@@ -57,6 +69,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
   const { toast } = useToast();
   const [selectedGeographies, setSelectedGeographies] = useState<string[]>(["US", "EU"]);
   const [selectedStrategicGoals, setSelectedStrategicGoals] = useState<StrategicGoal[]>([]);
+  const [otherStrategicGoalText, setOtherStrategicGoalText] = useState<string>("");
   const [comparatorDrugs, setComparatorDrugs] = useState<string[]>(["Standard of Care"]);
   const [newComparatorDrug, setNewComparatorDrug] = useState<string>("");
   const [evidenceFiles, setEvidenceFiles] = useState<EvidenceFile[]>([]);
@@ -197,6 +210,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
       const requestData: GenerateConceptRequest = {
         ...values,
         strategicGoals: selectedStrategicGoals,
+        otherStrategicGoalText: selectedStrategicGoals.includes("other") ? otherStrategicGoalText : undefined,
         geography: selectedGeographies,
         comparatorDrugs: comparatorDrugs.length > 0 ? comparatorDrugs : undefined,
         currentEvidenceRefs: evidenceFiles.map(f => f.name),
