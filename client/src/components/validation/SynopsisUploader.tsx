@@ -181,7 +181,7 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
     if (inputMethod === "file" && !selectedFile) {
       toast({
         title: "No File Selected",
-        description: "Please upload a synopsis document to validate.",
+        description: "Please upload a study idea document to validate.",
         variant: "destructive",
       });
       return;
@@ -337,12 +337,12 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
 
       toast({
         title: "Validation Complete",
-        description: "Your synopsis has been successfully validated.",
+        description: "Your study idea has been successfully validated.",
       });
 
       onValidationSuccess(validationResults);
     } catch (error) {
-      console.error("Failed to validate synopsis:", error);
+      console.error("Failed to validate study idea:", error);
       toast({
         title: "Validation Failed",
         description: error instanceof Error ? error.message : "An unknown error occurred",
@@ -358,7 +358,7 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
       <div className="lg:col-span-2">
         <Card>
           <CardHeader>
-            <CardTitle>Study Synopsis Validation</CardTitle>
+            <CardTitle>Study Idea Validation</CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -707,7 +707,7 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
                       >
                         <Upload className="mx-auto h-12 w-12 text-neutral-medium" />
                         <h3 className="mt-2 text-sm font-medium text-neutral-dark">
-                          {selectedFile ? selectedFile.name : "Drop your synopsis file here"}
+                          {selectedFile ? selectedFile.name : "Drop your study idea file here"}
                         </h3>
                         <p className="mt-1 text-sm text-neutral-medium">
                           or{" "}
@@ -747,7 +747,7 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
                           <FormLabel>Study Idea Description</FormLabel>
                           <FormControl>
                             <Textarea 
-                              placeholder="Describe your study idea or paste your synopsis text here..." 
+                              placeholder="Describe your study idea or paste your study text here..." 
                               className="h-40 resize-none"
                               {...field} 
                             />
@@ -782,7 +782,7 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
                     Cancel
                   </Button>
                   <Button type="submit" disabled={isValidating}>
-                    {isValidating ? "Validating..." : "Validate Synopsis"}
+                    {isValidating ? "Validating..." : "Validate Study Idea"}
                   </Button>
                 </div>
               </form>
@@ -798,7 +798,7 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
           </CardHeader>
           <CardContent>
             <p className="text-sm text-neutral-medium mb-4">
-              The synopsis validator analyzes your study protocol against best practices and current evidence to identify areas for improvement.
+              The study idea validator analyzes your study protocol against best practices and current evidence to identify areas for improvement.
             </p>
             
             <div className="space-y-3">
