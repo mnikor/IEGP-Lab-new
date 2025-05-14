@@ -1,13 +1,29 @@
 // Common shared types for the application
 
-export type StrategicGoal = "expand_label" | "defend_share" | "accelerate_uptake" | "real_world_evidence";
+export type StrategicGoal = 
+  "expand_label" | 
+  "defend_market_share" | 
+  "accelerate_uptake" | 
+  "facilitate_market_access" | 
+  "real_world_evidence" | 
+  "dosing_optimization" | 
+  "biomarker_validation" | 
+  "safety_risk_management" | 
+  "combination_extension" | 
+  "other";
 
 // Strategic goal label mapping
 export const strategicGoalLabels: Record<StrategicGoal, string> = {
   "expand_label": "Expand Label",
-  "defend_share": "Defend Market Share",
+  "defend_market_share": "Defend Market Share",
   "accelerate_uptake": "Accelerate Uptake",
-  "real_world_evidence": "Real World Evidence"
+  "facilitate_market_access": "Facilitate Market Access",
+  "real_world_evidence": "Real World Evidence",
+  "dosing_optimization": "Dosing Optimization",
+  "biomarker_validation": "Biomarker Validation",
+  "safety_risk_management": "Safety Risk Management",
+  "combination_extension": "Combination Extension",
+  "other": "Other"
 };
 export type StudyPhase = "I" | "II" | "III" | "IV" | "any";
 
@@ -106,6 +122,7 @@ export interface StudyConcept {
   drugName: string;
   indication: string;
   strategicGoals: StrategicGoal[];
+  otherStrategicGoalText?: string;
   geography: string[];
   studyPhase: StudyPhase;
   targetSubpopulation?: string;
@@ -130,6 +147,7 @@ export interface GenerateConceptRequest {
   drugName: string;
   indication: string;
   strategicGoals: StrategicGoal[];
+  otherStrategicGoalText?: string;
   geography: string[];
   studyPhasePref: StudyPhase;
   currentEvidenceRefs?: string[];
