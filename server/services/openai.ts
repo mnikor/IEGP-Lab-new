@@ -274,7 +274,7 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
  */
 function buildValidationPrompt(data: any, searchResults: { content: string; citations: string[] }): string {
   return `
-  Analyze the provided clinical study synopsis and provide detailed validation feedback.
+  Analyze the provided clinical study synopsis and provide comprehensive, evidence-based validation feedback.
 
   # Study Parameters:
   - Drug: ${data.drugName}
@@ -290,8 +290,22 @@ function buildValidationPrompt(data: any, searchResults: { content: string; cita
   - Comparator: ${data.extractedPico.comparator}
   - Outcomes: ${data.extractedPico.outcomes}
 
-  # Current Evidence:
+  # Current Evidence from Perplexity Search:
   ${searchResults.content}
+
+  ## Citations:
+  ${searchResults.citations.map((citation, index) => `${index + 1}. ${citation}`).join('\n')}
+
+  ## Validation Guidelines:
+  1. Assess the study's METHODOLOGICAL RIGOR using evidence-based criteria
+  2. Evaluate the SCIENTIFIC VALIDITY and CLINICAL RELEVANCE of the proposed outcomes
+  3. Analyze the FEASIBILITY of the study design and recruitment strategy
+  4. Determine if the study ALIGNS with the strategic goal of "${data.strategicGoal.replace('_', ' ')}"
+  5. Provide detailed ECONOMIC ANALYSIS with cost projections, timeline estimates, and ROI calculations
+  6. Perform a comprehensive SWOT ANALYSIS based on the current evidence
+  7. Calculate MCDA SCORES to provide an objective assessment of the study's quality
+  8. Identify potential SAMPLE SIZE issues and provide recommendations
+  9. Evaluate the proposed TIMELINE for realism and suggest optimizations
 
   Respond with a JSON object containing:
   1. "title": A descriptive title for this validation report
@@ -300,6 +314,17 @@ function buildValidationPrompt(data: any, searchResults: { content: string; cita
   4. "riskFlags": Array of identified risks, each with "category", "description", "severity" ("high", "medium", "low"), and "mitigation" fields
   5. "revisedEconomics": Object with "originalCost" (if found, otherwise null), "revisedCost", "originalTimeline" (if found, otherwise null), "revisedTimeline", "originalROI" (if found, otherwise null), "revisedROI", and "notes" fields
   6. "swotAnalysis": Object with "strengths", "weaknesses", "opportunities", and "threats" arrays
+  7. "mcdaScores": Object with "scientificValidity", "clinicalImpact", "commercialValue", "feasibility", and "overall" numeric scores (1-5 scale)
+  8. "feasibilityData": Object containing detailed feasibility metrics similar to the concept generation output, including:
+     - "sampleSize": Recommended sample size (number)
+     - "sampleSizeJustification": Text explaining the sample size recommendation
+     - "numberOfSites": Recommended number of sites (number)
+     - "numberOfCountries": Recommended number of countries (number)
+     - "recruitmentPeriodMonths": Expected recruitment period in months (number)
+     - "followUpPeriodMonths": Expected follow-up period in months (number)
+     - "dropoutRate": Expected dropout rate (number between 0-1)
+     - "complexityFactor": Study complexity factor (number between 0-1)
+  9. "currentEvidence": Object with "summary" containing a concise summary of the current evidence, and "citations" array with objects containing "id", "url", and "title" fields
 
-  Be critical but constructive. Focus on scientific validity, methodological rigor, feasibility, and alignment with the strategic goal.`;
+  Be critical but constructive. Focus on scientific validity, methodological rigor, feasibility, and alignment with the strategic goal. Provide specific, actionable feedback that would improve the study design.`;
 }
