@@ -206,15 +206,15 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
     postLoeValue: loeData.postLoeValue,
     estimatedFpiDate: requestData.anticipatedFpiDate || loeData.estimatedFpiDate,
     
-    // Cost breakdown with realistic default values for UI
-    siteCosts: Math.round(totalSites * siteSetupCost),
-    personnelCosts: Math.round(estimatedCost * 0.3),  // 30% personnel costs
-    materialCosts: Math.round(estimatedCost * 0.15),  // 15% material costs
-    monitoringCosts: Math.round(estimatedCost * 0.2), // 20% monitoring costs 
-    dataCosts: Math.round(estimatedCost * 0.15),      // 15% data management costs
-    regulatoryCosts: Math.round(regulatoryCost),      // Regulatory costs
-    dropoutRate: 0,
-    complexityFactor: 0
+    // Cost breakdown with MINIMUM values to ensure no zero values
+    siteCosts: Math.max(10000, Math.round(totalSites * siteSetupCost)),
+    personnelCosts: Math.max(15000, Math.round(estimatedCost * 0.3)),  // 30% personnel costs
+    materialCosts: Math.max(5000, Math.round(estimatedCost * 0.15)),   // 15% material costs
+    monitoringCosts: Math.max(8000, Math.round(estimatedCost * 0.2)),  // 20% monitoring costs 
+    dataCosts: Math.max(5000, Math.round(estimatedCost * 0.15)),       // 15% data management costs
+    regulatoryCosts: Math.max(5000, Math.round(regulatoryCost)),       // Regulatory costs
+    dropoutRate: 0.13, // Default realistic dropout rate
+    complexityFactor: 0.65 // Default complexity factor
   };
   
   // Create concept with initial feasibility data for calculations
@@ -258,17 +258,17 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   }
   
   // Ensure site costs are reasonable (minimum value)
-  const siteCosts = Math.max(1000, Math.round(totalSites * siteSetupCost));
-  const regulatoryCosts = Math.max(500, Math.round(regulatoryCost));
+  const siteCosts = Math.max(10000, Math.round(totalSites * siteSetupCost));
+  const regulatoryCosts = Math.max(10000, Math.round(regulatoryCost));
   
   // Calculate other costs as percentages of the remaining budget after site and regulatory costs
   const remainingBudget = Math.max(5000, totalCost - siteCosts - regulatoryCosts);
   
   // Ensure each cost component is at least a minimum reasonable value to avoid showing zeros
-  const personnelCosts = Math.max(1000, Math.round(remainingBudget * personnelPct));
-  const materialCosts = Math.max(500, Math.round(remainingBudget * materialPct)); 
-  const monitoringCosts = Math.max(500, Math.round(remainingBudget * monitoringPct));
-  const dataCosts = Math.max(500, Math.round(remainingBudget * dataPct));
+  const personnelCosts = Math.max(15000, Math.round(remainingBudget * personnelPct));
+  const materialCosts = Math.max(5000, Math.round(remainingBudget * materialPct)); 
+  const monitoringCosts = Math.max(8000, Math.round(remainingBudget * monitoringPct));
+  const dataCosts = Math.max(5000, Math.round(remainingBudget * dataPct));
   
   // Risk factors
   const dropoutRate = Math.min(0.3, 0.1 + (completionRisk * 0.2)); // 10-30% dropout rate
@@ -685,7 +685,24 @@ function calculateLoeData(
     timeline || 
     24; // Default to 24 months if no timeline is available
     
-  estimatedDataReadoutDate.setMonth(estimatedDataReadoutDate.getMonth() + studyDurationMonths);
+  // Data readout typically happens earlier than final study completion
+  // For most studies, primary endpoint readout occurs at:
+  // - Phase 1: At study completion
+  // - Phase 2: 2/3 of the way through the study
+  // - Phase 3: 3/4 of the way through the study
+  // - Phase 4: 3/4 of the way through the study
+  let primaryEndpointReadoutFactor = 1.0; // Default: at completion
+  
+  const studyPhase = concept.studyPhase || 'any';
+  if (studyPhase === 'II') {
+    primaryEndpointReadoutFactor = 0.67; // 2/3 through study
+  } else if (studyPhase === 'III' || studyPhase === 'IV') {
+    primaryEndpointReadoutFactor = 0.75; // 3/4 through study
+  }
+  
+  // Apply the readout factor to the study duration
+  const dataReadoutMonths = Math.round(studyDurationMonths * primaryEndpointReadoutFactor);
+  estimatedDataReadoutDate.setMonth(estimatedFpiDate.getMonth() + dataReadoutMonths);
   
   console.log("Estimated data readout date:", estimatedDataReadoutDate.toISOString());
   
