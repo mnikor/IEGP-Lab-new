@@ -126,9 +126,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }))
         };
         
+        // Make sure we explicitly include the globalLoeDate in the resulting concept object
         return {
           ...concept,
-          feasibilityData,
+          // Ensure the user-specified globalLoeDate is properly preserved
+          globalLoeDate: data.globalLoeDate,
+          feasibilityData: {
+            ...feasibilityData,
+            // Ensure the timeToLoe value is correctly set from data readout to LOE
+            timeToLoe: feasibilityData.timeToLoe,
+            // Make sure the globalLoeDate is preserved in the feasibilityData
+            globalLoeDate: data.globalLoeDate || feasibilityData.globalLoeDate
+          },
           mcdaScores,
           swotAnalysis,
           currentEvidence

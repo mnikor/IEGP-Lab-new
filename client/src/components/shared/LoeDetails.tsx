@@ -53,22 +53,13 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
     console.log('Using default LOE date:', formattedLoeDate);
   }
   
-  // Default time to LOE (in months)
-  const defaultTimeToLoe = timeToLoe || (defaultLoeYears * 12);
+  // Time to LOE (in months)
+  // IMPORTANT: Always prioritize the calculated timeToLoe value from the backend
+  // This value is already calculated from data readout to LOE date
+  console.log('Time to LOE value received from backend:', timeToLoe);
   
-  // Default post-LOE value (percentage)
-  const safePostLoeValue = postLoeValue !== undefined && !isNaN(postLoeValue) ? 
-    postLoeValue : 0.2; // Default to 20%
-
-  // IMPORTANT: Always prioritize the estimatedFpiDate from feasibilityData
-  // This is the date that was either provided by the user or calculated in the backend
-  const defaultFpiDate = estimatedFpiDate || new Date(
-    today.getFullYear(),
-    today.getMonth() + 12,
-    today.getDate()
-  ).toISOString().split('T')[0];
-  
-  // Calculate an estimated data readout date based on FPI date
+  // Calculate an estimated data readout date based on FPI date first
+  // This needs to be moved up because it's used in the time to LOE calculation
   // Default to 24 months study duration if not specified
   const studyDuration = 24; // months
   const estimatedReadoutDate = estimatedFpiDate ? 
@@ -82,6 +73,37 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
       date.setMonth(date.getMonth() + studyDuration);
       return date.toISOString().split('T')[0];
     })();
+    
+  // Only use the default calculation if no timeToLoe is provided
+  const defaultTimeToLoe = timeToLoe !== undefined && !isNaN(timeToLoe) 
+    ? timeToLoe 
+    : (() => {
+        // Calculate months between estimated readout date and LOE date as fallback
+        try {
+          const readoutDate = new Date(estimatedReadoutDate);
+          const loeDate = new Date(formattedLoeDate);
+          const diffMonths = Math.max(0, 
+            Math.round((loeDate.getTime() - readoutDate.getTime()) / (1000 * 60 * 60 * 24 * 30.5))
+          );
+          console.log('Calculated fallback time to LOE (months):', diffMonths);
+          return diffMonths;
+        } catch (e) {
+          console.error('Error calculating time to LOE:', e);
+          return defaultLoeYears * 12; // Last resort fallback
+        }
+      })();
+  
+  // Default post-LOE value (percentage)
+  const safePostLoeValue = postLoeValue !== undefined && !isNaN(postLoeValue) ? 
+    postLoeValue : 0.2; // Default to 20%
+
+  // IMPORTANT: Always prioritize the estimatedFpiDate from feasibilityData
+  // This is the date that was either provided by the user or calculated in the backend
+  const defaultFpiDate = estimatedFpiDate || new Date(
+    today.getFullYear(),
+    today.getMonth() + 12,
+    today.getDate()
+  ).toISOString().split('T')[0];
   
   // Log for debugging
   console.log('LoeDetails using estimatedFpiDate:', estimatedFpiDate, 
