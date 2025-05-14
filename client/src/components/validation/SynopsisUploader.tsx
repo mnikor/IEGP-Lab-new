@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ValidationResults } from "@/lib/types";
+import { ValidationResults, StrategicGoal, strategicGoalLabels } from "@/lib/types";
 import { Upload, FileText, AlertCircle, X, UploadCloud } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -24,9 +24,7 @@ interface SynopsisUploaderProps {
 const formSchema = z.object({
   drugName: z.string().min(1, "Drug name is required"),
   indication: z.string().min(1, "Indication is required"),
-  strategicGoal: z.enum(["expand_label", "defend_share", "accelerate_uptake", "real_world_evidence"], {
-    required_error: "Please select a strategic goal",
-  }),
+  strategicGoals: z.array(z.enum(["expand_label", "defend_share", "accelerate_uptake", "real_world_evidence"])).min(1, "Please select at least one strategic goal"),
   studyIdeaText: z.string().optional(),
   additionalContext: z.string().optional(),
   
@@ -59,15 +57,27 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
   
   // Geography handling
   const [selectedGeographies, setSelectedGeographies] = useState<string[]>(["US", "EU"]);
+  const [selectedStrategicGoals, setSelectedStrategicGoals] = useState<StrategicGoal[]>([]);
   const [comparatorDrugs, setComparatorDrugs] = useState<string[]>(["Standard of Care"]);
   const [newComparatorDrug, setNewComparatorDrug] = useState<string>("");
+  
+  // Strategic goals handling
+  const addStrategicGoal = (goal: StrategicGoal) => {
+    if (!selectedStrategicGoals.includes(goal)) {
+      setSelectedStrategicGoals([...selectedStrategicGoals, goal]);
+    }
+  };
+  
+  const removeStrategicGoal = (goal: StrategicGoal) => {
+    setSelectedStrategicGoals(selectedStrategicGoals.filter(g => g !== goal));
+  };
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       drugName: "",
       indication: "",
-      strategicGoal: undefined,
+      strategicGoals: [],
       studyIdeaText: "",
       additionalContext: "",
       studyPhasePref: "any",
@@ -340,29 +350,46 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="strategicGoal"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Strategic Goal</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a strategic goal" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="expand_label">Expand Label</SelectItem>
-                          <SelectItem value="defend_share">Defend Market Share</SelectItem>
-                          <SelectItem value="accelerate_uptake">Accelerate Uptake</SelectItem>
-                          <SelectItem value="real_world_evidence">Real World Evidence</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
+                <div>
+                  <FormLabel>Strategic Goals</FormLabel>
+                  <div className="flex flex-wrap gap-2 mt-1 mb-2">
+                    {selectedStrategicGoals.map(goal => (
+                      <Badge key={goal} variant="secondary" className="bg-blue-100 text-primary hover:bg-blue-200">
+                        {strategicGoalLabels[goal]}
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-4 w-4 p-0 ml-1 text-blue-500 hover:text-blue-700 hover:bg-transparent"
+                          onClick={() => removeStrategicGoal(goal)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                    <Select 
+                      onValueChange={(value) => addStrategicGoal(value as StrategicGoal)}
+                      value=""
+                    >
+                      <SelectTrigger className="w-auto border-dashed">
+                        <span className="text-xs">+ Add</span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(strategicGoalLabels) as StrategicGoal[])
+                          .filter(goal => !selectedStrategicGoals.includes(goal))
+                          .map(goal => (
+                            <SelectItem key={goal} value={goal}>
+                              {strategicGoalLabels[goal]}
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {selectedStrategicGoals.length === 0 && (
+                    <p className="text-sm text-destructive">Please select at least one strategic goal</p>
                   )}
-                />
+                </div>
                 
                 <div>
                   <FormLabel>Geography</FormLabel>

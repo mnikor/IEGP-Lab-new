@@ -282,29 +282,46 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="strategicGoal"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Strategic Goal</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a strategic goal" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="expand_label">Expand Label</SelectItem>
-                          <SelectItem value="defend_share">Defend Market Share</SelectItem>
-                          <SelectItem value="accelerate_uptake">Accelerate Uptake</SelectItem>
-                          <SelectItem value="real_world_evidence">Real World Evidence</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
+                <div>
+                  <FormLabel>Strategic Goals</FormLabel>
+                  <div className="flex flex-wrap gap-2 mt-1 mb-2">
+                    {selectedStrategicGoals.map(goal => (
+                      <Badge key={goal} variant="secondary" className="bg-blue-100 text-primary hover:bg-blue-200">
+                        {strategicGoalLabels[goal]}
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-4 w-4 p-0 ml-1 text-blue-500 hover:text-blue-700 hover:bg-transparent"
+                          onClick={() => removeStrategicGoal(goal)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                    <Select 
+                      onValueChange={(value) => addStrategicGoal(value as StrategicGoal)}
+                      value=""
+                    >
+                      <SelectTrigger className="w-auto border-dashed">
+                        <span className="text-xs">+ Add</span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(strategicGoalLabels) as StrategicGoal[])
+                          .filter(goal => !selectedStrategicGoals.includes(goal))
+                          .map(goal => (
+                            <SelectItem key={goal} value={goal}>
+                              {strategicGoalLabels[goal]}
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {selectedStrategicGoals.length === 0 && (
+                    <p className="text-sm text-destructive">Please select at least one strategic goal</p>
                   )}
-                />
+                </div>
 
                 <div>
                   <FormLabel>Geography</FormLabel>
