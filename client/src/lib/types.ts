@@ -1,6 +1,14 @@
 // Common shared types for the application
 
 export type StrategicGoal = "expand_label" | "defend_share" | "accelerate_uptake" | "real_world_evidence";
+
+// Strategic goal label mapping
+export const strategicGoalLabels: Record<StrategicGoal, string> = {
+  "expand_label": "Expand Label",
+  "defend_share": "Defend Market Share",
+  "accelerate_uptake": "Accelerate Uptake",
+  "real_world_evidence": "Real World Evidence"
+};
 export type StudyPhase = "I" | "II" | "III" | "IV" | "any";
 
 export interface PicoData {

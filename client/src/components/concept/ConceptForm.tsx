@@ -11,7 +11,7 @@ import { X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { EvidenceUploader } from "@/components/shared/EvidenceUploader";
-import { StudyConcept, EvidenceFile, GenerateConceptRequest } from "@/lib/types";
+import { StudyConcept, EvidenceFile, GenerateConceptRequest, StrategicGoal, strategicGoalLabels } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ConceptFormProps {
@@ -23,9 +23,8 @@ interface ConceptFormProps {
 const formSchema = z.object({
   drugName: z.string().min(1, "Drug name is required"),
   indication: z.string().min(1, "Indication is required"),
-  strategicGoal: z.enum(["expand_label", "defend_share", "accelerate_uptake", "real_world_evidence"], {
-    required_error: "Please select a strategic goal",
-  }),
+  // Strategic goals is now handled outside the form state
+  strategicGoals: z.array(z.enum(["expand_label", "defend_share", "accelerate_uptake", "real_world_evidence"])).min(1, "Please select at least one strategic goal"),
   studyPhasePref: z.enum(["I", "II", "III", "IV", "any"], {
     required_error: "Please select a study phase preference",
   }),
@@ -57,6 +56,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
 }) => {
   const { toast } = useToast();
   const [selectedGeographies, setSelectedGeographies] = useState<string[]>(["US", "EU"]);
+  const [selectedStrategicGoals, setSelectedStrategicGoals] = useState<StrategicGoal[]>([]);
   const [comparatorDrugs, setComparatorDrugs] = useState<string[]>(["Standard of Care"]);
   const [newComparatorDrug, setNewComparatorDrug] = useState<string>("");
   const [evidenceFiles, setEvidenceFiles] = useState<EvidenceFile[]>([]);
@@ -67,7 +67,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
     defaultValues: {
       drugName: "",
       indication: "",
-      strategicGoal: undefined,
+      strategicGoals: [],
       studyPhasePref: "any",
       targetSubpopulation: "",
       budgetCeilingEur: undefined,
@@ -99,6 +99,17 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
   const removeGeography = (geo: string) => {
     setSelectedGeographies(selectedGeographies.filter(g => g !== geo));
   };
+  
+  // Strategic goals functions
+  const addStrategicGoal = (goal: StrategicGoal) => {
+    if (!selectedStrategicGoals.includes(goal)) {
+      setSelectedStrategicGoals([...selectedStrategicGoals, goal]);
+    }
+  };
+
+  const removeStrategicGoal = (goal: StrategicGoal) => {
+    setSelectedStrategicGoals(selectedStrategicGoals.filter(g => g !== goal));
+  };
 
   const handleEvidenceUpload = (files: EvidenceFile[]) => {
     setEvidenceFiles([...evidenceFiles, ...files]);
@@ -117,6 +128,15 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
       toast({
         title: "Validation Error",
         description: "Please select at least one geography",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (selectedStrategicGoals.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one strategic goal",
         variant: "destructive",
       });
       return;
@@ -176,6 +196,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
         
       const requestData: GenerateConceptRequest = {
         ...values,
+        strategicGoals: selectedStrategicGoals,
         geography: selectedGeographies,
         comparatorDrugs: comparatorDrugs.length > 0 ? comparatorDrugs : undefined,
         currentEvidenceRefs: evidenceFiles.map(f => f.name),
