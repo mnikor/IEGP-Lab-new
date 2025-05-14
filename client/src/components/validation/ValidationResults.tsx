@@ -6,6 +6,7 @@ import PicoFramework from "@/components/shared/PicoFramework";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
 import FeasibilityDetails from "@/components/shared/FeasibilityDetails";
 import CurrentEvidence from "@/components/shared/CurrentEvidence";
+import LoeDetails from "@/components/shared/LoeDetails";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
 import { AlertTriangle, ArrowRight, CheckCircle, Download, FileDown, Info as InfoIcon } from "lucide-react";
@@ -332,9 +333,31 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results }) => {
 
           {/* Feasibility Details (if available) */}
           {results.feasibilityData && (
-            <div>
+            <div className="mb-6">
               <h3 className="text-md font-medium text-neutral-dark mb-3">Feasibility Analysis</h3>
               <FeasibilityDetails feasibilityData={results.feasibilityData} />
+            </div>
+          )}
+          
+          {/* LOE Details (if available) */}
+          {results.feasibilityData && (
+            <div className="mb-6">
+              <h3 className="text-md font-medium text-neutral-dark mb-3">Timeline & Patent Exclusivity</h3>
+              <LoeDetails 
+                globalLoeDate={results.globalLoeDate || results.feasibilityData?.globalLoeDate}
+                regionalLoeData={results.feasibilityData?.regionalLoeData}
+                timeToLoe={results.timeToLoe || results.feasibilityData?.timeToLoe}
+                postLoeValue={results.feasibilityData?.postLoeValue}
+                estimatedFpiDate={results.feasibilityData?.estimatedFpiDate}
+              />
+            </div>
+          )}
+          
+          {/* Current Evidence (if available) */}
+          {results.currentEvidence && (
+            <div className="mb-6">
+              <h3 className="text-md font-medium text-neutral-dark mb-3">Current Evidence</h3>
+              <CurrentEvidence currentEvidence={results.currentEvidence} />
             </div>
           )}
         </div>
