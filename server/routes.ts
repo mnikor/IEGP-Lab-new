@@ -132,11 +132,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }))
         };
         
-        // Make sure we explicitly include the globalLoeDate in the resulting concept object
+        // Make sure we explicitly include the globalLoeDate and timeToLoe in the resulting concept object
         return {
           ...concept,
-          // Ensure the user-specified globalLoeDate is properly preserved
+          // Ensure the user-specified globalLoeDate is properly preserved at the top level
           globalLoeDate: data.globalLoeDate,
+          // Also ensure the timeToLoe value is preserved at the top level
+          timeToLoe: feasibilityData.timeToLoe,
           feasibilityData: {
             ...feasibilityData,
             // Ensure the timeToLoe value is correctly set from data readout to LOE

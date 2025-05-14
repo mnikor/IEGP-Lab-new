@@ -30,6 +30,9 @@ export const studyConcepts = pgTable("study_concepts", {
   salesImpactThreshold: real("sales_impact_threshold"),
   knowledgeGapAddressed: text("knowledge_gap_addressed"),
   innovationJustification: text("innovation_justification"),
+  // Adding explicit LOE fields at the study concept level (top level) for easier access
+  globalLoeDate: text("global_loe_date"),
+  timeToLoe: integer("time_to_loe"),
   picoData: json("pico_data").notNull(),
   mcdaScores: json("mcda_scores").notNull(),
   swotAnalysis: json("swot_analysis").notNull(),
