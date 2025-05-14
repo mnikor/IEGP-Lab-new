@@ -37,6 +37,7 @@ const formSchema = z.object({
     "other"
   ])).min(1, "Please select at least one strategic goal"),
   otherStrategicGoalText: z.string().optional(),
+  additionalContext: z.string().optional(),
   studyPhasePref: z.enum(["I", "II", "III", "IV", "any"], {
     required_error: "Please select a study phase preference",
   }),
@@ -81,6 +82,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
       drugName: "",
       indication: "",
       strategicGoals: [],
+      additionalContext: "",
       studyPhasePref: "any",
       targetSubpopulation: "",
       budgetCeilingEur: undefined,
