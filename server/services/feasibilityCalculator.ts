@@ -551,18 +551,34 @@ function calculateLoeData(
   // (includes protocol development, site selection, contracts, IRB approvals, site activation)
   let estimatedFpiDate: Date;
   
-  if (requestData.anticipatedFpiDate) {
-    // Use user-provided FPI date if available
+  if (requestData.anticipatedFpiDate && requestData.anticipatedFpiDate.trim() !== '') {
+    // Use user-provided FPI date if available and not empty
     console.log("Using user-provided FPI date:", requestData.anticipatedFpiDate);
-    estimatedFpiDate = new Date(requestData.anticipatedFpiDate);
+    
+    try {
+      // Make sure we're properly parsing the date string in ISO format (YYYY-MM-DD)
+      estimatedFpiDate = new Date(requestData.anticipatedFpiDate + 'T00:00:00Z');
+      
+      // Verify the date is valid
+      if (isNaN(estimatedFpiDate.getTime())) {
+        console.error("Invalid date format from anticipatedFpiDate:", requestData.anticipatedFpiDate);
+        // Fall back to default if the date is invalid
+        estimatedFpiDate = new Date(currentDate.getTime());
+        estimatedFpiDate.setMonth(currentDate.getMonth() + 12);
+      }
+    } catch (e) {
+      console.error("Error parsing anticipatedFpiDate:", e);
+      // Fall back to default on error
+      estimatedFpiDate = new Date(currentDate.getTime());
+      estimatedFpiDate.setMonth(currentDate.getMonth() + 12);
+    }
   } else {
     // Realistic default: 12 months from now for study startup
     console.log("No user-provided FPI date, using default 12 months from now");
     estimatedFpiDate = new Date(currentDate.getTime());
-    estimatedFpiDate.setMonth(currentDate.getMonth() +
-     12);
+    estimatedFpiDate.setMonth(currentDate.getMonth() + 12);
   }
-  console.log("Final estimatedFpiDate:", estimatedFpiDate);
+  console.log("Final estimatedFpiDate:", estimatedFpiDate, "ISO String:", estimatedFpiDate.toISOString());
   
   // Default LOE to 10 years from now if not provided
   let globalLoeDate: Date = new Date(currentDate.getTime());

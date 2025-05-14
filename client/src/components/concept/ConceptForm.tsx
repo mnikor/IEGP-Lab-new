@@ -155,13 +155,35 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
         }
       }
       
+      // Log the date value before sending
+      console.log("Form anticipatedFpiDate value:", values.anticipatedFpiDate);
+      
+      // Normalize the date format - ensure it's in ISO format
+      let formattedFpiDate = values.anticipatedFpiDate;
+      if (formattedFpiDate && formattedFpiDate.trim() !== '') {
+        // Create a Date object and get the ISO date (YYYY-MM-DD)
+        try {
+          const dateObj = new Date(formattedFpiDate);
+          if (!isNaN(dateObj.getTime())) {
+            formattedFpiDate = dateObj.toISOString().split('T')[0];
+            console.log("Normalized FPI date format:", formattedFpiDate);
+          }
+        } catch (e) {
+          console.error("Error formatting FPI date:", e);
+        }
+      }
+      
       const requestData: GenerateConceptRequest = {
         ...values,
         geography: selectedGeographies,
         comparatorDrugs: comparatorDrugs.length > 0 ? comparatorDrugs : undefined,
         currentEvidenceRefs: evidenceFiles.map(f => f.name),
         regionalLoeDates: values.globalLoeDate ? processedRegionalLoeDates : undefined,
+        anticipatedFpiDate: formattedFpiDate,
       };
+      
+      // Log the final request data
+      console.log("Final request data:", requestData);
 
       const response = await apiRequest("POST", "/api/study-concepts/generate", requestData);
       const conceptsData = await response.json();

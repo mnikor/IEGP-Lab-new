@@ -67,6 +67,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = validationResult.data;
       
+      // Log the incoming request data to debug anticipatedFpiDate
+      console.log("Received request with anticipatedFpiDate:", data.anticipatedFpiDate);
+      
       // Step 1: Perform web search using Perplexity API to gather evidence
       const isOncology = (data.indication || '').toLowerCase().includes('cancer') || 
                          (data.indication || '').toLowerCase().includes('oncol') ||
