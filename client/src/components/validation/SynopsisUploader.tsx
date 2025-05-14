@@ -55,7 +55,12 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState<boolean>(false);
   const [inputMethod, setInputMethod] = useState<string>("file");
-
+  
+  // Geography handling
+  const [selectedGeographies, setSelectedGeographies] = useState<string[]>(["US", "EU"]);
+  const [comparatorDrugs, setComparatorDrugs] = useState<string[]>(["Standard of Care"]);
+  const [newComparatorDrug, setNewComparatorDrug] = useState<string>("");
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -64,10 +69,8 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
       strategicGoal: undefined,
       studyIdeaText: "",
       additionalContext: "",
-      geography: ["US", "EU"],
-      studyPhasePref: undefined,
+      studyPhasePref: "any",
       targetSubpopulation: "",
-      comparatorDrugs: [],
       budgetCeilingEur: undefined,
       timelineCeilingMonths: undefined,
       salesImpactThreshold: undefined,
@@ -76,6 +79,29 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
       hasPatentExtensionPotential: false,
     },
   });
+  
+  // Geography handling functions
+  const addGeography = (geo: string) => {
+    if (!selectedGeographies.includes(geo)) {
+      setSelectedGeographies([...selectedGeographies, geo]);
+    }
+  };
+
+  const removeGeography = (geo: string) => {
+    setSelectedGeographies(selectedGeographies.filter(g => g !== geo));
+  };
+  
+  // Comparator drug handling functions
+  const addComparatorDrug = () => {
+    if (newComparatorDrug.trim() && !comparatorDrugs.includes(newComparatorDrug.trim())) {
+      setComparatorDrugs([...comparatorDrugs, newComparatorDrug.trim()]);
+      setNewComparatorDrug("");
+    }
+  };
+  
+  const removeComparatorDrug = (drug: string) => {
+    setComparatorDrugs(comparatorDrugs.filter(d => d !== drug));
+  };
 
   const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -146,9 +172,36 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
       });
       return;
     }
+    
+    // Check for geography selection
+    if (selectedGeographies.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one geography",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setIsValidating(true);
+      
+      // Format dates properly
+      let formattedFpiDate = values.anticipatedFpiDate;
+      if (formattedFpiDate && formattedFpiDate.trim() !== '') {
+        try {
+          const dateObj = new Date(formattedFpiDate);
+          if (!isNaN(dateObj.getTime())) {
+            formattedFpiDate = dateObj.toISOString().split('T')[0];
+          }
+        } catch (e) {
+          console.error("Error formatting FPI date:", e);
+        }
+      }
+      
+      // Ensure LOE date is in correct format
+      const formattedGlobalLoeDate = values.globalLoeDate ? 
+        new Date(values.globalLoeDate).toISOString().split('T')[0] : undefined;
 
       // Create a FormData object to send the data
       const formData = new FormData();
@@ -158,21 +211,62 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
         formData.append('file', selectedFile);
       }
       
-      // Always append these form fields
+      // Always append basic form fields
       formData.append('drugName', values.drugName);
       formData.append('indication', values.indication);
       formData.append('strategicGoal', values.strategicGoal);
       
       // For text input method, ensure studyIdeaText is sent
       if (inputMethod === "text") {
-        console.log("Sending study idea text:", values.studyIdeaText);
         formData.append('studyIdeaText', values.studyIdeaText || '');
       } else {
         formData.append('studyIdeaText', '');
       }
       
-      // Always send additional context if provided
+      // Send additional context
       formData.append('additionalContext', values.additionalContext || '');
+      
+      // Append geographies
+      selectedGeographies.forEach(geo => {
+        formData.append('geography[]', geo);
+      });
+      
+      // Append study phase preference
+      formData.append('studyPhasePref', values.studyPhasePref || 'any');
+      
+      // Append target subpopulation if provided
+      if (values.targetSubpopulation) {
+        formData.append('targetSubpopulation', values.targetSubpopulation);
+      }
+      
+      // Append comparator drugs
+      comparatorDrugs.forEach(drug => {
+        formData.append('comparatorDrugs[]', drug);
+      });
+      
+      // Append budget constraints if provided
+      if (values.budgetCeilingEur) {
+        formData.append('budgetCeilingEur', values.budgetCeilingEur.toString());
+      }
+      
+      if (values.timelineCeilingMonths) {
+        formData.append('timelineCeilingMonths', values.timelineCeilingMonths.toString());
+      }
+      
+      if (values.salesImpactThreshold) {
+        formData.append('salesImpactThreshold', values.salesImpactThreshold.toString());
+      }
+      
+      // Append timeline and LOE information
+      if (formattedFpiDate) {
+        formData.append('anticipatedFpiDate', formattedFpiDate);
+      }
+      
+      if (formattedGlobalLoeDate) {
+        formData.append('globalLoeDate', formattedGlobalLoeDate);
+      }
+      
+      formData.append('hasPatentExtensionPotential', values.hasPatentExtensionPotential ? 'true' : 'false');
 
       // Make the API call
       const response = await fetch('/api/synopsis-validations/validate', {
@@ -268,6 +362,93 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
                     </FormItem>
                   )}
                 />
+                
+                <div>
+                  <FormLabel>Geography</FormLabel>
+                  <div className="flex flex-wrap gap-2 mt-1 mb-2">
+                    {selectedGeographies.map(geo => (
+                      <Badge key={geo} variant="secondary" className="bg-blue-100 text-primary hover:bg-blue-200">
+                        {geo}
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-4 w-4 p-0 ml-1 text-blue-500 hover:text-blue-700 hover:bg-transparent"
+                          onClick={() => removeGeography(geo)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                    <Select onValueChange={(value) => addGeography(value)}>
+                      <SelectTrigger className="w-auto border-dashed">
+                        <span className="text-xs">+ Add</span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[
+                          { code: "US", name: "United States" },
+                          { code: "EU", name: "European Union" },
+                          { code: "JP", name: "Japan" },
+                          { code: "CN", name: "China" },
+                          { code: "UK", name: "United Kingdom" },
+                          { code: "CA", name: "Canada" },
+                          { code: "AU", name: "Australia" },
+                          { code: "BR", name: "Brazil" },
+                        ]
+                          .filter(g => !selectedGeographies.includes(g.code))
+                          .map(geo => (
+                            <SelectItem key={geo.code} value={geo.code}>
+                              {geo.name} ({geo.code})
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {selectedGeographies.length === 0 && (
+                    <p className="text-sm text-destructive">Please select at least one geography</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="studyPhasePref"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Study Phase Preference</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a phase" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="any">Any Phase</SelectItem>
+                            <SelectItem value="I">Phase I</SelectItem>
+                            <SelectItem value="II">Phase II</SelectItem>
+                            <SelectItem value="III">Phase III</SelectItem>
+                            <SelectItem value="IV">Phase IV</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="targetSubpopulation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Target Subpopulation (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Elderly patients with comorbidities" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <Tabs value={inputMethod} onValueChange={setInputMethod} className="mt-4">
                   <TabsList className="grid w-full grid-cols-2">
