@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -596,6 +597,29 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                               Could this study potentially extend patent exclusivity?
                             </p>
                           </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="mt-6">
+                    <FormField
+                      control={form.control}
+                      name="additionalContext"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Additional Context</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Regulatory approval is expected on date ..., market access is expected in key markets on ....date" 
+                              className="h-24 resize-none"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Provide any additional context that might be relevant for the study concept generation.
+                          </FormDescription>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
