@@ -350,9 +350,10 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
 
       // Log formData for debugging
       console.log("Submitting form with data:");
-      for (const pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
-      }
+      const entries = Array.from(formData.entries());
+      entries.forEach(entry => {
+        console.log(entry[0], entry[1]);
+      });
       
       // Make the API call
       console.log("Making API call to /api/study-idea-validations/validate");

@@ -226,11 +226,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasFile: !!req.file
       });
       
+      // Log incoming request data for debugging
+      console.log("Received form data:", req.body);
+      if (req.body.strategicGoals) {
+        console.log("Strategic goals from form:", req.body.strategicGoals);
+      }
+      if (req.body['strategicGoals[]']) {
+        console.log("Strategic goals array from form:", req.body['strategicGoals[]']);
+      }
+      
+      // Handle strategic goals - could be an array or a single value from the form
+      let strategicGoals = req.body.strategicGoals || req.body['strategicGoals[]'];
+      
+      // Ensure strategicGoals is an array
+      if (strategicGoals && !Array.isArray(strategicGoals)) {
+        strategicGoals = [strategicGoals];
+      }
+      
       // Validate request body
       const validationResult = validateSynopsisRequestSchema.safeParse({
         drugName: req.body.drugName,
         indication: req.body.indication,
-        strategicGoal: req.body.strategicGoal,
+        strategicGoals: strategicGoals || [],
         studyIdeaText: req.body.studyIdeaText,
         additionalContext: req.body.additionalContext
       });
@@ -371,8 +388,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.redirect(307, `/api/study-idea-validations/${req.params.id}`);
   });
   
+  // Add redirect for POST requests to validation endpoint
   app.post("/api/synopsis-validations/validate", upload.single('file'), (req, res, next) => {
-    // Simple redirect to the new endpoint by modifying the request URL
+    console.log("Redirecting from /api/synopsis-validations/validate to /api/study-idea-validations/validate");
     req.url = '/api/study-idea-validations/validate';
     next();
   });
