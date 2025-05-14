@@ -126,14 +126,26 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
 
       // Create a FormData object to send the data
       const formData = new FormData();
+      
+      // Only append file if using file input method and a file is selected
       if (inputMethod === "file" && selectedFile) {
         formData.append('file', selectedFile);
       }
       
+      // Always append these form fields
       formData.append('drugName', values.drugName);
       formData.append('indication', values.indication);
       formData.append('strategicGoal', values.strategicGoal);
-      formData.append('studyIdeaText', values.studyIdeaText || '');
+      
+      // For text input method, ensure studyIdeaText is sent
+      if (inputMethod === "text") {
+        console.log("Sending study idea text:", values.studyIdeaText);
+        formData.append('studyIdeaText', values.studyIdeaText || '');
+      } else {
+        formData.append('studyIdeaText', '');
+      }
+      
+      // Always send additional context if provided
       formData.append('additionalContext', values.additionalContext || '');
 
       // Make the API call

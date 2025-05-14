@@ -50,7 +50,7 @@ export const insertStudyConceptSchema = createInsertSchema(studyConcepts).omit({
 export const synopsisValidations = pgTable("synopsis_validations", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
-  originalFileName: text("original_file_name").notNull(),
+  originalFileName: text("original_file_name"), // Optional now, since we allow text input
   // New fields for text-based study ideas
   studyIdeaText: text("study_idea_text"),
   additionalContext: text("additional_context"),

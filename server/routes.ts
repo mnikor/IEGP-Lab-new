@@ -200,6 +200,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/synopsis-validations/validate", upload.single('file'), async (req, res) => {
     try {
+      console.log("Validating synopsis with body:", {
+        drugName: req.body.drugName,
+        indication: req.body.indication,
+        strategicGoal: req.body.strategicGoal,
+        hasStudyIdeaText: !!req.body.studyIdeaText,
+        hasFile: !!req.file
+      });
+      
       // Validate request body
       const validationResult = validateSynopsisRequestSchema.safeParse({
         drugName: req.body.drugName,
@@ -222,16 +230,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let text: string;
       let originalFileName: string = "text-input.txt";
       
+      console.log("Processing validation with studyIdeaText:", data.studyIdeaText?.substring(0, 50));
+      
       if (req.file) {
         // If file is uploaded, extract text from it
+        console.log("Using uploaded file:", req.file.originalname);
         text = await extractTextFromDocument(req.file.buffer, req.file.originalname);
         originalFileName = req.file.originalname;
       } else if (data.studyIdeaText && data.studyIdeaText.trim()) {
         // If study idea text is provided, use it directly
+        console.log("Using provided study idea text");
         text = data.studyIdeaText;
       } else {
         // Neither file nor text provided
-        return res.status(400).json({ message: "Either file upload or study idea text is required" });
+        console.log("No file or study idea text provided");
+        return res.status(400).json({ message: "No file uploaded" });
       }
       
       // Step 2: Extract PICO from the document text
