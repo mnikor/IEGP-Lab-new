@@ -161,7 +161,7 @@ export class MemStorage implements IStorage {
       title: "Pembrolizumab plus Chemotherapy vs. Standard of Care in PD-L1+ NSCLC with Brain Metastases",
       drugName: "Pembrolizumab",
       indication: "Non-small cell lung cancer with brain metastases",
-      strategicGoal: "expand_label",
+      strategicGoals: ["expand_label", "accelerate_uptake"],
       geography: ["US", "EU"],
       studyPhase: "III",
       targetSubpopulation: "PD-L1 positive patients",

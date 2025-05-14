@@ -121,6 +121,8 @@ export interface StudyConcept {
   feasibilityData: FeasibilityData;
   evidenceSources: EvidenceSource[];
   currentEvidence?: CurrentEvidence;
+  globalLoeDate?: string;    // Top-level LOE date for quicker access
+  timeToLoe?: number;        // Top-level time to LOE for quicker access
   createdAt?: string;
 }
 
