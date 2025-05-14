@@ -21,6 +21,7 @@ export const studyConcepts = pgTable("study_concepts", {
   drugName: text("drug_name").notNull(),
   indication: text("indication").notNull(),
   strategicGoals: text("strategic_goals").array().notNull(),
+  otherStrategicGoalText: text("other_strategic_goal_text"),
   geography: text("geography").array().notNull(),
   studyPhase: text("study_phase").notNull(),
   targetSubpopulation: text("target_subpopulation"),
@@ -53,6 +54,7 @@ export const synopsisValidations = pgTable("synopsis_validations", {
   drugName: text("drug_name").notNull(),
   indication: text("indication").notNull(),
   strategicGoals: text("strategic_goals").array().notNull(),
+  otherStrategicGoalText: text("other_strategic_goal_text"),
   originalFileName: text("original_file_name"), // Optional now, since we allow text input
   
   // Fields for text-based study ideas
@@ -97,7 +99,19 @@ export const insertSynopsisValidationSchema = createInsertSchema(synopsisValidat
 export const generateConceptRequestSchema = z.object({
   drugName: z.string().min(1, "Drug name is required"),
   indication: z.string().min(1, "Indication is required"),
-  strategicGoals: z.array(z.enum(["expand_label", "defend_share", "accelerate_uptake", "real_world_evidence"])).min(1, "At least one strategic goal is required"),
+  strategicGoals: z.array(z.enum([
+    "expand_label", 
+    "defend_market_share", 
+    "accelerate_uptake", 
+    "facilitate_market_access", 
+    "real_world_evidence", 
+    "dosing_optimization", 
+    "biomarker_validation", 
+    "safety_risk_management", 
+    "combination_extension", 
+    "other"
+  ])).min(1, "At least one strategic goal is required"),
+  otherStrategicGoalText: z.string().optional(),
   geography: z.array(z.string().length(2)).min(1, "At least one geography is required"),
   studyPhasePref: z.enum(["I", "II", "III", "IV", "any"]),
   currentEvidenceRefs: z.array(z.string()).optional(),
@@ -122,7 +136,19 @@ export const generateConceptRequestSchema = z.object({
 export const validateSynopsisRequestSchema = z.object({
   drugName: z.string().min(1, "Drug name is required"),
   indication: z.string().min(1, "Indication is required"),
-  strategicGoals: z.array(z.enum(["expand_label", "defend_share", "accelerate_uptake", "real_world_evidence"])).min(1, "At least one strategic goal is required"),
+  strategicGoals: z.array(z.enum([
+    "expand_label", 
+    "defend_market_share", 
+    "accelerate_uptake", 
+    "facilitate_market_access", 
+    "real_world_evidence", 
+    "dosing_optimization", 
+    "biomarker_validation", 
+    "safety_risk_management", 
+    "combination_extension", 
+    "other"
+  ])).min(1, "At least one strategic goal is required"),
+  otherStrategicGoalText: z.string().optional(),
   // Study idea can be provided as text or file upload
   studyIdeaText: z.string().optional(),
   // Additional context field for regulatory approval dates, market access estimates, etc.
