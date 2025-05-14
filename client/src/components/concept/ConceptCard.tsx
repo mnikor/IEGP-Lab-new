@@ -50,6 +50,15 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
       <CardContent className="p-4">
         <h3 className="text-lg font-medium text-neutral-dark mb-2">{concept.title}</h3>
         
+        {/* Strategic Goals */}
+        <div className="flex flex-wrap gap-2 mb-3">
+          {concept.strategicGoals?.map((goal, index) => (
+            <Badge key={index} variant="secondary" className="bg-blue-100 text-primary">
+              {goal.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+            </Badge>
+          ))}
+        </div>
+        
         {/* Knowledge Gap & Innovation Justification */}
         {(concept.knowledgeGapAddressed || concept.innovationJustification) && (
           <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4">

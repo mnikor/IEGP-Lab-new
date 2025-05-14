@@ -86,9 +86,23 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results }) => {
         <div className="space-y-6">
           <div className="bg-neutral-lightest p-4 rounded-lg">
             <h3 className="text-lg font-medium text-neutral-dark mb-2">{results.title}</h3>
-            <p className="text-sm text-neutral-medium">
+            <p className="text-sm text-neutral-medium mb-2">
               Original file: {results.originalFileName}
             </p>
+            
+            {/* Strategic Goals */}
+            {results.strategicGoals && results.strategicGoals.length > 0 && (
+              <div className="mt-2">
+                <p className="text-sm text-neutral-medium mb-1">Strategic Goals:</p>
+                <div className="flex flex-wrap gap-2">
+                  {results.strategicGoals.map((goal, index) => (
+                    <Badge key={index} variant="secondary" className="bg-blue-100 text-primary">
+                      {goal.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Extracted PICO */}
