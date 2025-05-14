@@ -8,7 +8,7 @@ import FeasibilityDetails from "@/components/shared/FeasibilityDetails";
 import CurrentEvidence from "@/components/shared/CurrentEvidence";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
-import { AlertTriangle, ArrowRight, CheckCircle, Download, FileDown } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle, Download, FileDown, Info as InfoIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -18,6 +18,8 @@ interface ValidationResultsProps {
 
 const ValidationResults: React.FC<ValidationResultsProps> = ({ results }) => {
   const { toast } = useToast();
+  const [showDeltasInfo, setShowDeltasInfo] = React.useState(true);
+  const [showRiskInfo, setShowRiskInfo] = React.useState(false);
 
   const exportPDF = async () => {
     try {
@@ -96,7 +98,34 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results }) => {
 
           {/* Benchmark Deltas */}
           <div>
-            <h3 className="text-md font-medium text-neutral-dark mb-3">Benchmark Deltas</h3>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-md font-medium text-neutral-dark">Benchmark Deltas</h3>
+              <div className="flex items-center">
+                <Button 
+                  variant="link" 
+                  className="h-auto p-0 text-xs text-neutral-medium"
+                  onClick={() => setShowDeltasInfo(!showDeltasInfo)}
+                >
+                  <InfoIcon className="h-4 w-4 mr-1" />
+                  {showDeltasInfo ? "Hide explanation" : "What are benchmark deltas?"}
+                </Button>
+              </div>
+            </div>
+            
+            {showDeltasInfo && (
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4 text-sm text-blue-700">
+                <p>
+                  <strong>Benchmark Deltas</strong> compare your current study design with suggested improvements 
+                  based on latest evidence. Each row shows:
+                </p>
+                <ul className="list-disc ml-4 mt-1">
+                  <li><strong>Current design</strong> (from your uploaded synopsis)</li>
+                  <li><strong>Suggested improvement</strong> (based on literature evidence)</li>
+                  <li><strong>Impact</strong> (positive, neutral, or negative) of making this change</li>
+                </ul>
+              </div>
+            )}
+            
             <div className="space-y-2">
               {results.benchmarkDeltas.map((delta, index) => (
                 <div key={index} className="p-3 border rounded-md">
