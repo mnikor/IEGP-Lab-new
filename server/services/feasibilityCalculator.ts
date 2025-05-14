@@ -586,8 +586,30 @@ function calculateLoeData(
   
   // Check if user provided a global LOE date
   if (requestData.globalLoeDate) {
-    globalLoeDate = new Date(requestData.globalLoeDate);
+    console.log("Using user-provided global LOE date:", requestData.globalLoeDate);
+    
+    try {
+      // Make sure we're properly parsing the date string
+      globalLoeDate = new Date(requestData.globalLoeDate + 'T00:00:00Z');
+      
+      // Verify the date is valid
+      if (isNaN(globalLoeDate.getTime())) {
+        console.error("Invalid date format from globalLoeDate:", requestData.globalLoeDate);
+        // Fall back to default if the date is invalid
+        globalLoeDate = new Date(currentDate.getTime());
+        globalLoeDate.setFullYear(globalLoeDate.getFullYear() + 10);
+      }
+    } catch (e) {
+      console.error("Error parsing globalLoeDate:", e);
+      // Fall back to default on error
+      globalLoeDate = new Date(currentDate.getTime());
+      globalLoeDate.setFullYear(globalLoeDate.getFullYear() + 10);
+    }
+  } else {
+    console.log("No user-provided global LOE date, using default 10 years from now");
   }
+  
+  console.log("Final globalLoeDate:", globalLoeDate, "ISO String:", globalLoeDate.toISOString());
   
   // Initialize regional LOE data
   const regionalLoeData: RegionalLoeData[] = [];

@@ -29,14 +29,19 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
   // Always render the component with default values if no LOE data is available
   // Calculate reasonable defaults
 
-  // Generate default LOE date (typically ~10-12 years after current date for new drugs)
+  // Use the provided global LOE date if available (this comes from the feasibilityData
+  // and is based on user input), otherwise use a default date 10 years from now
   const defaultLoeYears = 10;
   const today = new Date();
-  const defaultLoeDate = globalLoeDate || new Date(
+  
+  // IMPORTANT - Simply use the globalLoeDate provided, don't override
+  const formattedLoeDate = globalLoeDate || new Date(
     today.getFullYear() + defaultLoeYears,
     today.getMonth(),
     today.getDate()
   ).toISOString();
+  
+  console.log('LoeDetails using globalLoeDate directly:', globalLoeDate);
   
   // Default time to LOE (in months)
   const defaultTimeToLoe = timeToLoe || (defaultLoeYears * 12);
@@ -60,14 +65,14 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
   const defaultRegionalData: RegionalLoeData[] = regionalLoeData?.length ? regionalLoeData : [
     {
       region: 'United States',
-      loeDate: defaultLoeDate,
+      loeDate: formattedLoeDate,
       hasPatentExtension: false,
       extensionPotential: false,
       notes: 'Estimated LOE date based on standard patent duration'
     },
     {
       region: 'European Union',
-      loeDate: defaultLoeDate,
+      loeDate: formattedLoeDate,
       hasPatentExtension: false,
       extensionPotential: false,
       notes: 'Estimated LOE date based on standard patent duration'
