@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ValidationResults } from "@/lib/types";
-import { Upload, FileText, AlertCircle } from "lucide-react";
+import { Upload, FileText, AlertCircle, X, UploadCloud } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface SynopsisUploaderProps {
@@ -448,6 +449,161 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
                       </FormItem>
                     )}
                   />
+                </div>
+                
+                <div>
+                  <FormLabel>Comparator Drugs (Optional)</FormLabel>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Input
+                      value={newComparatorDrug}
+                      onChange={(e) => setNewComparatorDrug(e.target.value)}
+                      placeholder="Add a comparator drug"
+                      className="flex-1"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addComparatorDrug();
+                        }
+                      }}
+                    />
+                    <Button type="button" onClick={addComparatorDrug}>
+                      Add
+                    </Button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {comparatorDrugs.map(drug => (
+                      <Badge key={drug} variant="secondary" className="bg-blue-100 text-primary hover:bg-blue-200">
+                        {drug}
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-4 w-4 p-0 ml-1 text-blue-500 hover:text-blue-700 hover:bg-transparent"
+                          onClick={() => removeComparatorDrug(drug)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="budgetCeilingEur"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Budget Ceiling (EUR)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g., 2000000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="timelineCeilingMonths"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Timeline Ceiling (Months)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g., 24" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="salesImpactThreshold"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sales Impact Threshold</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g., 10000000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                {/* Study Timeline Section */}
+                <div className="mt-6 border-t pt-4 border-neutral-light">
+                  <h3 className="text-sm font-medium mb-4">Study Timeline Information</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <FormField
+                      control={form.control}
+                      name="anticipatedFpiDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Anticipated FPI Date</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="date" 
+                              {...field}
+                            />
+                          </FormControl>
+                          <p className="text-xs text-neutral-medium mt-1">
+                            When do you expect First Patient In (FPI)? If not provided, defaults to 12 months from now.
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* LOE (Loss of Exclusivity) Section */}
+                <div className="mt-6 border-t pt-4 border-neutral-light">
+                  <h3 className="text-sm font-medium mb-4">Patent Exclusivity Information</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <FormField
+                      control={form.control}
+                      name="globalLoeDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Global LOE Date</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <p className="text-xs text-neutral-medium mt-1">
+                            When will the drug lose patent exclusivity?
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="hasPatentExtensionPotential"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-8">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={field.value}
+                              onChange={field.onChange}
+                              className="h-4 w-4 text-primary border-neutral-medium rounded"
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              Patent Extension Potential
+                            </FormLabel>
+                            <p className="text-xs text-neutral-medium">
+                              Could this study potentially extend patent exclusivity?
+                            </p>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 <Tabs value={inputMethod} onValueChange={setInputMethod} className="mt-4">
