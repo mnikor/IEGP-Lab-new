@@ -81,8 +81,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                          (data.indication || '').toLowerCase().includes('oncol') ||
                          (data.indication || '').toLowerCase().includes('tumor');
       
-      // Create a more detailed query that explicitly asks for study design information                   
-      const searchQuery = `Provide the latest clinical evidence for ${data.drugName} in ${data.indication} focusing on ${data.strategicGoal.replace('_', ' ')}. 
+      // Create a more detailed query that explicitly asks for study design information
+      const strategicGoalsFocus = data.strategicGoals.map(goal => goal.replace('_', ' ')).join(' and ');
+      const searchQuery = `Provide the latest clinical evidence for ${data.drugName} in ${data.indication} focusing on ${strategicGoalsFocus}. 
       Include details about: 
       1. Optimal study design (Phase ${data.studyPhasePref}) 
       2. Typical patient populations and sample sizes 
@@ -251,7 +252,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const extractedPico = await extractPicoFromText(text);
       
       // Step 3: Perform web search to gather evidence for benchmarking
-      const searchQuery = `Provide clinical evidence benchmarks for ${data.drugName} in ${data.indication} focusing on ${data.strategicGoal.replace('_', ' ')}`;
+      const strategicGoalsFocus = data.strategicGoals.map(goal => goal.replace('_', ' ')).join(' and ');
+      const searchQuery = `Provide clinical evidence benchmarks for ${data.drugName} in ${data.indication} focusing on ${strategicGoalsFocus}`;
       const searchResults = await perplexityWebSearch(searchQuery, [
         "pubmed.ncbi.nlm.nih.gov",
         "clinicaltrials.gov",

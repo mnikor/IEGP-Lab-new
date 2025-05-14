@@ -251,7 +251,12 @@ export class MemStorage implements IStorage {
     // Sample validation
     const sampleValidation: InsertSynopsisValidation = {
       title: "Validation Report: Trastuzumab Deruxtecan in HER2+ Metastatic Breast Cancer",
+      drugName: "Trastuzumab Deruxtecan",
+      indication: "HER2+ Metastatic Breast Cancer",
+      strategicGoals: ["defend_share", "real_world_evidence"],
       originalFileName: "trastuzumab_study_synopsis.pdf",
+      geography: ["US", "EU"],
+      studyPhase: "III",
       extractedPico: {
         population: "Adult patients with HER2-positive metastatic breast cancer who have received at least one prior anti-HER2-based regimen",
         intervention: "Trastuzumab deruxtecan (T-DXd) 5.4 mg/kg IV every 3 weeks",

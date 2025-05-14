@@ -183,7 +183,7 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
   # Parameters:
   - Drug: ${data.drugName}
   - Indication: ${data.indication}
-  - Strategic Goal: ${data.strategicGoal.replace('_', ' ')}
+  - Strategic Goals: ${data.strategicGoals.map(goal => goal.replace('_', ' ')).join(', ')}
   - Geography: ${data.geography.join(', ')}
   - Study Phase Preference: ${data.studyPhasePref}
   - Target Subpopulation: ${data.targetSubpopulation || 'Not specified'}
