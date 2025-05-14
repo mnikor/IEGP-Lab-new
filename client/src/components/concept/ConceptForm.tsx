@@ -109,6 +109,10 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    // Debug log for form submission
+    console.log("Form submitted with values:", values);
+    console.log("globalLoeDate value at submission:", values.globalLoeDate);
+    
     if (selectedGeographies.length === 0) {
       toast({
         title: "Validation Error",
@@ -129,23 +133,16 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
           processedRegionalLoeDates = regionalLoeDates;
         } else {
           // Create region-specific LOE dates based on the global date
+          // CRITICAL FIX: We must NOT modify the user-specified global LOE date
+          console.log("Creating regional LOE dates using exact global date:", values.globalLoeDate);
+          
           processedRegionalLoeDates = selectedGeographies.map(region => {
-            // Create a new date object from the global date
-            // We can safely use globalLoeDate now as we've verified it exists and is not empty
+            // Use the exact same date for all regions without any adjustments
+            // This preserves the user-specified LOE date exactly as entered
             const date = new Date(values.globalLoeDate as string);
             
-            // Slightly adjust the date based on region for realism
-            // (some regions may have different patent expiration dates)
-            if (region === "US") {
-              // US patents may have slightly longer terms in some cases
-              date.setMonth(date.getMonth() + 3);
-            } else if (region === "EU") {
-              // EU might have different patent terms
-              date.setMonth(date.getMonth() - 2);
-            } else if (region === "JP") {
-              // Japan may have its own timeline
-              date.setMonth(date.getMonth() + 1);
-            }
+            // DEBUG: Log the date we're using for each region
+            console.log(`Using exact same LOE date for ${region}:`, date.toISOString().split('T')[0]);
             
             return {
               region,
@@ -173,14 +170,22 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
         }
       }
       
+      // Ensure we're explicitly sending the globalLoeDate in correct format
+      const formattedGlobalLoeDate = values.globalLoeDate ? 
+        new Date(values.globalLoeDate).toISOString().split('T')[0] : undefined;
+        
       const requestData: GenerateConceptRequest = {
         ...values,
         geography: selectedGeographies,
         comparatorDrugs: comparatorDrugs.length > 0 ? comparatorDrugs : undefined,
         currentEvidenceRefs: evidenceFiles.map(f => f.name),
+        globalLoeDate: formattedGlobalLoeDate, // Ensure we send the exact date the user provided
         regionalLoeDates: values.globalLoeDate ? processedRegionalLoeDates : undefined,
         anticipatedFpiDate: formattedFpiDate,
       };
+      
+      // Critical debug log for LOE date in final request
+      console.log("Final globalLoeDate in request:", requestData.globalLoeDate);
       
       // Log the final request data
       console.log("Final request data:", requestData);
