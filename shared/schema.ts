@@ -51,6 +51,10 @@ export const synopsisValidations = pgTable("synopsis_validations", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   originalFileName: text("original_file_name").notNull(),
+  // New fields for text-based study ideas
+  studyIdeaText: text("study_idea_text"),
+  additionalContext: text("additional_context"),
+  // Content extraction fields
   extractedPico: json("extracted_pico").notNull(),
   benchmarkDeltas: json("benchmark_deltas").notNull(),
   riskFlags: json("risk_flags").notNull(),

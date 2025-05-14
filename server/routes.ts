@@ -200,16 +200,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/synopsis-validations/validate", upload.single('file'), async (req, res) => {
     try {
-      // Check for file
-      if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
-      }
-
       // Validate request body
       const validationResult = validateSynopsisRequestSchema.safeParse({
         drugName: req.body.drugName,
         indication: req.body.indication,
-        strategicGoal: req.body.strategicGoal
+        strategicGoal: req.body.strategicGoal,
+        studyIdeaText: req.body.studyIdeaText,
+        additionalContext: req.body.additionalContext
       });
 
       if (!validationResult.success) {
@@ -221,8 +218,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = validationResult.data;
       
-      // Step 1: Extract text from the uploaded document
-      const text = await extractTextFromDocument(req.file.buffer, req.file.originalname);
+      // Get text either from uploaded file or directly from studyIdeaText
+      let text: string;
+      let originalFileName: string = "text-input.txt";
+      
+      if (req.file) {
+        // If file is uploaded, extract text from it
+        text = await extractTextFromDocument(req.file.buffer, req.file.originalname);
+        originalFileName = req.file.originalname;
+      } else if (data.studyIdeaText && data.studyIdeaText.trim()) {
+        // If study idea text is provided, use it directly
+        text = data.studyIdeaText;
+      } else {
+        // Neither file nor text provided
+        return res.status(400).json({ message: "Either file upload or study idea text is required" });
+      }
       
       // Step 2: Extract PICO from the document text
       const extractedPico = await extractPicoFromText(text);
@@ -235,17 +245,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "nejm.org"
       ]);
       
+      // Include additional context in analysis if provided
+      let enrichedText = text;
+      if (data.additionalContext && data.additionalContext.trim()) {
+        enrichedText += "\n\nAdditional Context:\n" + data.additionalContext;
+      }
+      
       // Step 4: Analyze the document against the evidence
       const validationResults = await analyzeWithOpenAI(searchResults, { 
         ...data,
-        documentText: text,
+        documentText: enrichedText,
         extractedPico
       }, true);
       
       // Step 5: Save the validation to the database
       const savedValidation = await storage.createSynopsisValidation({
         ...validationResults,
-        originalFileName: req.file.originalname
+        originalFileName: originalFileName,
+        studyIdeaText: data.studyIdeaText,
+        additionalContext: data.additionalContext
       });
 
       res.json(savedValidation);
