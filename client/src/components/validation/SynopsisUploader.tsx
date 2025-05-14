@@ -28,6 +28,22 @@ const formSchema = z.object({
   }),
   studyIdeaText: z.string().optional(),
   additionalContext: z.string().optional(),
+  
+  // Additional fields from concept generation
+  geography: z.array(z.string()).min(1, "At least one geography is required").optional(),
+  studyPhasePref: z.enum(["I", "II", "III", "IV", "any"], {
+    required_error: "Please select a study phase",
+  }).optional(),
+  targetSubpopulation: z.string().optional(),
+  comparatorDrugs: z.array(z.string()).optional(),
+  budgetCeilingEur: z.coerce.number().positive().optional(),
+  timelineCeilingMonths: z.coerce.number().positive().optional(),
+  salesImpactThreshold: z.coerce.number().positive().optional(),
+  
+  // Timeline and LOE fields
+  anticipatedFpiDate: z.string().optional(),
+  globalLoeDate: z.string().optional(),
+  hasPatentExtensionPotential: z.boolean().optional().default(false),
 });
 
 const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({ 
@@ -48,6 +64,16 @@ const SynopsisUploader: React.FC<SynopsisUploaderProps> = ({
       strategicGoal: undefined,
       studyIdeaText: "",
       additionalContext: "",
+      geography: ["US", "EU"],
+      studyPhasePref: undefined,
+      targetSubpopulation: "",
+      comparatorDrugs: [],
+      budgetCeilingEur: undefined,
+      timelineCeilingMonths: undefined,
+      salesImpactThreshold: undefined,
+      anticipatedFpiDate: "",
+      globalLoeDate: "",
+      hasPatentExtensionPotential: false,
     },
   });
 

@@ -50,10 +50,29 @@ export const insertStudyConceptSchema = createInsertSchema(studyConcepts).omit({
 export const synopsisValidations = pgTable("synopsis_validations", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
+  drugName: text("drug_name").notNull(),
+  indication: text("indication").notNull(),
+  strategicGoal: text("strategic_goal").notNull(),
   originalFileName: text("original_file_name"), // Optional now, since we allow text input
-  // New fields for text-based study ideas
+  
+  // Fields for text-based study ideas
   studyIdeaText: text("study_idea_text"),
   additionalContext: text("additional_context"),
+  
+  // Fields matching study concepts for consistency
+  geography: text("geography").array(),
+  studyPhase: text("study_phase"),
+  targetSubpopulation: text("target_subpopulation"),
+  comparatorDrugs: text("comparator_drugs").array(),
+  budgetCeilingEur: real("budget_ceiling_eur"),
+  timelineCeilingMonths: integer("timeline_ceiling_months"),
+  salesImpactThreshold: real("sales_impact_threshold"),
+  
+  // LOE fields
+  globalLoeDate: text("global_loe_date"),
+  timeToLoe: integer("time_to_loe"),
+  anticipatedFpiDate: text("anticipated_fpi_date"),
+  
   // Content extraction fields
   extractedPico: json("extracted_pico").notNull(),
   benchmarkDeltas: json("benchmark_deltas").notNull(),
@@ -61,7 +80,7 @@ export const synopsisValidations = pgTable("synopsis_validations", {
   revisedEconomics: json("revised_economics").notNull(),
   swotAnalysis: json("swot_analysis").notNull(),
   
-  // New fields to match the concept generation output
+  // Analysis fields
   mcdaScores: json("mcda_scores"),
   feasibilityData: json("feasibility_data"),
   currentEvidence: json("current_evidence"),
@@ -109,6 +128,24 @@ export const validateSynopsisRequestSchema = z.object({
   // Additional context field for regulatory approval dates, market access estimates, etc.
   additionalContext: z.string().optional(),
   // No file validation here, it's handled separately with multer
+  
+  // Additional fields from generate concept
+  geography: z.array(z.string().length(2)).min(1, "At least one geography is required").optional(),
+  studyPhasePref: z.enum(["I", "II", "III", "IV", "any"]).optional(),
+  targetSubpopulation: z.string().optional(),
+  comparatorDrugs: z.array(z.string()).optional(),
+  budgetCeilingEur: z.number().positive().optional(),
+  timelineCeilingMonths: z.number().positive().optional(),
+  salesImpactThreshold: z.number().positive().optional(),
+  
+  // LOE and timeline information
+  anticipatedFpiDate: z.string().optional(), // ISO date string for First Patient In
+  globalLoeDate: z.string().optional(), // ISO date string for global LOE
+  regionalLoeDates: z.array(z.object({
+    region: z.string(),
+    date: z.string()
+  })).optional(),
+  hasPatentExtensionPotential: z.boolean().optional(),
 });
 
 // Export types
