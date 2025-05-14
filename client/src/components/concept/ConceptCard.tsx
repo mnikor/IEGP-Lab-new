@@ -225,6 +225,11 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
         {/* LOE Details */}
         {concept.feasibilityData && (
           <div className="mb-4">
+            {/* Debug logging using a self-executing function to avoid React node issues */}
+            {(() => {
+              console.log('ConceptCard passing globalLoeDate:', concept.feasibilityData.globalLoeDate);
+              return null;
+            })()}
             <LoeDetails 
               globalLoeDate={concept.feasibilityData.globalLoeDate}
               regionalLoeData={concept.feasibilityData.regionalLoeData}

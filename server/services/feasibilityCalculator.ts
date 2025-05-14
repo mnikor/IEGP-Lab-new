@@ -629,19 +629,23 @@ function calculateLoeData(
     // If no regional data provided, create entries based on geography
     const geography = concept.geography || requestData.geography || [];
     for (const region of geography) {
-      // Create region-specific LOE date (slightly different for each region)
+      // Create region-specific LOE date based on the global LOE date
+      // IMPORTANT: We must preserve the user-provided global LOE date
       const regionLoeDate = new Date(globalLoeDate.getTime());
       
-      // Adjust dates slightly by region (for variety)
-      if (region === "US") {
-        // US patent extension opportunities are often stronger
-        regionLoeDate.setMonth(regionLoeDate.getMonth() + 3);
-      } else if (region === "EU" || region.startsWith("E")) {
-        // EU patents may expire slightly earlier
-        regionLoeDate.setMonth(regionLoeDate.getMonth() - 2);
-      } else if (region === "JP") {
-        // Japan may have different patent terms
-        regionLoeDate.setMonth(regionLoeDate.getMonth() + 1);
+      // Only make minor adjustments if the LOE date wasn't specified by the user
+      if (!requestData.globalLoeDate) {
+        // Adjust dates slightly by region (for variety)
+        if (region === "US") {
+          // US patent extension opportunities are often stronger
+          regionLoeDate.setMonth(regionLoeDate.getMonth() + 3);
+        } else if (region === "EU" || region.startsWith("E")) {
+          // EU patents may expire slightly earlier
+          regionLoeDate.setMonth(regionLoeDate.getMonth() - 2);
+        } else if (region === "JP") {
+          // Japan may have different patent terms
+          regionLoeDate.setMonth(regionLoeDate.getMonth() + 1);
+        }
       }
       
       regionalLoeData.push({
