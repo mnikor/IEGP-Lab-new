@@ -64,8 +64,8 @@ const FeasibilityDetails: React.FC<FeasibilityDetailsProps> = ({ feasibilityData
           <div className="flex items-start space-x-2">
             <Users className="h-5 w-5 text-primary mt-1" />
             <div>
-              <p className="text-sm font-medium">Sample Size: {feasibilityData.sampleSize || 'N/A'} participants</p>
-              <p className="text-xs text-neutral-medium">{feasibilityData.sampleSizeJustification || 'Sample size based on statistical power analysis'}</p>
+              <p className="text-sm font-medium">Sample Size: {typeof feasibilityData.sampleSize === 'number' ? Math.round(feasibilityData.sampleSize) : 'N/A'} participants</p>
+              <p className="text-xs text-neutral-medium">{feasibilityData.sampleSizeJustification ? feasibilityData.sampleSizeJustification.replace(/\d+\.\d+/, Math.round(parseFloat(feasibilityData.sampleSizeJustification.match(/\d+\.\d+/)?.[0] || '0')).toString()) : 'Sample size based on statistical power analysis'}</p>
             </div>
           </div>
           <div className="flex items-start space-x-2">

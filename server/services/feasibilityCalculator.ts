@@ -257,15 +257,18 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
     dataPct = 0.15;
   }
   
-  const siteCosts = Math.round(totalSites * siteSetupCost);
-  const regulatoryCosts = Math.round(regulatoryCost);
+  // Ensure site costs are reasonable (minimum value)
+  const siteCosts = Math.max(1000, Math.round(totalSites * siteSetupCost));
+  const regulatoryCosts = Math.max(500, Math.round(regulatoryCost));
   
   // Calculate other costs as percentages of the remaining budget after site and regulatory costs
-  const remainingBudget = totalCost - siteCosts - regulatoryCosts;
-  const personnelCosts = Math.round(remainingBudget * personnelPct);
-  const materialCosts = Math.round(remainingBudget * materialPct); 
-  const monitoringCosts = Math.round(remainingBudget * monitoringPct);
-  const dataCosts = Math.round(remainingBudget * dataPct);
+  const remainingBudget = Math.max(5000, totalCost - siteCosts - regulatoryCosts);
+  
+  // Ensure each cost component is at least a minimum reasonable value to avoid showing zeros
+  const personnelCosts = Math.max(1000, Math.round(remainingBudget * personnelPct));
+  const materialCosts = Math.max(500, Math.round(remainingBudget * materialPct)); 
+  const monitoringCosts = Math.max(500, Math.round(remainingBudget * monitoringPct));
+  const dataCosts = Math.max(500, Math.round(remainingBudget * dataPct));
   
   // Risk factors
   const dropoutRate = Math.min(0.3, 0.1 + (completionRisk * 0.2)); // 10-30% dropout rate
