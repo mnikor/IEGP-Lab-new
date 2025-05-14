@@ -26,7 +26,7 @@ const GenerateConcept: React.FC = () => {
           <TabsList className="border-b-0">
             <TabsTrigger value="generate">Generate Concept</TabsTrigger>
             <TabsTrigger value="validate" asChild>
-              <a href="/validate-synopsis">Validate Synopsis</a>
+              <a href="/validate-study-idea">Validate Study Idea</a>
             </TabsTrigger>
             <TabsTrigger value="reports" asChild>
               <a href="/reports">Reports</a>
