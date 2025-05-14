@@ -158,7 +158,35 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results }) => {
 
           {/* Risk Flags */}
           <div>
-            <h3 className="text-md font-medium text-neutral-dark mb-3">Risk Flags</h3>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-md font-medium text-neutral-dark">Risk Flags</h3>
+              <div className="flex items-center">
+                <Button 
+                  variant="link" 
+                  className="h-auto p-0 text-xs text-neutral-medium"
+                  onClick={() => setShowRiskInfo(!showRiskInfo)}
+                >
+                  <InfoIcon className="h-4 w-4 mr-1" />
+                  {showRiskInfo ? "Hide explanation" : "What are risk flags?"}
+                </Button>
+              </div>
+            </div>
+            
+            {showRiskInfo && (
+              <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4 text-sm text-amber-700">
+                <p>
+                  <strong>Risk Flags</strong> identify potential issues that could impact your study's success. 
+                  Each flag includes:
+                </p>
+                <ul className="list-disc ml-4 mt-1">
+                  <li><strong>Category</strong> (scientific validity, feasibility, etc.)</li>
+                  <li><strong>Description</strong> of the identified risk</li>
+                  <li><strong>Severity</strong> (high, medium, or low)</li>
+                  <li><strong>Mitigation</strong> suggestions to address the risk</li>
+                </ul>
+              </div>
+            )}
+            
             <div className="space-y-2">
               {results.riskFlags.map((flag, index) => (
                 <div key={index} className="p-3 border rounded-md">
