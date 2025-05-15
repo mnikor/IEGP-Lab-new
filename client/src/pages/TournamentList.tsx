@@ -53,13 +53,7 @@ const TournamentList = () => {
 
   const createTournament = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/tournaments/new-concept', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      return apiRequest('POST', '/api/tournaments/new-concept', data);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });

@@ -136,10 +136,8 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
       setError(null);
 
       // Fetch tournament details
-      const tournamentData = await apiRequest<{ tournament: Tournament, rounds: any[] }>(
-        `/api/tournaments/${tournamentId}`, 
-        { method: 'GET' }
-      );
+      const response = await apiRequest('GET', `/api/tournaments/${tournamentId}`);
+      const tournamentData = await response.json();
 
       if (!tournamentData) {
         throw new Error('Failed to fetch tournament data');
@@ -159,10 +157,8 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
       }
 
       // Fetch all ideas for this tournament
-      const ideasData = await apiRequest<Idea[]>(
-        `/api/tournaments/${tournamentId}/ideas`, 
-        { method: 'GET' }
-      );
+      const ideasResponse = await apiRequest('GET', `/api/tournaments/${tournamentId}/ideas`);
+      const ideasData = await ideasResponse.json();
 
       if (ideasData) {
         setIdeas(ideasData);
