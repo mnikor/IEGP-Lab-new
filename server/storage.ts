@@ -3,6 +3,17 @@ import { users, type User, type InsertUser, studyConcepts, synopsisValidations, 
 // modify the interface with any CRUD methods
 // you might need
 
+import { 
+  Tournament, 
+  InsertTournament, 
+  Idea, 
+  InsertIdea, 
+  Review, 
+  InsertReview,
+  TournamentRound,
+  InsertTournamentRound
+} from '@shared/tournament';
+
 export interface IStorage {
   // User methods (retained from template)
   getUser(id: number): Promise<User | undefined>;
@@ -24,23 +35,69 @@ export interface IStorage {
   createSynopsisValidation(validation: InsertSynopsisValidation): Promise<SynopsisValidation>;
   updateSynopsisValidation(id: number, validation: Partial<InsertSynopsisValidation>): Promise<SynopsisValidation | undefined>;
   deleteSynopsisValidation(id: number): Promise<boolean>;
+  
+  // Tournament methods
+  createTournament(tournament: InsertTournament): Promise<Tournament>;
+  getTournament(id: number): Promise<Tournament | undefined>;
+  getAllTournaments(): Promise<Tournament[]>;
+  getRecentTournaments(limit: number): Promise<Tournament[]>;
+  updateTournament(id: number, tournament: Partial<Tournament>): Promise<Tournament | undefined>;
+  deleteTournament(id: number): Promise<boolean>;
+  
+  // Idea methods
+  createIdea(idea: InsertIdea): Promise<Idea>;
+  getIdea(ideaId: string): Promise<Idea | undefined>;
+  getIdeasByTournament(tournamentId: number): Promise<Idea[]>;
+  getIdeasByTournamentAndRound(tournamentId: number, round: number): Promise<Idea[]>;
+  getChampionsByTournament(tournamentId: number): Promise<Idea[]>;
+  updateIdea(ideaId: string, idea: Partial<Idea>): Promise<Idea | undefined>;
+  deleteIdea(ideaId: string): Promise<boolean>;
+  
+  // Review methods
+  createReview(review: InsertReview): Promise<Review>;
+  getReview(id: number): Promise<Review | undefined>;
+  getReviewsByIdeaId(ideaId: string): Promise<Review[]>;
+  deleteReview(id: number): Promise<boolean>;
+  
+  // Tournament round methods
+  createTournamentRound(round: InsertTournamentRound): Promise<TournamentRound>;
+  getTournamentRound(id: number): Promise<TournamentRound | undefined>;
+  getTournamentRoundsByTournament(tournamentId: number): Promise<TournamentRound[]>;
+  getTournamentRoundByTournamentAndRound(tournamentId: number, roundNumber: number): Promise<TournamentRound | undefined>;
+  deleteTournamentRound(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private concepts: Map<number, StudyConcept>;
   private validations: Map<number, SynopsisValidation>;
+  private tournaments: Map<number, Tournament>;
+  private ideas: Map<string, Idea>;
+  private reviews: Map<number, Review>;
+  private tournamentRounds: Map<number, TournamentRound>;
+  
   private userId: number;
   private conceptId: number;
   private validationId: number;
+  private tournamentId: number;
+  private reviewId: number;
+  private tournamentRoundId: number;
 
   constructor() {
     this.users = new Map();
     this.concepts = new Map();
     this.validations = new Map();
+    this.tournaments = new Map();
+    this.ideas = new Map();
+    this.reviews = new Map();
+    this.tournamentRounds = new Map();
+    
     this.userId = 1;
     this.conceptId = 1;
     this.validationId = 1;
+    this.tournamentId = 1;
+    this.reviewId = 1;
+    this.tournamentRoundId = 1;
     
     // Add some mock data for testing
     this.addMockData();
@@ -152,6 +209,169 @@ export class MemStorage implements IStorage {
   
   async deleteSynopsisValidation(id: number): Promise<boolean> {
     return this.validations.delete(id);
+  }
+  
+  // Tournament methods
+  async createTournament(tournament: InsertTournament): Promise<Tournament> {
+    const id = this.tournamentId++;
+    const newTournament: Tournament = {
+      ...tournament,
+      id,
+      currentRound: 0,
+      status: 'in_progress',
+      createdAt: new Date(),
+      completedAt: null
+    };
+    this.tournaments.set(id, newTournament);
+    return newTournament;
+  }
+
+  async getTournament(id: number): Promise<Tournament | undefined> {
+    return this.tournaments.get(id);
+  }
+
+  async getAllTournaments(): Promise<Tournament[]> {
+    return Array.from(this.tournaments.values()).sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  async getRecentTournaments(limit: number): Promise<Tournament[]> {
+    return Array.from(this.tournaments.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, limit);
+  }
+
+  async updateTournament(id: number, tournament: Partial<Tournament>): Promise<Tournament | undefined> {
+    const existingTournament = this.tournaments.get(id);
+    if (!existingTournament) {
+      return undefined;
+    }
+    
+    const updatedTournament: Tournament = {
+      ...existingTournament,
+      ...tournament
+    };
+    
+    this.tournaments.set(id, updatedTournament);
+    return updatedTournament;
+  }
+
+  async deleteTournament(id: number): Promise<boolean> {
+    return this.tournaments.delete(id);
+  }
+  
+  // Idea methods
+  async createIdea(idea: InsertIdea): Promise<Idea> {
+    const newIdea: Idea = {
+      ...idea,
+      createdAt: new Date()
+    };
+    
+    this.ideas.set(idea.ideaId, newIdea);
+    return newIdea;
+  }
+
+  async getIdea(ideaId: string): Promise<Idea | undefined> {
+    return this.ideas.get(ideaId);
+  }
+
+  async getIdeasByTournament(tournamentId: number): Promise<Idea[]> {
+    return Array.from(this.ideas.values()).filter(idea => 
+      idea.tournamentId === tournamentId
+    );
+  }
+
+  async getIdeasByTournamentAndRound(tournamentId: number, round: number): Promise<Idea[]> {
+    return Array.from(this.ideas.values()).filter(idea => 
+      idea.tournamentId === tournamentId && idea.round === round
+    );
+  }
+
+  async getChampionsByTournament(tournamentId: number): Promise<Idea[]> {
+    return Array.from(this.ideas.values()).filter(idea => 
+      idea.tournamentId === tournamentId && idea.isChampion
+    );
+  }
+
+  async updateIdea(ideaId: string, idea: Partial<Idea>): Promise<Idea | undefined> {
+    const existingIdea = this.ideas.get(ideaId);
+    if (!existingIdea) {
+      return undefined;
+    }
+    
+    const updatedIdea: Idea = {
+      ...existingIdea,
+      ...idea
+    };
+    
+    this.ideas.set(ideaId, updatedIdea);
+    return updatedIdea;
+  }
+
+  async deleteIdea(ideaId: string): Promise<boolean> {
+    return this.ideas.delete(ideaId);
+  }
+  
+  // Review methods
+  async createReview(review: InsertReview): Promise<Review> {
+    const id = this.reviewId++;
+    const newReview: Review = {
+      ...review,
+      id,
+      createdAt: new Date()
+    };
+    
+    this.reviews.set(id, newReview);
+    return newReview;
+  }
+
+  async getReview(id: number): Promise<Review | undefined> {
+    return this.reviews.get(id);
+  }
+
+  async getReviewsByIdeaId(ideaId: string): Promise<Review[]> {
+    return Array.from(this.reviews.values()).filter(review => 
+      review.ideaId === ideaId
+    );
+  }
+
+  async deleteReview(id: number): Promise<boolean> {
+    return this.reviews.delete(id);
+  }
+  
+  // Tournament round methods
+  async createTournamentRound(round: InsertTournamentRound): Promise<TournamentRound> {
+    const id = this.tournamentRoundId++;
+    const newRound: TournamentRound = {
+      ...round,
+      id,
+      startedAt: new Date(),
+      completedAt: new Date()
+    };
+    
+    this.tournamentRounds.set(id, newRound);
+    return newRound;
+  }
+
+  async getTournamentRound(id: number): Promise<TournamentRound | undefined> {
+    return this.tournamentRounds.get(id);
+  }
+
+  async getTournamentRoundsByTournament(tournamentId: number): Promise<TournamentRound[]> {
+    return Array.from(this.tournamentRounds.values()).filter(round => 
+      round.tournamentId === tournamentId
+    ).sort((a, b) => a.roundNumber - b.roundNumber);
+  }
+
+  async getTournamentRoundByTournamentAndRound(tournamentId: number, roundNumber: number): Promise<TournamentRound | undefined> {
+    return Array.from(this.tournamentRounds.values()).find(round => 
+      round.tournamentId === tournamentId && round.roundNumber === roundNumber
+    );
+  }
+
+  async deleteTournamentRound(id: number): Promise<boolean> {
+    return this.tournamentRounds.delete(id);
   }
   
   // Helper to add some mock data
