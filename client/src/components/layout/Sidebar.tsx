@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   FileTextIcon, 
@@ -8,7 +8,9 @@ import {
   SettingsIcon,
   BeakerIcon,
   TrophyIcon,
-  PlusCircleIcon
+  PlusCircleIcon,
+  CheckCircle2,
+  CircleDashed
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { Progress } from "@/components/ui/progress";
 
 const Sidebar: React.FC = () => {
   const [location, navigate] = useLocation();
@@ -35,6 +38,10 @@ const Sidebar: React.FC = () => {
   });
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [creationProgress, setCreationProgress] = useState(0);
+  const [creationStage, setCreationStage] = useState<string>('');
+  const [tournamentId, setTournamentId] = useState<number | null>(null);
+  const [pollInterval, setPollInterval] = useState<number | null>(null);
 
   const handleInputChange = (field: string, value: any) => {
     setFormValues(prev => ({
@@ -81,9 +88,80 @@ const Sidebar: React.FC = () => {
       }
     });
   };
+  
+  // Effect to poll for tournament progress
+  useEffect(() => {
+    if (tournamentId && isCreating) {
+      // Clear any existing interval
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+      
+      // Start polling for tournament progress
+      const interval = window.setInterval(async () => {
+        try {
+          const response = await fetch(`/api/tournaments/${tournamentId}`);
+          const data = await response.json();
+          
+          // Update progress based on tournament status
+          if (data.tournament) {
+            const tournament = data.tournament;
+            
+            // Check if initial ideas exist
+            const ideasResponse = await fetch(`/api/tournaments/${tournamentId}/ideas`);
+            const ideas = await ideasResponse.json();
+            
+            if (ideas.length === 0) {
+              setCreationStage('Generating initial study concepts...');
+              setCreationProgress(10);
+            } else if (tournament.currentRound === 0) {
+              setCreationStage('Evaluating concepts with review board...');
+              setCreationProgress(25);
+            } else if (tournament.currentRound === 1) {
+              setCreationStage('Processing round 1 challenger ideas...');
+              setCreationProgress(50);
+            } else if (tournament.currentRound === 2) {
+              setCreationStage('Processing round 2 challenger ideas...');
+              setCreationProgress(75);
+            } else if (tournament.currentRound === 3 || tournament.status === 'completed') {
+              setCreationStage('Finalizing tournament results...');
+              setCreationProgress(100);
+              
+              // Tournament is ready, stop polling and navigate
+              clearInterval(interval);
+              setPollInterval(null);
+              setIsCreating(false);
+              setIsNewTournamentOpen(false);
+              
+              // Reset state
+              setTournamentId(null);
+              setCreationStage('');
+              setCreationProgress(0);
+              
+              // Navigate to the tournament
+              navigate(`/tournaments/${tournamentId}`);
+            }
+          }
+        } catch (error) {
+          console.error('Error polling tournament progress:', error);
+        }
+      }, 3000); // Poll every 3 seconds
+      
+      setPollInterval(interval);
+      
+      // Clean up on unmount
+      return () => {
+        if (interval) {
+          clearInterval(interval);
+        }
+      };
+    }
+  }, [tournamentId, isCreating, navigate]);
 
   const handleSubmit = async () => {
     setError(null);
+    setCreationProgress(0);
+    setCreationStage('');
     
     if (!formValues.drugName || !formValues.indication) {
       setError('Drug name and indication are required');
@@ -101,13 +179,16 @@ const Sidebar: React.FC = () => {
     }
     
     setIsCreating(true);
+    setCreationStage('Initializing tournament...');
+    setCreationProgress(5);
     
     try {
       const response = await apiRequest('POST', '/api/tournaments/new-concept', formValues);
       const data = await response.json();
       
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
-      setIsNewTournamentOpen(false);
+      
+      // Reset form values but keep dialog open to show progress
       setFormValues({
         drugName: '',
         indication: '',
@@ -118,14 +199,19 @@ const Sidebar: React.FC = () => {
         lanes: 5
       });
       
-      // Navigate to the new tournament
+      // Store tournament ID to track progress, but don't navigate yet
       if (data && data.tournament_id) {
-        navigate(`/tournaments/${data.tournament_id}`);
+        setTournamentId(data.tournament_id);
+        setCreationStage('Tournament created, generating initial ideas...');
+        setCreationProgress(10);
+      } else {
+        throw new Error('No tournament ID returned from server');
       }
     } catch (error: any) {
       setError(error.message || 'Failed to create tournament');
-    } finally {
       setIsCreating(false);
+      setCreationProgress(0);
+      setCreationStage('');
     }
   };
 
