@@ -556,7 +556,396 @@ export class MemStorage implements IStorage {
       }
     };
     
-    // Add the sample data
+    // Sample tournament
+    const sampleTournament: InsertTournament = {
+      drugName: "amivantamab",
+      indication: "non-small cell lung cancer with EGFR exon 20 insertion mutations",
+      strategicGoals: [
+        { goal: "expand_label", weight: 0.4 },
+        { goal: "accelerate_uptake", weight: 0.3 },
+        { goal: "demonstrate_safety", weight: 0.3 }
+      ],
+      geography: ["US", "EU", "JP"],
+      studyPhasePref: "II",
+      maxRounds: 5,
+      lanes: 4,
+      status: "running",
+      currentRound: 2,
+      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() // 10 days ago
+    };
+    
+    // Add tournament to storage
+    this.createTournament(sampleTournament).then(tournament => {
+      console.log("Created tournament:", tournament.id);
+      
+      // Create sample ideas for the tournament
+      const ideaA: InsertIdea = {
+        ideaId: "A_v1",
+        tournamentId: tournament.id,
+        laneId: 1,
+        round: 1,
+        isChampion: true,
+        title: "EGFR Exon 20 First-line Comparison Study",
+        drugName: "amivantamab",
+        indication: "NSCLC with EGFR exon 20 insertion mutations",
+        strategicGoals: ["expand_label", "accelerate_uptake"],
+        geography: ["US", "EU", "JP"],
+        studyPhase: "II",
+        picoData: {
+          population: "Treatment-naive patients with NSCLC and confirmed EGFR exon 20 insertion mutations",
+          intervention: "Amivantamab (1050mg IV, q3w) monotherapy",
+          comparator: "Platinum-based chemotherapy",
+          outcomes: "PFS, OS, ORR, DOR, safety"
+        },
+        mcdaScores: {
+          scientificValidity: 0.78,
+          clinicalImpact: 0.85,
+          commercialValue: 0.82,
+          feasibility: 0.70,
+          overall: 0.79
+        },
+        swotAnalysis: {
+          strengths: ["Addresses unmet need in first-line setting", "Built on strong Phase 1 data", "Potential for practice-changing results"],
+          weaknesses: ["Complex trial design", "Recruitment challenges for rare mutation", "Higher cost than current SOC"],
+          opportunities: ["First-line label expansion", "Guideline inclusion", "Increase market share"],
+          threats: ["Competing agents in development", "Evolving molecular testing landscape", "Reimbursement challenges"]
+        },
+        feasibilityData: {
+          estimatedCost: 5200000,
+          timeline: 36,
+          projectedROI: 3.2,
+          recruitmentRate: 0.62,
+          completionRisk: 0.40
+        },
+        evidenceSources: [],
+        overallScore: 0.79,
+        scoreChange: null
+      };
+      
+      const ideaB: InsertIdea = {
+        ideaId: "B_v1",
+        tournamentId: tournament.id,
+        laneId: 2,
+        round: 1,
+        isChampion: true,
+        title: "Amivantamab + Chemo vs Chemo alone in pretreated NSCLC",
+        drugName: "amivantamab",
+        indication: "Previously treated NSCLC with EGFR exon 20 insertion mutations",
+        strategicGoals: ["demonstrate_safety", "accelerate_uptake"],
+        geography: ["US", "EU"],
+        studyPhase: "II",
+        picoData: {
+          population: "Patients with NSCLC and EGFR exon 20 insertion mutations who progressed after platinum-based chemotherapy",
+          intervention: "Amivantamab + docetaxel",
+          comparator: "Docetaxel alone",
+          outcomes: "PFS, OS, ORR, safety"
+        },
+        mcdaScores: {
+          scientificValidity: 0.75,
+          clinicalImpact: 0.80,
+          commercialValue: 0.74,
+          feasibility: 0.82,
+          overall: 0.77
+        },
+        swotAnalysis: {
+          strengths: ["Combination approach addresses resistance mechanisms", "Feasible recruitment timeline", "Clear endpoints"],
+          weaknesses: ["Added toxicity with combination", "Complex dosing schedule", "Longer treatment duration impacts costs"],
+          opportunities: ["Expand use in later lines", "Potential synergistic effect", "Address docetaxel resistance"],
+          threats: ["Other EGFR-targeting agents", "Evolving treatment landscape", "Payer restrictions"]
+        },
+        feasibilityData: {
+          estimatedCost: 4800000,
+          timeline: 30,
+          projectedROI: 2.8,
+          recruitmentRate: 0.70,
+          completionRisk: 0.35
+        },
+        evidenceSources: [],
+        overallScore: 0.77,
+        scoreChange: null
+      };
+      
+      const ideaC: InsertIdea = {
+        ideaId: "C_v2",
+        tournamentId: tournament.id,
+        laneId: 1,
+        round: 2,
+        isChampion: false,
+        parentIdeaId: "A_v1",
+        title: "Amivantamab vs. Osimertinib in EGFR Exon 20+ NSCLC",
+        drugName: "amivantamab",
+        indication: "NSCLC with EGFR exon 20 insertion mutations",
+        strategicGoals: ["expand_label", "accelerate_uptake", "demonstrate_safety"],
+        geography: ["US", "EU", "JP", "CN"],
+        studyPhase: "II",
+        picoData: {
+          population: "Treatment-naive patients with NSCLC and confirmed EGFR exon 20 insertion mutations",
+          intervention: "Amivantamab (1050mg IV, q3w)",
+          comparator: "Osimertinib (80mg daily)",
+          outcomes: "PFS, OS, ORR, DOR, CNS efficacy, safety"
+        },
+        mcdaScores: {
+          scientificValidity: 0.82,
+          clinicalImpact: 0.88,
+          commercialValue: 0.85,
+          feasibility: 0.73,
+          overall: 0.83
+        },
+        swotAnalysis: {
+          strengths: ["Direct comparison to most relevant competitor", "Includes CNS efficacy assessment", "Robust biomarker analysis"],
+          weaknesses: ["More complex patient selection criteria", "Added CNS imaging increases complexity", "Higher per-patient costs"],
+          opportunities: ["Definitive positioning vs osimertinib", "Enhanced physician confidence", "Potential premium pricing justification"],
+          threats: ["Osimertinib established prescribing patterns", "Upcoming novel agents", "Regulatory hurdles for complex endpoints"]
+        },
+        feasibilityData: {
+          estimatedCost: 5800000,
+          timeline: 38,
+          projectedROI: 3.5,
+          recruitmentRate: 0.60,
+          completionRisk: 0.45
+        },
+        evidenceSources: [],
+        overallScore: 0.83,
+        scoreChange: null
+      };
+      
+      const ideaD: InsertIdea = {
+        ideaId: "D_v2",
+        tournamentId: tournament.id,
+        laneId: 2,
+        round: 2,
+        isChampion: false,
+        parentIdeaId: "B_v1",
+        title: "Amivantamab + Lazertinib Combination Study",
+        drugName: "amivantamab",
+        indication: "NSCLC with EGFR exon 20 insertion mutations",
+        strategicGoals: ["demonstrate_safety", "accelerate_uptake", "expand_label"],
+        geography: ["US", "EU", "JP"],
+        studyPhase: "II",
+        picoData: {
+          population: "Treatment-naive and previously treated patients with NSCLC and EGFR exon 20 insertion mutations",
+          intervention: "Amivantamab + lazertinib",
+          comparator: "Physician's choice (platinum chemotherapy or EGFR TKI)",
+          outcomes: "PFS, OS, ORR, safety, CNS efficacy"
+        },
+        mcdaScores: {
+          scientificValidity: 0.84,
+          clinicalImpact: 0.82,
+          commercialValue: 0.83,
+          feasibility: 0.68,
+          overall: 0.80
+        },
+        swotAnalysis: {
+          strengths: ["Novel combination approach", "Targets multiple resistance mechanisms", "Strong preclinical rationale"],
+          weaknesses: ["Increased complexity with dual therapy", "Drug-drug interaction potential", "Higher cost impact"],
+          opportunities: ["First combination approach in this setting", "Potential for enhanced efficacy", "New mechanism targeting"],
+          threats: ["Complex regulatory path for combination", "Competing combination approaches", "Added toxicity concerns"]
+        },
+        feasibilityData: {
+          estimatedCost: 6200000,
+          timeline: 42,
+          projectedROI: 3.0,
+          recruitmentRate: 0.55,
+          completionRisk: 0.50
+        },
+        evidenceSources: [],
+        overallScore: 0.80,
+        scoreChange: null
+      };
+      
+      // Add ideas to storage
+      Promise.all([
+        this.createIdea(ideaA),
+        this.createIdea(ideaB),
+        this.createIdea(ideaC),
+        this.createIdea(ideaD)
+      ]).then(ideas => {
+        console.log("Created ideas for tournament:", ideas.length);
+        
+        // Create reviews for each idea
+        const reviewsForA = [
+          {
+            ideaId: "A_v1",
+            agentId: "CLIN",
+            score: 0.81,
+            strengths: ["Strong clinical rationale", "Clear patient population", "Meaningful endpoints"],
+            weaknesses: ["Limited biomarker strategy", "No quality of life measures"],
+            additionalMetrics: {
+              clinicalRelevance: 0.85,
+              novelty: 0.78,
+              feasibility: 0.80
+            }
+          },
+          {
+            ideaId: "A_v1",
+            agentId: "REG",
+            score: 0.76,
+            strengths: ["Well-defined regulatory pathway", "Endpoints align with prior approvals"],
+            weaknesses: ["Limited global regulatory strategy", "Documentation requirements unclear"],
+            additionalMetrics: {
+              approvability: 0.79,
+              timeToApproval: 0.72,
+              labelExpansionPotential: 0.77
+            }
+          }
+        ];
+        
+        const reviewsForB = [
+          {
+            ideaId: "B_v1",
+            agentId: "CLIN",
+            score: 0.79,
+            strengths: ["Addresses clinical resistance problem", "Feasible comparison"],
+            weaknesses: ["Potential for overlapping toxicities", "Limited biomarker analysis"],
+            additionalMetrics: {
+              clinicalRelevance: 0.82,
+              novelty: 0.75,
+              feasibility: 0.80
+            }
+          },
+          {
+            ideaId: "B_v1",
+            agentId: "SAF",
+            score: 0.73,
+            strengths: ["Clear safety monitoring plan", "Manageable toxicity profile expected"],
+            weaknesses: ["Potential for additive toxicities", "Limited risk mitigation strategies"],
+            additionalMetrics: {
+              safetyProfile: 0.75,
+              monitoringFeasibility: 0.72,
+              riskMitigation: 0.71
+            }
+          }
+        ];
+        
+        const reviewsForC = [
+          {
+            ideaId: "C_v2",
+            agentId: "CLIN",
+            score: 0.86,
+            strengths: ["Direct competitor comparison", "CNS efficacy assessment", "Comprehensive endpoints"],
+            weaknesses: ["Complex patient population", "Limited biomarker analysis"],
+            additionalMetrics: {
+              clinicalRelevance: 0.90,
+              novelty: 0.82,
+              feasibility: 0.85
+            }
+          },
+          {
+            ideaId: "C_v2",
+            agentId: "STAT",
+            score: 0.83,
+            strengths: ["Robust statistical design", "Appropriate power calculations", "Well-defined endpoints"],
+            weaknesses: ["Complex stratification factors", "Ambitious effect size assumptions"],
+            additionalMetrics: {
+              statisticalRobustness: 0.84,
+              sampleSizeJustification: 0.81,
+              analysisMethodology: 0.85
+            }
+          }
+        ];
+        
+        const reviewsForD = [
+          {
+            ideaId: "D_v2",
+            agentId: "CLIN",
+            score: 0.84,
+            strengths: ["Novel combination approach", "Strong scientific rationale", "Addresses resistance mechanisms"],
+            weaknesses: ["Complex administration", "Potential for drug interactions"],
+            additionalMetrics: {
+              clinicalRelevance: 0.85,
+              novelty: 0.90,
+              feasibility: 0.77
+            }
+          },
+          {
+            ideaId: "D_v2",
+            agentId: "ETH",
+            score: 0.78,
+            strengths: ["Addresses patient need", "Reasonable risk-benefit balance"],
+            weaknesses: ["Limited patient engagement strategy", "Complex informed consent requirements"],
+            additionalMetrics: {
+              ethicalConsiderations: 0.80,
+              patientBenefit: 0.82,
+              inclusivity: 0.75
+            }
+          }
+        ];
+        
+        // Add all reviews
+        const allReviews = [...reviewsForA, ...reviewsForB, ...reviewsForC, ...reviewsForD];
+        Promise.all(allReviews.map(review => this.createReview(review))).then(createdReviews => {
+          console.log("Created reviews:", createdReviews.length);
+          
+          // Create tournament rounds
+          const round1: InsertTournamentRound = {
+            tournamentId: tournament.id,
+            roundNumber: 1,
+            startedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+            completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+            status: "completed",
+            laneUpdates: [
+              {
+                laneId: 1,
+                champion: {
+                  ideaId: "A_v1",
+                  score: 0.79
+                }
+              },
+              {
+                laneId: 2,
+                champion: {
+                  ideaId: "B_v1",
+                  score: 0.77
+                }
+              }
+            ]
+          };
+          
+          const round2: InsertTournamentRound = {
+            tournamentId: tournament.id,
+            roundNumber: 2,
+            startedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+            completedAt: null,
+            status: "in_progress",
+            laneUpdates: [
+              {
+                laneId: 1,
+                champion: {
+                  ideaId: "A_v1",
+                  score: 0.79
+                },
+                challenger: {
+                  ideaId: "C_v2",
+                  score: 0.83
+                },
+                delta: 0.04
+              },
+              {
+                laneId: 2,
+                champion: {
+                  ideaId: "B_v1",
+                  score: 0.77
+                },
+                challenger: {
+                  ideaId: "D_v2",
+                  score: 0.80
+                },
+                delta: 0.03
+              }
+            ]
+          };
+          
+          Promise.all([
+            this.createTournamentRound(round1),
+            this.createTournamentRound(round2)
+          ]).then(rounds => {
+            console.log("Created tournament rounds:", rounds.length);
+          });
+        });
+      });
+    });
+    
+    // Add the sample concept and validation data
     this.createStudyConcept(sampleConcept);
     this.createSynopsisValidation(sampleValidation);
   }
