@@ -67,8 +67,8 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts }) => {
       
       toast({
         title: "Export Successful",
-        description: isPDF 
-          ? "PPTX generation failed, but PDF has been downloaded as a fallback"
+        description: isPDF || import.meta.env.MODE === 'production'
+          ? "Your presentation has been downloaded as a PDF file"
           : "The PPTX has been downloaded to your device",
       });
     } catch (error) {
@@ -92,7 +92,7 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts }) => {
           </Button>
           <Button onClick={exportPPTX}>
             <Download className="mr-2 h-4 w-4" />
-            Export PPTX
+            {import.meta.env.MODE === 'production' ? 'Export Presentation' : 'Export PPTX'}
           </Button>
         </div>
       </CardHeader>

@@ -196,9 +196,15 @@ export async function generatePdfReport(concepts: StudyConcept[]): Promise<Buffe
  * @returns Buffer containing the PPTX file
  */
 export async function generatePptxReport(concepts: StudyConcept[]): Promise<Buffer> {
+  // In production environment, immediately fall back to PDF to avoid module compatibility issues
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Skipping PPTX generation in production environment, falling back to PDF');
+    return generatePdfReport(concepts);
+  }
+  
   return new Promise(async (resolve, reject) => {
     try {
-      // Dynamically import pptxgenjs only when needed
+      // Dynamically import pptxgenjs only when needed (only in development)
       if (!pptxgenjs) {
         try {
           // Try to import using dynamic import
@@ -206,7 +212,9 @@ export async function generatePptxReport(concepts: StudyConcept[]): Promise<Buff
           pptxgenjs = module.default || module;
         } catch (error) {
           console.error('Error importing pptxgenjs:', error);
-          throw new Error('Failed to import pptxgenjs module');
+          // Fall back to PDF generation on import error
+          const pdfBuffer = await generatePdfReport(concepts);
+          return resolve(pdfBuffer);
         }
       }
       
