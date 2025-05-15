@@ -1,0 +1,212 @@
+import OpenAI from "openai";
+import { InsertIdea, NewTournamentRequest } from "@shared/tournament";
+import { perplexityWebSearch } from "./perplexity";
+
+// Use the OpenAI client
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+/**
+ * Generates seed ideas for a tournament using the GPT-4.1 model
+ * 
+ * @param tournamentData The tournament request data
+ * @param tournamentId The ID of the created tournament
+ * @param numIdeas The number of seed ideas to generate (default: 5)
+ * @returns Array of seed ideas
+ */
+export async function generateSeedIdeas(
+  tournamentData: NewTournamentRequest, 
+  tournamentId: number,
+  numIdeas: number = 5
+): Promise<InsertIdea[]> {
+  try {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OPENAI_API_KEY environment variable not found");
+    }
+
+    // Create search query from tournament data
+    const strategicGoalsFocus = tournamentData.strategicGoals.map(goal => goal.goal.replace('_', ' ')).join(' and ');
+    const isOncology = (tournamentData.indication || '').toLowerCase().includes('cancer') || 
+                      (tournamentData.indication || '').toLowerCase().includes('oncol') ||
+                      (tournamentData.indication || '').toLowerCase().includes('tumor');
+    
+    const searchQuery = `Provide the latest clinical evidence for ${tournamentData.drugName} in ${tournamentData.indication} focusing on ${strategicGoalsFocus}. 
+    Include details about: 
+    1. Optimal study design (Phase ${tournamentData.studyPhasePref}) 
+    2. Typical patient populations and sample sizes 
+    3. Common comparators used in similar studies
+    4. Standard endpoints and outcomes
+    5. Average costs and durations for similar trials${isOncology ? ' in oncology' : ''}
+    6. Common inclusion/exclusion criteria 
+    7. Geographic patterns/differences in conducting these trials`;
+    
+    // Perform web search using Perplexity API
+    const searchResults = await perplexityWebSearch(searchQuery, [
+      "pubmed.ncbi.nlm.nih.gov",
+      "clinicaltrials.gov",
+      "fda.gov",
+      "ema.europa.eu",
+      "nejm.org",
+      "thelancet.com",
+      "jamanetwork.com"
+    ]);
+
+    // Build the prompt for generating seed ideas
+    const prompt = buildSeedIdeaPrompt(tournamentData, searchResults, numIdeas);
+
+    // Generate seed ideas using OpenAI
+    const response = await openai.chat.completions.create({
+      model: "gpt-4.1",
+      messages: [
+        { 
+          role: "system", 
+          content: `You are a clinical study concept generator. Generate evidence-based clinical study concepts based on the provided drug, indication, and strategic goals. Each concept should be scientifically rigorous, clinically relevant, and commercially viable.` 
+        },
+        { role: "user", content: prompt }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 1.0, // Higher temperature for more diverse seed ideas
+    });
+
+    // Parse the response
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    let concepts = result.concepts || [];
+    
+    // Ensure we have the requested number of ideas
+    if (concepts.length < numIdeas) {
+      console.warn(`Only ${concepts.length} seed ideas generated, expected ${numIdeas}`);
+    }
+
+    // Transform concepts into InsertIdea objects
+    const ideas: InsertIdea[] = concepts.map((concept: any, index: number) => {
+      const laneId = index;
+      const ideaId = `${String.fromCharCode(65 + laneId)}_v1`; // A_v1, B_v1, etc.
+      
+      return {
+        ideaId,
+        tournamentId,
+        laneId,
+        round: 0, // Seed ideas are round 0
+        isChampion: true, // All seed ideas start as champions
+        
+        title: concept.title,
+        drugName: concept.drugName,
+        indication: concept.indication,
+        strategicGoals: concept.strategicGoals,
+        geography: concept.geography,
+        studyPhase: concept.studyPhase,
+        targetSubpopulation: concept.targetSubpopulation || null,
+        comparatorDrugs: concept.comparatorDrugs || [],
+        knowledgeGapAddressed: concept.knowledgeGapAddressed || null,
+        innovationJustification: concept.innovationJustification || null,
+        
+        picoData: concept.picoData,
+        mcdaScores: concept.mcdaScores,
+        swotAnalysis: concept.swotAnalysis,
+        feasibilityData: concept.feasibilityData,
+        evidenceSources: concept.evidenceSources,
+        
+        overallScore: 0, // Will be calculated after review
+        scoreChange: null,
+      };
+    });
+
+    return ideas;
+  } catch (error) {
+    console.error("Error generating seed ideas:", error);
+    throw error;
+  }
+}
+
+/**
+ * Builds a prompt for seed idea generation
+ */
+function buildSeedIdeaPrompt(
+  data: NewTournamentRequest, 
+  searchResults: { content: string; citations: string[] },
+  numIdeas: number
+): string {
+  const strategicGoalsText = data.strategicGoals.map(goalObj => {
+    return `${goalObj.goal.replace('_', ' ')} (weight: ${goalObj.weight})`;
+  }).join(', ');
+
+  return `
+  Based on the following parameters and evidence, generate ${numIdeas} distinct clinical study concepts for ${data.drugName} in ${data.indication}.
+
+  # Parameters:
+  - Drug: ${data.drugName}
+  - Indication: ${data.indication}
+  - Strategic Goals: ${strategicGoalsText}
+  - Geography: ${data.geography.join(', ')}
+  - Study Phase Preference: ${data.studyPhasePref}
+
+  # Evidence from Literature:
+  ${searchResults.content}
+  
+  ## CRITICAL INSTRUCTIONS:
+  1. FIRST, analyze the evidence to identify what is ALREADY KNOWN about ${data.drugName} in ${data.indication}.
+  2. SECOND, identify critical KNOWLEDGE GAPS that align with the strategic goals.
+  3. THIRD, design NOVEL study concepts that address these gaps and advance the strategic goals, rather than replicating existing studies.
+  
+  ## Design Requirements:
+  1. Create truly innovative studies that build upon existing evidence rather than duplicating what's already been done.
+  2. For Phase III oncology studies, ensure cost estimates accurately reflect the high expense (typically €30-100M range).
+  3. When EU is specified as a geography, your design should include multiple European countries (8-12 countries).
+  4. Sample sizes should align with typical values for the specified phase and indication.
+  5. Each concept should clearly explain WHY this approach is novel and how it addresses a specific gap in current knowledge.
+  
+  Respond with a JSON object in this format:
+  {
+    "concepts": [
+      {
+        "title": "A descriptive title for the study",
+        "drugName": "The drug name from the parameters",
+        "indication": "The indication from the parameters",
+        "strategicGoals": ["Array of strategic goals from the parameters"],
+        "geography": ["Array of geography codes"],
+        "studyPhase": "A recommended study phase (I, II, III, IV, or any)",
+        "targetSubpopulation": "The target subpopulation (use the provided value or suggest one)",
+        "comparatorDrugs": ["Array of comparator drugs (use the provided values or suggest appropriate ones)"],
+        "knowledgeGapAddressed": "Detailed explanation of the specific knowledge gap this study addresses based on current evidence",
+        "innovationJustification": "Explanation of why this study design is novel and how it advances the strategic goal",
+        "picoData": {
+          "population": "Detailed description of the study population",
+          "intervention": "Detailed description of the intervention",
+          "comparator": "Detailed description of the comparator",
+          "outcomes": "Detailed description of the outcomes"
+        },
+        "mcdaScores": {
+          "scientificValidity": 3.5,
+          "clinicalImpact": 4.0,
+          "commercialValue": 3.8,
+          "feasibility": 3.2,
+          "overall": 3.6
+        },
+        "swotAnalysis": {
+          "strengths": ["Strength 1", "Strength 2"],
+          "weaknesses": ["Weakness 1", "Weakness 2"],
+          "opportunities": ["Opportunity 1", "Opportunity 2"],
+          "threats": ["Threat 1", "Threat 2"]
+        },
+        "feasibilityData": {
+          "estimatedCost": 2000000,
+          "timeline": 24,
+          "projectedROI": 2.5,
+          "recruitmentRate": 0.7,
+          "completionRisk": 0.3
+        },
+        "evidenceSources": [
+          {
+            "title": "Source title",
+            "authors": "Optional authors",
+            "publication": "Optional publication name",
+            "year": 2023,
+            "citation": "Full citation string"
+          }
+        ]
+      }
+      // Generate ${numIdeas} total concepts
+    ]
+  }
+  
+  Ensure each concept is distinct, evidence-based, and aligned with the strategic goals. The concepts should be feasible given the parameters. Include appropriate mcdaScores and feasibilityData values that reflect realistic projections.`;
+}
