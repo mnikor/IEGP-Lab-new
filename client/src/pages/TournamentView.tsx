@@ -192,7 +192,7 @@ const TournamentView = () => {
               {tournament.status === 'running' ? 'Tournament in progress' : 'Tournament complete'}
             </p>
           </div>
-          <Badge variant={tournament.status === 'completed' ? 'success' : 'secondary'} className="text-sm">
+          <Badge variant={tournament.status === 'completed' ? 'default' : 'secondary'} className="text-sm">
             {tournament.status.toUpperCase()}
           </Badge>
         </div>
@@ -479,7 +479,7 @@ const TournamentView = () => {
                           <div className="space-y-4">
                             <div className="flex items-center justify-between">
                               <h3 className="text-lg font-medium">
-                                {agentConfig[selectedAgentId || 'CLIN']?.name} Review
+                                {selectedAgentId && agentConfig[selectedAgentId as keyof typeof agentConfig] ? agentConfig[selectedAgentId as keyof typeof agentConfig].name : 'Expert'} Review
                               </h3>
                               <Badge variant="outline">
                                 Score: {reviewData.score.toFixed(2)}
