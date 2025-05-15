@@ -86,35 +86,40 @@ const TournamentList = () => {
     }));
   };
 
-  const handleStrategicGoalChange = (goal: string, checked: boolean) => {
+  const handleStrategicGoalChange = (displayGoal: string, checked: boolean) => {
     const weight = 1; // Default weight, can be made configurable later
+    // Map the display goal to the server-expected goal value
+    const mappedGoal = strategicGoalsMap[displayGoal as keyof typeof strategicGoalsMap];
     
     setFormValues(prev => {
       if (checked) {
         return {
           ...prev,
-          strategicGoals: [...prev.strategicGoals, { goal, weight }]
+          strategicGoals: [...prev.strategicGoals, { goal: mappedGoal, weight }]
         };
       } else {
         return {
           ...prev,
-          strategicGoals: prev.strategicGoals.filter(g => g.goal !== goal)
+          strategicGoals: prev.strategicGoals.filter(g => g.goal !== mappedGoal)
         };
       }
     });
   };
 
-  const handleGeographyChange = (region: string, checked: boolean) => {
+  const handleGeographyChange = (displayRegion: string, checked: boolean) => {
+    // Map the display region to the server-expected two-letter code
+    const regionCode = geographicRegionsMap[displayRegion as keyof typeof geographicRegionsMap];
+    
     setFormValues(prev => {
       if (checked) {
         return {
           ...prev,
-          geography: [...prev.geography, region]
+          geography: [...prev.geography, regionCode]
         };
       } else {
         return {
           ...prev,
-          geography: prev.geography.filter(g => g !== region)
+          geography: prev.geography.filter(g => g !== regionCode)
         };
       }
     });
@@ -160,15 +165,17 @@ const TournamentList = () => {
   
   const strategicGoals = Object.keys(strategicGoalsMap);
   
-  // Predefine some geographic regions
-  const geographicRegions = [
-    'North America',
-    'Europe',
-    'Asia Pacific',
-    'Latin America',
-    'Middle East & Africa',
-    'Global'
-  ];
+  // Predefine some geographic regions with ISO codes
+  const geographicRegionsMap = {
+    'North America': 'NA',
+    'Europe': 'EU',
+    'Asia Pacific': 'AP',
+    'Latin America': 'LA',
+    'Middle East & Africa': 'ME',
+    'Global': 'GL'
+  };
+  
+  const geographicRegions = Object.keys(geographicRegionsMap);
 
   if (isLoading) {
     return (
@@ -273,7 +280,7 @@ const TournamentList = () => {
                       <input
                         type="checkbox"
                         id={`goal-${goal}`}
-                        checked={formValues.strategicGoals.some(g => g.goal === goal)}
+                        checked={formValues.strategicGoals.some(g => g.goal === strategicGoalsMap[goal as keyof typeof strategicGoalsMap])}
                         onChange={(e) => handleStrategicGoalChange(goal, e.target.checked)}
                         className="rounded border-gray-300 text-primary focus:ring-primary"
                       />
@@ -293,7 +300,7 @@ const TournamentList = () => {
                       <input
                         type="checkbox"
                         id={`region-${region}`}
-                        checked={formValues.geography.includes(region)}
+                        checked={formValues.geography.includes(geographicRegionsMap[region as keyof typeof geographicRegionsMap])}
                         onChange={(e) => handleGeographyChange(region, e.target.checked)}
                         className="rounded border-gray-300 text-primary focus:ring-primary"
                       />
