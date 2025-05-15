@@ -1,27 +1,9 @@
 import { StudyConcept, SynopsisValidation } from "@shared/schema";
 import PDFDocument from 'pdfkit';
-// Use dynamic import for pptxgenjs to ensure proper module loading
-let PptxGenJS: any;
-try {
-  // First try ES module import
-  const PptxGenJSModule = await import('pptxgenjs');
-  PptxGenJS = PptxGenJSModule.default || PptxGenJSModule;
-} catch (error) {
-  console.error('Error importing pptxgenjs:', error);
-  throw new Error('Failed to import pptxgenjs module');
-}
+import PptxGenJS from 'pptxgenjs';
 import { PassThrough } from 'stream';
 
-// Dynamic import function for JSZip to be used when needed
-async function getJSZip() {
-  try {
-    const JSZipModule = await import('jszip');
-    return JSZipModule.default || JSZipModule;
-  } catch (error) {
-    console.error('Error importing JSZip:', error);
-    throw new Error('Failed to import JSZip module');
-  }
-}
+// JSZip is already included with pptxgenjs, no need for separate import
 
 /**
  * Generates a PDF report for study concepts
@@ -228,7 +210,7 @@ export async function generatePptxReport(concepts: StudyConcept[]): Promise<Buff
         const overviewSlide = pptx.addSlide();
         overviewSlide.addText(`Concept ${index + 1}: ${concept.title}`, { x: 0.5, y: 0.5, w: 9, h: 0.8, fontSize: 18, fontFace: 'Arial', bold: true });
         overviewSlide.addText(`Drug: ${concept.drugName} | Indication: ${concept.indication}`, { x: 0.5, y: 1.3, w: 9, h: 0.5, fontSize: 14, fontFace: 'Arial' });
-        overviewSlide.addText(`Strategic Goal: ${concept.strategicGoal.replace('_', ' ')} | Phase: ${concept.studyPhase} | Geography: ${concept.geography.join(', ')}`, { x: 0.5, y: 1.8, w: 9, h: 0.5, fontSize: 14, fontFace: 'Arial' });
+        overviewSlide.addText(`Strategic Goals: ${concept.strategicGoals.join(', ').replace(/_/g, ' ')} | Phase: ${concept.studyPhase} | Geography: ${concept.geography.join(', ')}`, { x: 0.5, y: 1.8, w: 9, h: 0.5, fontSize: 14, fontFace: 'Arial' });
         
         // Type assertion for MCDA scores
         const pptxMcdaScores = concept.mcdaScores as {
@@ -346,30 +328,16 @@ export async function generatePptxReport(concepts: StudyConcept[]): Promise<Buff
         });
       });
       
-      // Generate the presentation as a buffer
-      // For pptxgenjs, we need to use the Write method and handle the Buffer ourselves
-      const stream = new PassThrough();
-      const chunks: Buffer[] = [];
-      
-      stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
-      stream.on('end', () => resolve(Buffer.concat(chunks)));
-      stream.on('error', (err) => reject(err));
-      
-      // Must cast to any since the TypeScript types for pptxgenjs are not updated to match the actual API
-      // This is safe because we know the API accepts 'nodebuffer' as a parameter
-      const writeOutput = (pptx as any).write('nodebuffer'); 
-      if (writeOutput instanceof Promise) {
-        writeOutput.then((buffer: any) => {
-          stream.write(Buffer.from(buffer));
-          stream.end();
-        }).catch((err: Error) => {
+      // Generate the presentation as a buffer using modern API
+      // The latest version of pptxgenjs supports writeFile which returns a Promise with the buffer
+      pptx.writeFile({ outputType: 'nodebuffer' })
+        .then((buffer: Buffer) => {
+          resolve(buffer);
+        })
+        .catch((err: Error) => {
+          console.error('Error generating PPTX:', err);
           reject(err);
         });
-      } else {
-        // For older versions that might return the buffer directly
-        stream.write(Buffer.from(writeOutput));
-        stream.end();
-      }
     } catch (error) {
       reject(error);
     }
