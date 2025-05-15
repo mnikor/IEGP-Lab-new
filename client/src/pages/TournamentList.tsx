@@ -38,7 +38,7 @@ const TournamentList = () => {
   const [formValues, setFormValues] = useState({
     drugName: '',
     indication: '',
-    studyPhasePref: '2',
+    studyPhasePref: 'II',
     strategicGoals: [] as Array<{ goal: string, weight: number }>,
     geography: [] as string[],
     maxRounds: 3,
@@ -264,10 +264,11 @@ const TournamentList = () => {
                     <SelectValue placeholder="Select phase" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Phase 1</SelectItem>
-                    <SelectItem value="2">Phase 2</SelectItem>
-                    <SelectItem value="3">Phase 3</SelectItem>
-                    <SelectItem value="4">Phase 4</SelectItem>
+                    <SelectItem value="I">Phase 1</SelectItem>
+                    <SelectItem value="II">Phase 2</SelectItem>
+                    <SelectItem value="III">Phase 3</SelectItem>
+                    <SelectItem value="IV">Phase 4</SelectItem>
+                    <SelectItem value="any">Any Phase</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
