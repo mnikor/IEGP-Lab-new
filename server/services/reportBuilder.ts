@@ -54,7 +54,7 @@ export async function generatePdfReport(concepts: StudyConcept[]): Promise<Buffe
         // Concept metadata
         doc.fontSize(10).font('Helvetica-Bold').text('Drug: ').font('Helvetica').text(concept.drugName, { continued: true });
         doc.fontSize(10).font('Helvetica-Bold').text('   Indication: ').font('Helvetica').text(concept.indication);
-        doc.fontSize(10).font('Helvetica-Bold').text('Strategic Goal: ').font('Helvetica').text(concept.strategicGoal.replace('_', ' '));
+        doc.fontSize(10).font('Helvetica-Bold').text('Strategic Goals: ').font('Helvetica').text(concept.strategicGoals.join(', ').replace(/_/g, ' '));
         doc.fontSize(10).font('Helvetica-Bold').text('Geography: ').font('Helvetica').text(concept.geography.join(', '));
         doc.fontSize(10).font('Helvetica-Bold').text('Study Phase: ').font('Helvetica').text(concept.studyPhase);
         doc.moveDown();
@@ -330,9 +330,11 @@ export async function generatePptxReport(concepts: StudyConcept[]): Promise<Buff
       
       // Generate the presentation as a buffer using modern API
       // The latest version of pptxgenjs supports writeFile which returns a Promise with the buffer
-      pptx.writeFile({ outputType: 'nodebuffer' })
-        .then((buffer: Buffer) => {
-          resolve(buffer);
+      // Use writeBuffer instead of writeFile for Node.js environment
+      // Cast to any since TypeScript definitions may not be up to date
+      (pptx as any).writeBuffer()
+        .then((buffer: any) => {
+          resolve(Buffer.from(buffer));
         })
         .catch((err: Error) => {
           console.error('Error generating PPTX:', err);
