@@ -145,18 +145,20 @@ const TournamentList = () => {
     navigate(`/tournaments/${id}`);
   };
 
-  // Predefine some strategic goals
-  const strategicGoals = [
-    'PRIMARY_EFFICACY',
-    'SECONDARY_EFFICACY',
-    'SAFETY_PROFILE',
-    'DOSING_OPTIMIZATION',
-    'MECHANISM_OF_ACTION',
-    'POPULATION_EXPANSION',
-    'COMPARATIVE_EFFECTIVENESS',
-    'HEALTH_ECONOMICS',
-    'REGULATORY_APPROVAL'
-  ];
+  // Predefine some strategic goals with their API mapping
+  const strategicGoalsMap = {
+    'PRIMARY_EFFICACY': 'expand_label',
+    'SECONDARY_EFFICACY': 'defend_market_share',
+    'SAFETY_PROFILE': 'safety_risk_management',
+    'DOSING_OPTIMIZATION': 'dosing_optimization',
+    'MECHANISM_OF_ACTION': 'biomarker_validation',
+    'POPULATION_EXPANSION': 'accelerate_uptake',
+    'COMPARATIVE_EFFECTIVENESS': 'real_world_evidence',
+    'HEALTH_ECONOMICS': 'facilitate_market_access',
+    'REGULATORY_APPROVAL': 'combination_extension'
+  };
+  
+  const strategicGoals = Object.keys(strategicGoalsMap);
   
   // Predefine some geographic regions
   const geographicRegions = [
