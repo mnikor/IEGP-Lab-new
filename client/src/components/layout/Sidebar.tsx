@@ -278,7 +278,19 @@ const Sidebar: React.FC = () => {
         </div>
         
         <div className="px-2 mt-4">
-          <Dialog open={isNewTournamentOpen} onOpenChange={setIsNewTournamentOpen}>
+          <Dialog 
+            open={isNewTournamentOpen} 
+            onOpenChange={(open) => {
+              // If we're in the middle of creating a tournament, confirm before closing
+              if (!open && isCreating && tournamentId) {
+                if (window.confirm("Tournament creation is still in progress. If you close this dialog, the tournament will continue to be created in the background but you won't see progress. Are you sure you want to close?")) {
+                  setIsNewTournamentOpen(false);
+                }
+              } else {
+                setIsNewTournamentOpen(open);
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <Button 
                 variant="outline" 
@@ -409,17 +421,102 @@ const Sidebar: React.FC = () => {
                   </div>
                 </div>
               </div>
+              {/* Creation Progress UI */}
+              {isCreating && tournamentId && (
+                <div className="space-y-4 my-4 px-2">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-sm font-medium">Creating Tournament</h4>
+                    <span className="text-xs text-muted-foreground">{creationProgress}%</span>
+                  </div>
+                  
+                  <Progress value={creationProgress} className="h-2" />
+                  
+                  <div className="text-sm text-center text-muted-foreground mt-2">
+                    {creationStage}
+                  </div>
+                  
+                  <div className="space-y-2 pt-2">
+                    <div className="flex items-center gap-2">
+                      {creationProgress >= 5 ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <CircleDashed className="h-4 w-4 text-gray-300" />
+                      )}
+                      <span className="text-xs">Creating tournament</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {creationProgress >= 10 ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <CircleDashed className="h-4 w-4 text-gray-300" />
+                      )}
+                      <span className="text-xs">Generating initial ideas</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {creationProgress >= 25 ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <CircleDashed className="h-4 w-4 text-gray-300" />
+                      )}
+                      <span className="text-xs">Expert review of initial ideas</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {creationProgress >= 50 ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <CircleDashed className="h-4 w-4 text-gray-300" />
+                      )}
+                      <span className="text-xs">Processing round 1</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {creationProgress >= 75 ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <CircleDashed className="h-4 w-4 text-gray-300" />
+                      )}
+                      <span className="text-xs">Processing round 2</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {creationProgress >= 100 ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <CircleDashed className="h-4 w-4 text-gray-300" />
+                      )}
+                      <span className="text-xs">Finalizing tournament</span>
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-center text-muted-foreground mt-4">
+                    This process may take 1-5 minutes to complete.
+                    <br />
+                    You'll be redirected automatically when ready.
+                  </div>
+                </div>
+              )}
+              
               <DialogFooter>
-                <Button 
-                  type="submit" 
-                  onClick={handleSubmit}
-                  disabled={isCreating}
-                >
-                  {isCreating && (
+                {isCreating && tournamentId ? (
+                  <Button type="button" variant="outline" disabled>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Start Tournament
-                </Button>
+                    Processing...
+                  </Button>
+                ) : (
+                  <Button 
+                    type="submit" 
+                    onClick={handleSubmit}
+                    disabled={isCreating}
+                  >
+                    {isCreating && !tournamentId && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Start Tournament
+                  </Button>
+                )}
               </DialogFooter>
             </DialogContent>
           </Dialog>
