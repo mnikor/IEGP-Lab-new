@@ -49,6 +49,7 @@ const TournamentView = () => {
     isLoading, 
     error, 
     connectToTournament,
+    disconnectFromTournament,
     getReviewForIdea
   } = useTournament();
 
