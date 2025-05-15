@@ -8,6 +8,8 @@ import {
   StudyConcept,
   SynopsisValidation
 } from "@shared/schema";
+// Import tournament routes
+import tournamentRoutes from "./routes/tournament";
 import { perplexityWebSearch } from "./services/perplexity";
 import { analyzeWithOpenAI, extractPicoFromText } from "./services/openai";
 import { extractTextFromDocument } from "./services/documentParser";
@@ -476,6 +478,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to generate validation PDF report" });
     }
   });
+
+  // Register tournament routes
+  app.use('/api/tournaments', tournamentRoutes);
 
   const httpServer = createServer(app);
   return httpServer;

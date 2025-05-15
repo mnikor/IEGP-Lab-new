@@ -8,6 +8,9 @@ import AppShell from "@/components/layout/AppShell";
 import GenerateConcept from "@/pages/generate-concept";
 import ValidateStudyIdea from "@/pages/validate-study-idea";
 import Reports from "@/pages/reports";
+import TournamentList from "@/pages/TournamentList";
+import TournamentView from "@/pages/TournamentView";
+import { TournamentProvider } from "@/context/TournamentContext";
 
 function Router() {
   return (
@@ -34,6 +37,16 @@ function Router() {
           }}
         </Route>
         <Route path="/reports" component={Reports} />
+        <Route path="/tournaments">
+          <TournamentList />
+        </Route>
+        <Route path="/tournaments/:id">
+          {(params) => (
+            <TournamentProvider>
+              <TournamentView />
+            </TournamentProvider>
+          )}
+        </Route>
         <Route component={NotFound} />
       </Switch>
     </AppShell>
