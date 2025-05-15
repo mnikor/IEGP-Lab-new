@@ -12,7 +12,7 @@ NODE_OPTIONS = "--experimental-json-modules --experimental-specifier-resolution=
 [deployment]
 deploymentTarget = "autoscale"
 build = ["sh", "-c", "npm run build"]
-run = ["sh", "-c", "NODE_ENV=production node dist/index.js"]
+run = ["sh", "-c", "NODE_OPTIONS=\"--experimental-json-modules --experimental-specifier-resolution=node\" NODE_ENV=production node dist/index.js"]
 
 [[ports]]
 localPort = 5000
