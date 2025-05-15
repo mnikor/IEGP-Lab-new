@@ -42,7 +42,7 @@ export async function runReviewerAgent(idea: Idea, agentId: string): Promise<Ins
     
     // Call OpenAI to get the review
     const response = await openai.chat.completions.create({
-      model: "gpt-4.1", // Could use a smaller model like gpt-4.1-mini for cost efficiency
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }

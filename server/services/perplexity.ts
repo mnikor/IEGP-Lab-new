@@ -14,9 +14,9 @@ interface PerplexitySearchResult {
  */
 async function performSingleSearch(question: string, domains: string[] | null = null): Promise<PerplexitySearchResult> {
   try {
-    const apiKey = process.env.PPLX_API_KEY;
+    const apiKey = process.env.PERPLEXITY_API_KEY;
     if (!apiKey) {
-      throw new Error("PPLX_API_KEY environment variable not found");
+      throw new Error("PERPLEXITY_API_KEY environment variable not found");
     }
 
     console.log(`Performing Perplexity search with query: "${question}"`);
