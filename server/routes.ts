@@ -410,14 +410,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "No valid concepts found" });
       }
 
-      const pptxBuffer = await generatePptxReport(validConcepts);
-      
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
-      res.setHeader('Content-Disposition', `attachment; filename=study-concepts-presentation.pptx`);
-      res.send(pptxBuffer);
+      try {
+        // Try to generate PPTX
+        const pptxBuffer = await generatePptxReport(validConcepts);
+        
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+        res.setHeader('Content-Disposition', `attachment; filename=study-concepts-presentation.pptx`);
+        res.send(pptxBuffer);
+      } catch (pptxError) {
+        // If PPTX generation fails, fall back to PDF
+        console.error("Error generating PPTX, falling back to PDF:", pptxError);
+        
+        // Generate PDF instead
+        const pdfBuffer = await generatePdfReport(validConcepts);
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=study-concepts-presentation.pdf`);
+        res.send(pdfBuffer);
+      }
     } catch (error) {
-      console.error("Error generating PPTX:", error);
-      res.status(500).json({ message: "Failed to generate PPTX presentation" });
+      console.error("Error generating export:", error);
+      res.status(500).json({ message: "Failed to generate presentation" });
     }
   });
 

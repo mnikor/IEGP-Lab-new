@@ -47,26 +47,35 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts }) => {
     try {
       const response = await apiRequest("GET", "/api/export/pptx?ids=" + concepts.map(c => c.id).join(","), undefined);
       
-      // Create a blob from the PPTX Stream
+      // Check content type to determine if we got PPTX or PDF (fallback)
+      const contentType = response.headers.get('content-type');
+      const isPDF = contentType && contentType.includes('application/pdf');
+      
+      // Create a blob from the response
       const blob = await response.blob();
       
       // Create a link element, use it to download the blob, then remove it
       const link = document.createElement("a");
       link.href = window.URL.createObjectURL(blob);
-      link.download = `clinical-study-concepts-${new Date().toISOString().split('T')[0]}.pptx`;
+      
+      // Use appropriate file extension based on content type
+      const fileExtension = isPDF ? 'pdf' : 'pptx';
+      link.download = `clinical-study-concepts-${new Date().toISOString().split('T')[0]}.${fileExtension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
       toast({
         title: "Export Successful",
-        description: "The PPTX has been downloaded to your device",
+        description: isPDF 
+          ? "PPTX generation failed, but PDF has been downloaded as a fallback"
+          : "The PPTX has been downloaded to your device",
       });
     } catch (error) {
-      console.error("Failed to export PPTX:", error);
+      console.error("Failed to export presentation:", error);
       toast({
         title: "Export Failed",
-        description: "There was an error exporting the PPTX",
+        description: "There was an error exporting the presentation",
         variant: "destructive",
       });
     }

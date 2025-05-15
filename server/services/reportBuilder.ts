@@ -1,7 +1,10 @@
 import { StudyConcept, SynopsisValidation } from "@shared/schema";
 import PDFDocument from 'pdfkit';
-import PptxGenJS from 'pptxgenjs';
 import { PassThrough } from 'stream';
+
+// We'll use a dynamic import for pptxgenjs to ensure compatibility
+// between development and production environments
+let pptxgenjs: any = null;
 
 // JSZip is already included with pptxgenjs, no need for separate import
 
@@ -193,10 +196,22 @@ export async function generatePdfReport(concepts: StudyConcept[]): Promise<Buffe
  * @returns Buffer containing the PPTX file
  */
 export async function generatePptxReport(concepts: StudyConcept[]): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     try {
+      // Dynamically import pptxgenjs only when needed
+      if (!pptxgenjs) {
+        try {
+          // Try to import using dynamic import
+          const module = await import('pptxgenjs');
+          pptxgenjs = module.default || module;
+        } catch (error) {
+          console.error('Error importing pptxgenjs:', error);
+          throw new Error('Failed to import pptxgenjs module');
+        }
+      }
+      
       // Create a new presentation
-      const pptx = new PptxGenJS();
+      const pptx = new pptxgenjs();
       
       // Add title slide
       const titleSlide = pptx.addSlide();
