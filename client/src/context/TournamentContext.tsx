@@ -235,10 +235,8 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const refreshIdeas = async (tournamentId: number) => {
     try {
-      const ideasData = await apiRequest<Idea[]>(
-        `/api/tournaments/${tournamentId}/ideas`, 
-        { method: 'GET' }
-      );
+      const ideasResponse = await apiRequest('GET', `/api/tournaments/${tournamentId}/ideas`);
+      const ideasData = await ideasResponse.json();
 
       if (ideasData) {
         setIdeas(ideasData);
@@ -250,10 +248,8 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const getReviewForIdea = async (ideaId: string, agentId: string): Promise<Review> => {
     try {
-      const review = await apiRequest<Review>(
-        `/api/tournaments/feedback/${ideaId}/${agentId}`, 
-        { method: 'GET' }
-      );
+      const reviewResponse = await apiRequest('GET', `/api/tournaments/feedback/${ideaId}/${agentId}`);
+      const review = await reviewResponse.json();
 
       if (!review) {
         throw new Error('Failed to fetch review');

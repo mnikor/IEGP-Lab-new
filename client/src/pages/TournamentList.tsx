@@ -55,7 +55,7 @@ const TournamentList = () => {
     mutationFn: async (data: any) => {
       return apiRequest('POST', '/api/tournaments/new-concept', data);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
       setIsNewTournamentOpen(false);
       setFormValues({
@@ -69,8 +69,9 @@ const TournamentList = () => {
       });
       
       // Navigate to the new tournament
-      if (data && data.tournament_id) {
-        navigate(`/tournaments/${data.tournament_id}`);
+      const responseData = await data.json();
+      if (responseData && responseData.tournament_id) {
+        navigate(`/tournaments/${responseData.tournament_id}`);
       }
     },
     onError: (error: Error) => {
@@ -343,7 +344,7 @@ const TournamentList = () => {
         </Dialog>
       </div>
       
-      {tournaments && tournaments.length > 0 ? (
+      {tournaments && Array.isArray(tournaments) && tournaments.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tournaments.map((tournament: Tournament) => (
             <Card key={tournament.id} className="overflow-hidden">
