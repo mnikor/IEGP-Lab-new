@@ -122,9 +122,11 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
 
   // Cleanup event source on unmount
+  // Cleanup event source on unmount or when tournament changes
   useEffect(() => {
     return () => {
       if (eventSource) {
+        console.log('Closing previous EventSource connection');
         eventSource.close();
       }
     };
@@ -132,8 +134,20 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const connectToTournament = async (tournamentId: number) => {
     try {
+      // Clear any existing connection first
+      if (eventSource) {
+        console.log('Closing existing EventSource connection before connecting to new tournament');
+        eventSource.close();
+        setEventSource(null);
+      }
+      
       setIsLoading(true);
       setError(null);
+      
+      // Reset state to prevent flashing old data
+      setTournament(null);
+      setIdeas([]);
+      setRounds([]);
 
       // Fetch tournament details
       const response = await apiRequest('GET', `/api/tournaments/${tournamentId}`);
@@ -148,7 +162,7 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
       
       // Convert existing rounds to expected format
       if (tournamentData.rounds && tournamentData.rounds.length > 0) {
-        const formattedRounds = tournamentData.rounds.map(round => ({
+        const formattedRounds = tournamentData.rounds.map((round: any) => ({
           round: round.roundNumber,
           lanes: round.laneUpdates,
           timestamp: round.startedAt
@@ -165,54 +179,62 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
       }
 
       // Connect to SSE endpoint for real-time updates
-      const sse = new EventSource(`/api/tournaments/stream/${tournamentId}`);
-      
-      sse.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          
-          // Check if this is just a connection message
-          if (data.connected) {
-            console.log('Connected to tournament stream');
-            return;
-          }
-          
-          // This is a round update
-          console.log('Received round update:', data);
-          
-          setRounds(prevRounds => {
-            // Check if this round already exists
-            const existingRoundIndex = prevRounds.findIndex(r => r.round === data.round);
+      // Use a small timeout to ensure previous connections are properly closed
+      setTimeout(() => {
+        const sse = new EventSource(`/api/tournaments/stream/${tournamentId}`);
+        
+        sse.onopen = () => {
+          console.log(`SSE connection opened for tournament ${tournamentId}`);
+        };
+        
+        sse.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
             
-            if (existingRoundIndex >= 0) {
-              // Update existing round
-              const updatedRounds = [...prevRounds];
-              updatedRounds[existingRoundIndex] = data;
-              return updatedRounds;
-            } else {
-              // Add new round
-              return [...prevRounds, data];
+            // Check if this is just a connection message
+            if (data.connected) {
+              console.log('Connected to tournament stream');
+              return;
             }
-          });
-          
-          // Update current round if needed
-          if (data.round > currentRound) {
-            setCurrentRound(data.round);
+            
+            // This is a round update
+            console.log('Received round update:', data);
+            
+            setRounds(prevRounds => {
+              // Check if this round already exists
+              const existingRoundIndex = prevRounds.findIndex(r => r.round === data.round);
+              
+              if (existingRoundIndex >= 0) {
+                // Update existing round
+                const updatedRounds = [...prevRounds];
+                updatedRounds[existingRoundIndex] = data;
+                return updatedRounds;
+              } else {
+                // Add new round
+                return [...prevRounds, data];
+              }
+            });
+            
+            // Update current round if needed
+            if (data.round > currentRound) {
+              setCurrentRound(data.round);
+            }
+            
+            // Refresh ideas list after a round update
+            refreshIdeas(tournamentId);
+          } catch (err) {
+            console.error('Error processing SSE message:', err);
           }
-          
-          // Refresh ideas list after a round update
-          refreshIdeas(tournamentId);
-        } catch (err) {
-          console.error('Error processing SSE message:', err);
-        }
-      };
+        };
+        
+        sse.onerror = (err) => {
+          console.error('SSE error:', err);
+          sse.close();
+        };
+        
+        setEventSource(sse);
+      }, 100);  // Small delay to ensure clean connection
       
-      sse.onerror = (err) => {
-        console.error('SSE error:', err);
-        sse.close();
-      };
-      
-      setEventSource(sse);
       setIsLoading(false);
     } catch (err) {
       console.error('Error connecting to tournament:', err);

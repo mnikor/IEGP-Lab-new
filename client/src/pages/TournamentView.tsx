@@ -52,11 +52,21 @@ const TournamentView = () => {
     getReviewForIdea
   } = useTournament();
 
+  // Connect to tournament only once when component mounts or tournamentId changes
   useEffect(() => {
     if (tournamentId > 0) {
+      console.log(`Connecting to tournament ${tournamentId}`);
       connectToTournament(tournamentId);
+      
+      // Cleanup function to disconnect when component unmounts
+      return () => {
+        console.log(`Disconnecting from tournament ${tournamentId}`);
+        disconnectFromTournament();
+      };
     }
-  }, [tournamentId, connectToTournament]);
+    // Intentionally omitting connectToTournament from dependencies
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tournamentId]);
 
   // Set initial selected lane when data loads
   useEffect(() => {
@@ -75,22 +85,37 @@ const TournamentView = () => {
 
   // Load review data when selected idea or agent changes
   useEffect(() => {
+    // Skip initial render when selectedIdeaId might be null
+    if (!selectedIdeaId || !selectedAgentId) return;
+    
+    let isMounted = true;
     const loadReview = async () => {
-      if (selectedIdeaId && selectedAgentId) {
-        setIsLoadingReview(true);
-        try {
-          const review = await getReviewForIdea(selectedIdeaId, selectedAgentId);
+      setIsLoadingReview(true);
+      try {
+        const review = await getReviewForIdea(selectedIdeaId, selectedAgentId);
+        // Only update state if the component is still mounted and
+        // the selected idea/agent hasn't changed
+        if (isMounted) {
           setReviewData(review);
-        } catch (err) {
-          console.error('Failed to load review:', err);
+        }
+      } catch (err) {
+        console.error('Failed to load review:', err);
+        if (isMounted) {
           setReviewData(null);
-        } finally {
+        }
+      } finally {
+        if (isMounted) {
           setIsLoadingReview(false);
         }
       }
     };
     
     loadReview();
+    
+    // Cleanup function to prevent updates after unmount
+    return () => {
+      isMounted = false;
+    };
   }, [selectedIdeaId, selectedAgentId, getReviewForIdea]);
 
   const handleLaneSelect = (laneId: number) => {
