@@ -400,6 +400,16 @@ const TournamentView = () => {
 
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4">
+      {/* Research Data Modal */}
+      <ResearchDataModal
+        isOpen={showResearchData}
+        onClose={() => setShowResearchData(false)}
+        tournamentName={tournament.drugName}
+        indication={tournament.indication}
+        data={researchData}
+        isLoading={isLoadingResearch}
+      />
+      
       {/* Tournament Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
@@ -1055,6 +1065,77 @@ const TournamentView = () => {
                 </CardContent>
               </Card>
             </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Research data modal component
+const ResearchDataModal = ({ 
+  isOpen, 
+  onClose, 
+  tournamentName, 
+  indication, 
+  data, 
+  isLoading 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  tournamentName: string; 
+  indication: string;
+  data: { content: string; citations: string[] } | null;
+  isLoading: boolean;
+}) => {
+  if (!isOpen) return null;
+  
+  const processMarkdown = (text: string) => {
+    if (!text) return '';
+    return text
+      .replace(/## (.*?)\n/g, '<h2 class="text-xl font-bold mt-6 mb-3">$1</h2>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n\n/g, '<br/><br/>')
+      .replace(/   -/g, '&nbsp;&nbsp;&nbsp;•');
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-auto">
+      <div className="bg-background rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-auto">
+        <div className="sticky top-0 bg-background p-4 border-b flex items-center justify-between z-10">
+          <h2 className="text-xl font-bold">Research Data: {tournamentName} for {indication}</h2>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <LucideX className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <div className="p-6">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <LucideLoader className="w-12 h-12 animate-spin text-primary mb-4" />
+              <p>Loading research data...</p>
+            </div>
+          ) : data ? (
+            <div className="prose prose-sm max-w-none">
+              <p className="text-sm text-muted-foreground mb-6">
+                This data was generated using Perplexity AI to inform the tournament's idea generation.
+              </p>
+              
+              <div dangerouslySetInnerHTML={{ __html: processMarkdown(data.content) }} />
+              
+              <h2 className="text-xl font-bold mt-8 mb-4">Citations</h2>
+              <ol className="space-y-2 text-sm">
+                {data.citations.map((citation, index) => (
+                  <li key={index}>
+                    <a href={citation} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      {citation}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : (
+            <p>No research data available.</p>
           )}
         </div>
       </div>
