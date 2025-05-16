@@ -154,21 +154,48 @@ const TournamentView = () => {
         })).sort((a, b) => a.laneId - b.laneId);
       }
       
-      // For other rounds, show the champions and challengers for that specific round
-      const roundIdeas = ideas.filter(i => i.round === viewingRound);
-      const championsInRound = roundIdeas.filter(i => i.isChampion);
-      const laneData = championsInRound.map(champion => {
-        const challengers = roundIdeas.filter(i => 
-          i.laneId === champion.laneId && 
-          !i.isChampion
-        );
+      // For other rounds, find champions and challengers differently
+      // We need to find all lanes where ideas were active in that round
+      const allLaneIdsSet = new Set(ideas.map(idea => idea.laneId));
+      const allLaneIds = Array.from(allLaneIdsSet);
+      
+      // For each lane, find the champion and challengers in that round
+      const laneData = allLaneIds.map(laneId => {
+        // Find ideas for this lane in this round
+        const laneIdeas = ideas.filter(i => i.laneId === laneId && i.round === viewingRound);
+        
+        // Find champion for this lane (might be from a previous round if no new champion in this round)
+        let champion;
+        const roundChampion = laneIdeas.find(i => i.isChampion);
+        
+        if (roundChampion) {
+          champion = roundChampion;
+        } else {
+          // If no champion in this round, find the latest champion from previous rounds
+          const previousRounds = Array.from({length: viewingRound}, (_, i) => viewingRound - i - 1);
+          for (const prevRound of previousRounds) {
+            const prevChampion = ideas.find(i => i.laneId === laneId && i.round === prevRound && i.isChampion);
+            if (prevChampion) {
+              champion = prevChampion;
+              break;
+            }
+          }
+          
+          // If still no champion found, use the initial idea
+          if (!champion) {
+            champion = ideas.find(i => i.laneId === laneId && i.round === 0);
+          }
+        }
+        
+        // Find challengers for this lane in this specific round
+        const challengers = laneIdeas.filter(i => !i.isChampion);
         
         return {
-          laneId: champion.laneId,
+          laneId,
           champion,
           challengers
         };
-      });
+      }).filter(lane => lane.champion); // Only include lanes that have a champion
       
       return laneData.sort((a, b) => a.laneId - b.laneId);
     }
@@ -238,7 +265,15 @@ const TournamentView = () => {
 
   const laneData = getLaneData();
   const selectedIdea = getSelectedIdea();
-  const roundProgress = (tournament.currentRound / tournament.maxRounds) * 100;
+  
+  // Calculate round progress - ensure it's at least 10% for visual feedback
+  // and set to 100% if tournament is completed
+  let roundProgress = (tournament.currentRound / tournament.maxRounds) * 100;
+  if (tournament.status === 'completed') {
+    roundProgress = 100;
+  } else if (roundProgress < 10) {
+    roundProgress = 10; // Minimum visual indicator
+  }
 
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4">
@@ -333,28 +368,30 @@ const TournamentView = () => {
             <CardContent>
               <div className="space-y-4">
                 {laneData.map((lane) => (
-                  <Card 
-                    key={lane.laneId}
-                    className={`cursor-pointer hover:bg-accent/50 transition-colors ${
-                      selectedLane === lane.laneId ? 'border-primary' : ''
-                    }`}
-                    onClick={() => handleLaneSelect(lane.laneId)}
-                  >
-                    <CardHeader className="py-3">
-                      <CardTitle className="text-base flex items-center justify-between">
-                        <span>Lane {lane.laneId}</span>
-                        <Badge variant="outline" className="ml-2">
-                          {lane.champion.overallScore.toFixed(2)}
-                        </Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="py-2">
-                      <div className="text-sm font-medium">{lane.champion.title}</div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {lane.challengers.length} challengers in round {currentRound}
-                      </div>
-                    </CardContent>
-                  </Card>
+                  lane.champion && (
+                    <Card 
+                      key={lane.laneId}
+                      className={`cursor-pointer hover:bg-accent/50 transition-colors ${
+                        selectedLane === lane.laneId ? 'border-primary' : ''
+                      }`}
+                      onClick={() => handleLaneSelect(lane.laneId)}
+                    >
+                      <CardHeader className="py-3">
+                        <CardTitle className="text-base flex items-center justify-between">
+                          <span>Lane {lane.laneId}</span>
+                          <Badge variant="outline" className="ml-2">
+                            {lane.champion.overallScore.toFixed(2)}
+                          </Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="py-2">
+                        <div className="text-sm font-medium">{lane.champion.title}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {lane.challengers.length} challenger{lane.challengers.length !== 1 ? 's' : ''} in {viewingRound !== null ? `round ${viewingRound}` : `round ${currentRound}`}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
                 ))}
               </div>
             </CardContent>
