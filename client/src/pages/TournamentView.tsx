@@ -689,7 +689,89 @@ const TournamentView = () => {
                       <TabsTrigger value="overview">Overview</TabsTrigger>
                       <TabsTrigger value="reviews">Expert Reviews</TabsTrigger>
                       <TabsTrigger value="details">Full Details</TabsTrigger>
+                      {selectedIdea.parentIdeaId && (
+                        <TabsTrigger value="improvements">Improvements</TabsTrigger>
+                      )}
                     </TabsList>
+                    
+                    {/* Improvements Tab for showing idea evolution */}
+                    {selectedIdea.parentIdeaId && (
+                      <TabsContent value="improvements">
+                        <div className="space-y-4">
+                          <div className="flex items-center space-x-2 mb-4">
+                            <Badge variant="outline" className="text-primary border-primary">
+                              Round {selectedIdea.round} Challenger
+                            </Badge>
+                            <span className="text-muted-foreground">Derived from: {selectedIdea.parentIdeaId}</span>
+                          </div>
+                          
+                          {/* Improvement rationale */}
+                          <div className="p-4 border rounded-lg bg-accent/20">
+                            <h3 className="text-sm font-medium mb-2">Improvement Rationale</h3>
+                            <p className="text-sm">
+                              {(selectedIdea as any).improvementRationale || 'This idea was generated to address weaknesses identified by reviewers in the previous champion while maintaining its strengths.'}
+                            </p>
+                          </div>
+                          
+                          {/* Key improvements */}
+                          <div>
+                            <h3 className="text-sm font-medium mb-2">Key Improvements</h3>
+                            {(selectedIdea as any).keyImprovements && (selectedIdea as any).keyImprovements.length > 0 ? (
+                              <ul className="space-y-2">
+                                {(selectedIdea as any).keyImprovements.map((improvement: string, i: number) => (
+                                  <li key={i} className="p-3 border rounded-md flex items-start">
+                                    <div className="bg-green-100 dark:bg-green-900/20 p-1 rounded-full mr-2">
+                                      <LucideArrowUpRight className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                    </div>
+                                    <span className="text-sm">{improvement}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <div className="p-4 border border-dashed rounded-md text-sm text-muted-foreground">
+                                No specific improvements recorded for this idea.
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Score comparison */}
+                          <div>
+                            <h3 className="text-sm font-medium mb-2">Score Comparison</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="p-3 border rounded-md">
+                                <div className="text-xs text-muted-foreground">Previous Champion Score</div>
+                                <div className="font-medium mt-1">
+                                  {ideas.find(i => i.ideaId === selectedIdea.parentIdeaId)?.overallScore.toFixed(2) || 'N/A'}
+                                </div>
+                              </div>
+                              <div className="p-3 border rounded-md">
+                                <div className="text-xs text-muted-foreground">This Idea Score</div>
+                                <div className="font-medium mt-1">
+                                  {selectedIdea.overallScore.toFixed(2)}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Score change indicator */}
+                            {selectedIdea.parentIdeaId && (
+                              <div className="mt-2 p-3 border rounded-md bg-accent/10">
+                                <div className="flex items-center justify-between">
+                                  <div className="text-xs text-muted-foreground">Score Change</div>
+                                  <Badge 
+                                    variant={selectedIdea.scoreChange && selectedIdea.scoreChange > 0 ? "default" : "outline"}
+                                    className={selectedIdea.scoreChange && selectedIdea.scoreChange > 0 ? "bg-green-500" : ""}
+                                  >
+                                    {selectedIdea.scoreChange 
+                                      ? (selectedIdea.scoreChange > 0 ? '+' : '') + selectedIdea.scoreChange.toFixed(2) 
+                                      : 'Not calculated'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </TabsContent>
+                    )}
                     
                     <TabsContent value="overview">
                       <div className="space-y-6">
