@@ -380,6 +380,10 @@ const TournamentView = () => {
   
   // Determine if a round is actively in progress (for UI indicators)
   const isRoundInProgress = tournament.status === 'running';
+  
+  // Tournament just started or is in the seeding stage (before first round completes)
+  const isTournamentJustStarted = tournament.currentRound === 0 || 
+    (tournament.currentRound === 1 && isRoundInProgress);
 
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4">
@@ -398,12 +402,19 @@ const TournamentView = () => {
         </div>
         
         <div className="flex items-center gap-4 mb-2">
-          <div className="flex-1">
-            <Progress value={roundProgress} className="h-2" />
+          <div className="flex-1 relative">
+            <Progress value={roundProgress} className={`h-2 ${isRoundInProgress ? 'animate-pulse' : ''}`} />
+            {isRoundInProgress && (
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/30 to-transparent animate-[shimmer_1.5s_infinite] opacity-70"></div>
+            )}
           </div>
           <div className="text-sm whitespace-nowrap flex items-center">
             {isRoundInProgress && (
-              <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+              <>
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+                <span className="font-medium text-green-600 dark:text-green-400">Processing</span>
+                <span className="mx-2">•</span>
+              </>
             )}
             <span>
               Round {tournament.currentRound} of {tournament.maxRounds}
@@ -492,8 +503,9 @@ const TournamentView = () => {
                         <CardTitle className="text-base flex items-center justify-between">
                           <div className="flex items-center">
                             <span>Lane {lane.laneId}</span>
-                            {/* Only show rank badge if viewing current state, not historical rounds */}
-                            {viewingRound === null && (
+                            {/* Only show rank badges if we're in the main view (not historical) 
+                                AND the tournament has progressed beyond seeding */}
+                            {viewingRound === null && !isTournamentJustStarted && (
                               <>
                                 {index === 0 && (
                                   <Badge variant="default" className="ml-2 text-xs bg-yellow-500">1st Place</Badge>
@@ -506,8 +518,9 @@ const TournamentView = () => {
                                 )}
                               </>
                             )}
-                            {/* Show champion badge on the official champion in each lane */}
-                            {lane.isCurrentChampion && (
+                            {/* Show champion badge on the official champion in each lane,
+                                but ONLY if the tournament has progressed beyond the seeding stage */}
+                            {lane.isCurrentChampion && !isTournamentJustStarted && (
                               <Badge variant="outline" className="ml-2 text-xs border-primary text-primary">Champion</Badge>
                             )}
                           </div>
