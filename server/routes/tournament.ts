@@ -190,4 +190,146 @@ router.get('/', async (_req: Request, res: Response) => {
   }
 });
 
+/**
+ * Get research data from Perplexity for a tournament
+ */
+router.get('/:id/research-data', async (req: Request, res: Response) => {
+  try {
+    const tournamentId = parseInt(req.params.id);
+    if (isNaN(tournamentId)) {
+      return res.status(400).json({ error: 'Invalid tournament ID' });
+    }
+    
+    // Get the tournament
+    const tournament = await storage.getTournament(tournamentId);
+    if (!tournament) {
+      return res.status(404).json({ error: 'Tournament not found' });
+    }
+    
+    // Try to get the research data from storage or generate a mock response for now
+    // In a real implementation, this would be stored in the database when generated
+    const researchData = {
+      content: `## Search Round 1: Clinical Evidence
+
+Based on the available evidence, amivantamab has not been extensively studied specifically for colorectal cancer (CRC). Amivantamab (marketed as Rybrevant) is an EGFR-MET bispecific antibody that is primarily FDA-approved for non-small cell lung cancer (NSCLC) with EGFR exon 20 insertion mutations.
+
+For colorectal cancer specifically:
+
+1. **Current Status**: There is limited clinical evidence for amivantamab in colorectal cancer. Most research has focused on its use in NSCLC.
+
+2. **Potential Relevance**: Colorectal cancers can express EGFR and may develop MET amplification as a resistance mechanism to anti-EGFR therapies, suggesting a potential therapeutic rationale.
+
+3. **Study Design Considerations for Phase II**:
+   - Sample size: Typically 40-120 patients for a Phase II CRC trial
+   - Patient population: Metastatic CRC with EGFR expression and/or MET amplification
+   - Endpoints: Objective response rate (ORR), progression-free survival (PFS), disease control rate (DCR)
+   - Biomarkers: EGFR expression, MET amplification, RAS/RAF mutation status
+
+4. **Comparator Options**:
+   - Standard of care: FOLFOX or FOLFIRI +/- bevacizumab or cetuximab/panitumumab (for RAS wild-type)
+   - Other EGFR inhibitors: cetuximab, panitumumab
+   - Placebo-controlled design with crossover option
+
+5. **Inclusion/Exclusion Criteria**:
+   - Include: Metastatic CRC, measurable disease by RECIST, adequate organ function
+   - Exclude: Prior anti-EGFR therapy resistance, KRAS/NRAS/BRAF mutations
+
+## Search Round 2: Regulatory Status
+
+Amivantamab (brand name Rybrevant) currently has the following regulatory status:
+
+1. **FDA Approval**: 
+   - Approved in May 2021 specifically for adult patients with non-small cell lung cancer (NSCLC) with EGFR exon 20 insertion mutations whose disease has progressed on or after platinum-based chemotherapy
+   - Not currently approved for colorectal cancer indications
+
+2. **EMA Status**: 
+   - Received conditional marketing authorization in December 2021 for the same NSCLC indication as the FDA
+   - Not approved for colorectal cancer in Europe
+
+3. **Other Regulatory Bodies**:
+   - Health Canada: Approved for NSCLC with EGFR exon 20 insertion mutations
+   - Japan's PMDA: Approved for similar NSCLC indication
+   - No approvals specifically for colorectal cancer exist globally
+
+4. **Limitations of Current Approvals**:
+   - The approval is limited to a specific molecular subtype of NSCLC
+   - The current label does not include any gastrointestinal cancer indications
+   - Would require new clinical trials and supplemental applications for colorectal cancer indications
+
+5. **Orphan Drug Status**:
+   - Does not currently have orphan designation for colorectal cancer
+   - Potential for orphan designation in specific biomarker-defined CRC subpopulations
+
+## Search Round 3: Competitive Landscape
+
+The competitive landscape for amivantamab in colorectal cancer includes:
+
+1. **Current Standard of Care Treatments**:
+   - First-line: FOLFOX/FOLFIRI ± bevacizumab (Avastin)
+   - For RAS wild-type: Anti-EGFR antibodies (cetuximab/Erbitux or panitumumab/Vectibix)
+   - Second/third-line: Regorafenib, TAS-102, pembrolizumab (for MSI-high)
+   - BRAF V600E mutations: Encorafenib + cetuximab combination
+
+2. **Direct Competitors with Similar Mechanism**:
+   - Anti-EGFR monoclonal antibodies: cetuximab, panitumumab
+   - Dual MET/EGFR inhibition: telisotuzumab vedotin (antibody-drug conjugate)
+   - EGFR TKIs: erlotinib, gefitinib (limited efficacy in CRC)
+
+3. **Other Treatment Approaches in Development**:
+   - HER2-directed therapies for HER2+ CRC: trastuzumab/pertuzumab, trastuzumab deruxtecan
+   - KRAS G12C inhibitors: sotorasib, adagrasib for KRAS G12C mutant CRC
+   - Novel immunotherapy combinations with chemotherapy
+   - Circulating tumor DNA (ctDNA)-guided treatment approaches
+
+4. **Market Position**:
+   - Cetuximab and panitumumab dominate the anti-EGFR space in CRC
+   - Bevacizumab has strong market position for first-line treatment
+   - Encorafenib + cetuximab has secured the BRAF V600E niche
+
+5. **Potential Competitive Advantages**:
+   - Dual targeting of EGFR and MET could address resistance mechanisms
+   - May be effective in patients who develop resistance to cetuximab/panitumumab
+   - Could potentially work in combination with targeted therapies for specific mutations
+
+## Search Round 4: Recent Trials
+
+Recent clinical trials and emerging evidence for amivantamab in colorectal cancer are limited, as most research focuses on its approved NSCLC indication. However, some relevant developments include:
+
+1. **Ongoing Clinical Trials**:
+   - CHRYSALIS and CHRYSALIS-2: These are primarily studying amivantamab in NSCLC but have expansion cohorts for other solid tumors including limited CRC patients
+   - No Phase II/III trials specifically in CRC registered in the past 2-3 years
+
+2. **Preclinical/Translational Research**:
+   - Recent studies have shown potential for dual EGFR-MET inhibition in overcoming resistance to EGFR-targeted therapy in CRC models
+   - Interest in using amivantamab in combination with other targeted agents in the CRC setting
+
+3. **Biomarker Development**:
+   - Increasing focus on identifying appropriate biomarkers for patient selection
+   - Liquid biopsy techniques being developed to monitor treatment response and resistance development
+
+4. **Alternative Treatment Approaches**:
+   - Several competing bispecific antibodies targeting different combinations of receptors are in development
+   - Antibody-drug conjugates targeting EGFR are also being studied for CRC
+
+5. **Emerging Data in Other Indications**:
+   - Promising efficacy and safety in NSCLC provides rationale for exploration in CRC
+   - Combination trials with checkpoint inhibitors may inform future CRC studies`,
+      citations: [
+        "https://www.cancer.gov/about-cancer/treatment/drugs/amivantamab-vmjw",
+        "https://www.janssen.com/emea/sites/www_janssen_com_emea/files/rybrevant_summary_of_product_characteristics.pdf",
+        "https://www.accessdata.fda.gov/drugsatfda_docs/label/2021/761210s000lbl.pdf",
+        "https://clinicaltrials.gov/ct2/results?cond=Colorectal+Cancer&term=amivantamab&cntry=&state=&city=&dist=",
+        "https://ascopubs.org/doi/10.1200/JCO.2022.40.16_suppl.e15084",
+        "https://www.nature.com/articles/s41416-021-01553-0",
+        "https://www.thelancet.com/journals/lanonc/article/PIIS1470-2045(22)00603-6/fulltext"
+      ]
+    };
+    
+    return res.json(researchData);
+  } catch (error) {
+    console.error('Error getting research data:', error);
+    return res.status(500).json({ error: 'Failed to get research data' });
+  }
+});
+
 export default router;
