@@ -48,6 +48,10 @@ export const ideas = pgTable("ideas", {
   knowledgeGapAddressed: text("knowledge_gap_addressed"),
   innovationJustification: text("innovation_justification"),
   
+  // Improvement tracking (for challenger ideas)
+  improvementRationale: text("improvement_rationale"), // Why this challenger was created
+  keyImprovements: text("key_improvements").array(), // List of key changes from parent
+  
   // JSON fields
   picoData: json("pico_data").notNull(),
   mcdaScores: json("mcda_scores").notNull(),
@@ -129,7 +133,10 @@ export const newTournamentRequestSchema = z.object({
 export type Tournament = typeof tournaments.$inferSelect;
 export type InsertTournament = z.infer<typeof insertTournamentSchema>;
 export type Idea = typeof ideas.$inferSelect;
-export type InsertIdea = z.infer<typeof insertIdeaSchema>;
+export type InsertIdea = z.infer<typeof insertIdeaSchema> & {
+  improvementRationale?: string;
+  keyImprovements?: string[];
+};
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type TournamentRound = typeof tournamentRounds.$inferSelect;

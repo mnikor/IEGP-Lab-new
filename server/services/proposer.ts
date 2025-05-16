@@ -47,7 +47,7 @@ export async function generateChallenger(
     const laneId = champion.laneId;
     const ideaId = `${String.fromCharCode(65 + laneId)}_v${nextVersionNumber}`; // A_v2, B_v2, etc.
     
-    // Create the challenger idea
+    // Create the challenger idea with improvements
     const challenger: InsertIdea = {
       ideaId,
       tournamentId: champion.tournamentId,
@@ -56,25 +56,46 @@ export async function generateChallenger(
       isChampion: false, // Challengers start as non-champions
       parentIdeaId: champion.ideaId, // Reference to the parent champion
       
-      title: result.title || `Improved ${champion.title}`,
+      // Core study concept details - use provided values or fallback to champion values
+      title: result.title || `Improved ${champion.title} (Round ${round + 1})`,
       drugName: result.drugName || champion.drugName,
       indication: result.indication || champion.indication,
       strategicGoals: result.strategicGoals || champion.strategicGoals,
       geography: result.geography || champion.geography,
       studyPhase: result.studyPhase || champion.studyPhase,
+      
+      // These fields should ideally be improved based on feedback
       targetSubpopulation: result.targetSubpopulation || champion.targetSubpopulation,
       comparatorDrugs: result.comparatorDrugs || champion.comparatorDrugs,
       knowledgeGapAddressed: result.knowledgeGapAddressed || champion.knowledgeGapAddressed,
       innovationJustification: result.innovationJustification || champion.innovationJustification,
       
-      // Use the provided values or fallback to champion values
+      // Study design details - use provided values or fallback to champion values
       picoData: result.picoData || champion.picoData,
       mcdaScores: result.mcdaScores || champion.mcdaScores,
-      swotAnalysis: result.swotAnalysis || champion.swotAnalysis,
+      
+      // The SWOT analysis should reflect the improvements made
+      swotAnalysis: {
+        strengths: result.swotAnalysis?.strengths || champion.swotAnalysis?.strengths || [],
+        weaknesses: result.swotAnalysis?.weaknesses || champion.swotAnalysis?.weaknesses || [],
+        opportunities: result.swotAnalysis?.opportunities || champion.swotAnalysis?.opportunities || [],
+        threats: result.swotAnalysis?.threats || champion.swotAnalysis?.threats || []
+      },
+      
+      // Feasibility metrics should be adjusted based on improvements
       feasibilityData: result.feasibilityData || champion.feasibilityData,
+      
+      // Evidence sources may be updated to support the improvements
       evidenceSources: result.evidenceSources || champion.evidenceSources,
       
-      overallScore: 0, // Will be calculated after review
+      // Include improvement rationale if provided
+      improvementRationale: result.improvementRationale || `Enhanced version of ${champion.title} addressing reviewer feedback`,
+      
+      // Track key improvements made if provided
+      keyImprovements: result.keyImprovements || [],
+      
+      // Scoring - will be calculated after review
+      overallScore: 0,
       scoreChange: null,
     };
 
@@ -135,7 +156,7 @@ function buildChallengerPrompt(champion: Idea, reviews: Review[]): string {
     `\n# Primary Improvement Areas\nBased on analysis of all reviews, focus improvement efforts on these domains:\n${improvementAreas.map(area => `- ${area.replace(/_/g, ' ')}`).join('\n')}\n` : '';
 
   return `
-  You are tasked with creating an improved version of the following clinical study concept.
+  You are a specialized clinical research design expert tasked with creating an improved version of a clinical study concept.
   Analyze the reviewer feedback carefully and create a challenger version that addresses the weaknesses while maintaining or enhancing the strengths.
 
   # Original Champion Concept
@@ -176,11 +197,31 @@ function buildChallengerPrompt(champion: Idea, reviews: Review[]): string {
   # Reviewer Feedback
   ${reviewerFeedback}
   
+  ${improvementFocus}
+  
+  ## ENHANCEMENT STRATEGY
+  Based on the feedback patterns across reviewers, consider these strategic approaches for improvement:
+  
+  1. For clinical validity weaknesses: Consider refining the scientific rationale, improving endpoint selection, or adjusting inclusion/exclusion criteria to better match the study objectives.
+  
+  2. For statistical concerns: Consider optimizing sample size calculations, enhancing power analysis, adding adaptive design elements, or incorporating interim analyses for more robust results.
+  
+  3. For safety issues: Consider implementing additional monitoring procedures, refining safety endpoints, or strengthening risk management plans based on the drug's known safety profile.
+  
+  4. For regulatory challenges: Consider clarifying approval pathways, enhancing compliance with regulatory guidelines, or strengthening documentation plans for submissions.
+  
+  5. For economic value questions: Consider strengthening the value proposition, enhancing outcomes relevant to payers, or adding health economic endpoints to demonstrate cost-effectiveness.
+  
+  6. For operational feasibility problems: Consider simplifying procedures, improving recruitment strategies, or enhancing site support to improve study execution.
+  
   ## CRITICAL INSTRUCTIONS:
-  1. FIRST, analyze the feedback to identify the most significant weaknesses.
-  2. SECOND, prioritize improvements that will have the greatest impact on the study's validity, feasibility, and alignment with strategic goals.
-  3. THIRD, create a challenger concept that meaningfully improves upon the champion while maintaining its core strengths.
-  4. FOURTH, ensure the challenger is truly innovative and not just a minor tweak to the champion.
+  1. FIRST, synthesize the feedback across all domains to identify recurring themes and critical weaknesses to address.
+  
+  2. SECOND, prioritize improvements that will have the greatest impact on overall study quality, feasibility, and alignment with strategic goals.
+  
+  3. THIRD, create a challenger concept that represents a significant evolution of the champion, not just minor tweaks.
+  
+  4. FOURTH, ensure your proposal maintains scientific integrity and clinical relevance while addressing practical concerns.
   
   Create a JSON object representing the improved challenger concept with the following format:
   {

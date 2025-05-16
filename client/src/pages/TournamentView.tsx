@@ -42,10 +42,7 @@ const TournamentView = () => {
   const [isLoadingReview, setIsLoadingReview] = useState<boolean>(false);
   const [viewingRound, setViewingRound] = useState<number | null>(null);
   
-  // Track actual champion IDs to only display Champion badges on true champions
-  const actualChampionIds = ideas
-    .filter(idea => idea.isChampion && idea.round > 0)
-    .map(idea => idea.ideaId);
+  // We'll use the actualChampionIds variable defined later in the component
   
   const { 
     tournament, 
