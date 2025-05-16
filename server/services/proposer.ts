@@ -89,7 +89,31 @@ export async function generateChallenger(
  * Builds a prompt for challenger generation
  */
 function buildChallengerPrompt(champion: Idea, reviews: Review[]): string {
-  // Extract and format reviewer feedback
+  // Calculate average scores by domain to highlight key areas for improvement
+  const scoresByDomain: Record<string, number[]> = {};
+  
+  // Extract domain-specific metrics and collect them
+  reviews.forEach(review => {
+    Object.entries(review.additionalMetrics || {}).forEach(([key, value]) => {
+      if (typeof value === 'number') {
+        if (!scoresByDomain[key]) {
+          scoresByDomain[key] = [];
+        }
+        scoresByDomain[key].push(value);
+      }
+    });
+  });
+  
+  // Calculate averages for each domain
+  const domainAverages = Object.entries(scoresByDomain).map(([domain, scores]) => {
+    const avg = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+    return { domain, score: avg };
+  }).sort((a, b) => a.score - b.score); // Sort ascending so lowest scores (biggest improvement areas) are first
+  
+  // Get the lowest scoring domains (biggest improvement opportunities)
+  const improvementAreas = domainAverages.slice(0, 3).map(item => item.domain);
+  
+  // Extract and format reviewer feedback with emphasis on key improvement areas
   const reviewerFeedback = reviews.map(review => {
     return `
     ## ${review.agentId} Review (Score: ${review.score.toFixed(2)})
@@ -98,8 +122,17 @@ function buildChallengerPrompt(champion: Idea, reviews: Review[]): string {
     
     ### Weaknesses:
     ${review.weaknesses.map(w => `- ${w}`).join('\n')}
+    
+    ${Object.entries(review.additionalMetrics || {}).length > 0 ? 
+      `### Domain Scores:\n${Object.entries(review.additionalMetrics || {})
+        .map(([key, value]) => `- ${key}: ${typeof value === 'number' ? value.toFixed(2) : value}`)
+        .join('\n')}` : ''}
     `;
   }).join('\n');
+  
+  // Create a focused improvement suggestion section
+  const improvementFocus = improvementAreas.length > 0 ? 
+    `\n# Primary Improvement Areas\nBased on analysis of all reviews, focus improvement efforts on these domains:\n${improvementAreas.map(area => `- ${area.replace(/_/g, ' ')}`).join('\n')}\n` : '';
 
   return `
   You are tasked with creating an improved version of the following clinical study concept.
