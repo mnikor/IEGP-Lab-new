@@ -266,24 +266,60 @@ const TournamentView = () => {
       .sort((a, b) => a!.laneId - b!.laneId);
     }
     
-    // Default view - current state - just show the current champions
-    const champions = ideas.filter(i => i.isChampion);
-    const laneData = champions.map(champion => {
-      const challengers = ideas.filter(i => 
-        i.laneId === champion.laneId && 
-        !i.isChampion && 
-        i.round === currentRound
-      );
-      
-      return {
-        laneId: champion.laneId,
-        champion,
-        isCurrentChampion: true, // These are the current champions
-        challengers
-      };
-    });
+    // Default view - current state - show all lanes with their champions
+    // Get all unique lane IDs
+    const laneIds = ideas
+      .map(idea => idea.laneId)
+      .filter((laneId, index, self) => self.indexOf(laneId) === index);
     
-    return laneData.sort((a, b) => a.laneId - b.laneId);
+    // For each lane, find the current champion (if any) or the best idea
+    const laneData = laneIds.map(laneId => {
+      // Try to find the official champion for this lane
+      const champion = ideas.find(i => i.laneId === laneId && i.isChampion);
+      
+      if (champion) {
+        // This lane has an official champion
+        const challengers = ideas.filter(i => 
+          i.laneId === laneId && 
+          !i.isChampion && 
+          i.round === currentRound
+        );
+        
+        return {
+          laneId,
+          champion,
+          isCurrentChampion: true, // This is a current champion
+          challengers
+        };
+      } else {
+        // No official champion, find the best idea for this lane
+        const laneIdeas = ideas.filter(i => i.laneId === laneId);
+        
+        if (laneIdeas.length === 0) return null;
+        
+        // Sort by score descending and take the highest
+        const sortedIdeas = [...laneIdeas].sort((a, b) => b.overallScore - a.overallScore);
+        const bestIdea = sortedIdeas[0];
+        
+        const challengers = ideas.filter(i => 
+          i.laneId === laneId && 
+          i !== bestIdea && 
+          i.round === currentRound
+        );
+        
+        return {
+          laneId,
+          champion: bestIdea,
+          isCurrentChampion: false, // Not an official champion
+          challengers
+        };
+      }
+    }).filter(lane => lane !== null);
+    
+    // Sort lanes by champion score (descending) to rank them
+    return laneData.sort((a, b) => 
+      b!.champion.overallScore - a!.champion.overallScore
+    );
   };
 
   // Get selected idea details
@@ -341,6 +377,9 @@ const TournamentView = () => {
   } else if (roundProgress < 10) {
     roundProgress = 10; // Minimum visual indicator
   }
+  
+  // Determine if a round is actively in progress (for UI indicators)
+  const isRoundInProgress = tournament.status === 'running';
 
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4">
@@ -362,8 +401,14 @@ const TournamentView = () => {
           <div className="flex-1">
             <Progress value={roundProgress} className="h-2" />
           </div>
-          <div className="text-sm whitespace-nowrap">
-            Round {tournament.currentRound} of {tournament.maxRounds}
+          <div className="text-sm whitespace-nowrap flex items-center">
+            {isRoundInProgress && (
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+            )}
+            <span>
+              Round {tournament.currentRound} of {tournament.maxRounds}
+              {isRoundInProgress && ' (in progress)'}
+            </span>
           </div>
         </div>
         
@@ -434,7 +479,7 @@ const TournamentView = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {laneData.map((lane) => (
+                {laneData.map((lane, index) => (
                   lane.champion && (
                     <Card 
                       key={lane.laneId}
@@ -447,8 +492,23 @@ const TournamentView = () => {
                         <CardTitle className="text-base flex items-center justify-between">
                           <div className="flex items-center">
                             <span>Lane {lane.laneId}</span>
+                            {/* Only show rank badge if viewing current state, not historical rounds */}
+                            {viewingRound === null && (
+                              <>
+                                {index === 0 && (
+                                  <Badge variant="default" className="ml-2 text-xs bg-yellow-500">1st Place</Badge>
+                                )}
+                                {index === 1 && (
+                                  <Badge variant="default" className="ml-2 text-xs bg-gray-400">2nd Place</Badge>
+                                )}
+                                {index === 2 && (
+                                  <Badge variant="default" className="ml-2 text-xs bg-amber-600">3rd Place</Badge>
+                                )}
+                              </>
+                            )}
+                            {/* Show champion badge on the official champion in each lane */}
                             {lane.isCurrentChampion && (
-                              <Badge variant="default" className="ml-2 text-xs">Current Champion</Badge>
+                              <Badge variant="outline" className="ml-2 text-xs border-primary text-primary">Champion</Badge>
                             )}
                           </div>
                           <Badge variant="outline" className="ml-2">
