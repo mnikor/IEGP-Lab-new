@@ -158,7 +158,14 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
       }
 
       setTournament(tournamentData.tournament);
-      setCurrentRound(tournamentData.tournament.currentRound);
+      
+      // Ensure currentRound is never less than 1 for completed tournaments
+      if (tournamentData.tournament.status === 'completed' && tournamentData.tournament.currentRound === 0) {
+        console.log('Tournament is complete but currentRound is 0, setting to maxRounds');
+        setCurrentRound(tournamentData.tournament.maxRounds);
+      } else {
+        setCurrentRound(tournamentData.tournament.currentRound);
+      }
       
       // Convert existing rounds to expected format
       if (tournamentData.rounds && tournamentData.rounds.length > 0) {
