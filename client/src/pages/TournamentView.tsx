@@ -18,7 +18,9 @@ import {
   LucideThumbsUp,
   LucideAlertTriangle,
   LucideArrowUpRight,
-  LucideArrowRight
+  LucideArrowRight,
+  LucideX,
+  LucideArrowLeft
 } from 'lucide-react';
 
 // Mapping of agent IDs to their display names and icons
@@ -41,6 +43,9 @@ const TournamentView = () => {
   const [reviewData, setReviewData] = useState<any>(null);
   const [isLoadingReview, setIsLoadingReview] = useState<boolean>(false);
   const [viewingRound, setViewingRound] = useState<number | null>(null);
+  const [showResearchData, setShowResearchData] = useState<boolean>(false);
+  const [researchData, setResearchData] = useState<{content: string, citations: string[]} | null>(null);
+  const [isLoadingResearch, setIsLoadingResearch] = useState<boolean>(false);
   
   // We'll use the actualChampionIds variable defined later in the component
   
@@ -413,41 +418,18 @@ const TournamentView = () => {
               size="sm"
               className="text-xs"
               onClick={() => {
-                const win = window.open('', '_blank');
-                if (win) {
-                  win.document.write('<html><head><title>Research Data</title><style>body{font-family:Arial,sans-serif;line-height:1.6;margin:30px;max-width:800px}h1,h2{color:#2563eb}h2{margin-top:30px;border-bottom:1px solid #ddd;padding-bottom:10px}code{background:#f1f5f9;padding:2px 4px;border-radius:4px}pre{background:#f1f5f9;padding:15px;border-radius:8px;overflow:auto}ul,ol{padding-left:20px}a{color:#2563eb}blockquote{border-left:4px solid #ddd;padding-left:15px;color:#555}</style></head><body><h1>Loading Research Data...</h1></body></html>');
-                  fetch(`/api/tournaments/${tournament.id}/research-data`)
-                    .then(response => response.json())
-                    .then(data => {
-                      if (!win) return;
-                      const formattedContent = data.content
-                        .replace(/## (.*?)\n/g, '<h2>$1</h2>\n')
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\n\n/g, '<br/><br/>')
-                        .replace(/   -/g, '&nbsp;&nbsp;&nbsp;•');
-                      
-                      let html = `<html><head><title>Research Data for ${tournament.drugName}</title>`;
-                      html += '<style>body{font-family:Arial,sans-serif;line-height:1.6;margin:30px;max-width:800px}h1,h2{color:#2563eb}h2{margin-top:30px;border-bottom:1px solid #ddd;padding-bottom:10px}code{background:#f1f5f9;padding:2px 4px;border-radius:4px}pre{background:#f1f5f9;padding:15px;border-radius:8px;overflow:auto}ul,ol{padding-left:20px}a{color:#2563eb}blockquote{border-left:4px solid #ddd;padding-left:15px;color:#555}</style>';
-                      html += '</head><body>';
-                      html += `<h1>Perplexity Research Data for ${tournament.drugName} in ${tournament.indication}</h1>`;
-                      html += `<p><em>This data was generated using Perplexity AI to inform the tournament's idea generation.</em></p>`;
-                      html += formattedContent;
-                      
-                      html += '<h2>Citations</h2><ol>';
-                      data.citations.forEach(citation => {
-                        html += `<li><a href="${citation}" target="_blank">${citation}</a></li>`;
-                      });
-                      html += '</ol></body></html>';
-                      
-                      win.document.write(html);
-                      win.document.close();
-                    })
-                    .catch(error => {
-                      if (!win) return;
-                      win.document.write('<html><head><title>Error</title></head><body><h1>Error loading research data</h1><p>' + error.message + '</p></body></html>');
-                      win.document.close();
-                    });
-                }
+                setIsLoadingResearch(true);
+                fetch(`/api/tournaments/${tournament.id}/research-data`)
+                  .then(response => response.json())
+                  .then(data => {
+                    setResearchData(data);
+                    setShowResearchData(true);
+                    setIsLoadingResearch(false);
+                  })
+                  .catch(error => {
+                    console.error("Error loading research data:", error);
+                    setIsLoadingResearch(false);
+                  });
               }}
             >
               View Perplexity Research Data
