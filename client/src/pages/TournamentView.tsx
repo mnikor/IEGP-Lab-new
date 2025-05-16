@@ -384,6 +384,12 @@ const TournamentView = () => {
   // Tournament just started or is in the seeding stage (before first round completes)
   const isTournamentJustStarted = tournament.currentRound === 0 || 
     (tournament.currentRound === 1 && isRoundInProgress);
+    
+  // For display purposes, we need to know which ideas are actual champions
+  // This will be used to only highlight true champions, not just highest scoring ideas
+  const actualChampionIds = ideas
+    .filter(idea => idea.isChampion)
+    .map(idea => idea.ideaId);
 
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4">
@@ -518,9 +524,9 @@ const TournamentView = () => {
                                 )}
                               </>
                             )}
-                            {/* Show champion badge on the official champion in each lane,
-                                but ONLY if the tournament has progressed beyond the seeding stage */}
-                            {lane.isCurrentChampion && !isTournamentJustStarted && (
+                            {/* Show champion badge ONLY on ideas that are officially designated as champions
+                                and ONLY if the tournament has progressed beyond the seeding stage */}
+                            {actualChampionIds.includes(lane.champion.ideaId) && !isTournamentJustStarted && (
                               <Badge variant="outline" className="ml-2 text-xs border-primary text-primary">Champion</Badge>
                             )}
                           </div>
