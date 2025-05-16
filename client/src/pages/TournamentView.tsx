@@ -144,63 +144,129 @@ const TournamentView = () => {
     
     // If viewing a specific round
     if (viewingRound !== null) {
+      // Get all unique lane IDs without using Set
+      const allLaneIds = ideas
+        .map(idea => idea.laneId)
+        .filter((laneId, index, self) => self.indexOf(laneId) === index);
+      
       // For initial round (0), show only the seed ideas
       if (viewingRound === 0) {
         const seedIdeas = ideas.filter(i => i.round === 0);
-        return seedIdeas.map(idea => ({
-          laneId: idea.laneId,
-          champion: idea,
-          challengers: [] // No challengers in seed round
-        })).sort((a, b) => a.laneId - b.laneId);
+        return seedIdeas.map(idea => {
+          // Check if this is still the current champion for highlighting purposes
+          const isCurrentChampion = ideas.some(i => 
+            i.laneId === idea.laneId && 
+            i.isChampion &&
+            i.ideaId === idea.ideaId
+          );
+          
+          return {
+            laneId: idea.laneId,
+            champion: idea,
+            isCurrentChampion,
+            challengers: [] // No challengers in seed round
+          };
+        }).sort((a, b) => a.laneId - b.laneId);
       }
       
-      // For other rounds, find champions and challengers differently
-      // We need to find all lanes where ideas were active in that round
-      const allLaneIdsSet = new Set(ideas.map(idea => idea.laneId));
-      const allLaneIds = Array.from(allLaneIdsSet);
-      
-      // For each lane, find the champion and challengers in that round
-      const laneData = allLaneIds.map(laneId => {
-        // Find ideas for this lane in this round
-        const laneIdeas = ideas.filter(i => i.laneId === laneId && i.round === viewingRound);
+      // For all other rounds, determine the champion for that round (point in time)
+      return allLaneIds.map(laneId => {
+        // First, identify all ideas that existed for this lane up through this round
+        const ideasThroughThisRound = ideas.filter(i => 
+          i.laneId === laneId && 
+          i.round <= viewingRound
+        );
         
-        // Find champion for this lane (might be from a previous round if no new champion in this round)
-        let champion;
-        const roundChampion = laneIdeas.find(i => i.isChampion);
+        if (ideasThroughThisRound.length === 0) return null;
         
-        if (roundChampion) {
-          champion = roundChampion;
-        } else {
-          // If no champion in this round, find the latest champion from previous rounds
-          const previousRounds = Array.from({length: viewingRound}, (_, i) => viewingRound - i - 1);
-          for (const prevRound of previousRounds) {
-            const prevChampion = ideas.find(i => i.laneId === laneId && i.round === prevRound && i.isChampion);
-            if (prevChampion) {
-              champion = prevChampion;
-              break;
-            }
-          }
+        // To determine the champion for this lane at this point in time:
+        // 1. First check if there was a champion specifically crowned in this round
+        const thisRoundChampion = ideasThroughThisRound.find(i => 
+          i.round === viewingRound && 
+          i.isChampion
+        );
+        
+        if (thisRoundChampion) {
+          // This idea became champion in this exact round
+          const challengers = ideasThroughThisRound.filter(i => 
+            i.round === viewingRound && 
+            i !== thisRoundChampion
+          );
           
-          // If still no champion found, use the initial idea
-          if (!champion) {
-            champion = ideas.find(i => i.laneId === laneId && i.round === 0);
-          }
+          // Check if this is still the current overall champion
+          const isCurrentChampion = ideas.some(i => 
+            i.laneId === laneId && 
+            i.isChampion &&
+            i.ideaId === thisRoundChampion.ideaId
+          );
+          
+          return {
+            laneId,
+            champion: thisRoundChampion,
+            isCurrentChampion,
+            challengers
+          };
         }
         
-        // Find challengers for this lane in this specific round
-        const challengers = laneIdeas.filter(i => !i.isChampion);
+        // 2. If no champion from this round, find the most recent champion from earlier rounds
+        const championsSoFar = ideasThroughThisRound
+          .filter(i => i.isChampion)
+          .sort((a, b) => b.round - a.round); // Sort by round descending
+          
+        if (championsSoFar.length > 0) {
+          // The most recent champion up to this point is the effective champion
+          const effectiveChampion = championsSoFar[0];
+          
+          // Check if this is still the current overall champion
+          const isCurrentChampion = ideas.some(i => 
+            i.laneId === laneId && 
+            i.isChampion &&
+            i.ideaId === effectiveChampion.ideaId
+          );
+          
+          // Challengers are the ideas introduced in this specific round
+          const challengers = ideasThroughThisRound.filter(i => 
+            i.round === viewingRound && 
+            i !== effectiveChampion
+          );
+          
+          return {
+            laneId,
+            champion: effectiveChampion,
+            isCurrentChampion,
+            challengers
+          };
+        }
         
-        return {
-          laneId,
-          champion,
-          challengers
-        };
-      }).filter(lane => lane.champion); // Only include lanes that have a champion
-      
-      return laneData.sort((a, b) => a.laneId - b.laneId);
+        // 3. If no champion has been crowned yet, the initial idea is the effective champion
+        const initialIdea = ideasThroughThisRound.find(i => i.round === 0);
+        if (initialIdea) {
+          // Check if this is still the current overall champion
+          const isCurrentChampion = ideas.some(i => 
+            i.laneId === laneId && 
+            i.isChampion &&
+            i.ideaId === initialIdea.ideaId
+          );
+          
+          const challengers = ideasThroughThisRound.filter(i => 
+            i.round === viewingRound
+          );
+          
+          return {
+            laneId,
+            champion: initialIdea,
+            isCurrentChampion,
+            challengers
+          };
+        }
+        
+        return null;
+      })
+      .filter(lane => lane !== null)
+      .sort((a, b) => a!.laneId - b!.laneId);
     }
     
-    // Default view - current state
+    // Default view - current state - just show the current champions
     const champions = ideas.filter(i => i.isChampion);
     const laneData = champions.map(champion => {
       const challengers = ideas.filter(i => 
@@ -212,6 +278,7 @@ const TournamentView = () => {
       return {
         laneId: champion.laneId,
         champion,
+        isCurrentChampion: true, // These are the current champions
         challengers
       };
     });
@@ -373,12 +440,17 @@ const TournamentView = () => {
                       key={lane.laneId}
                       className={`cursor-pointer hover:bg-accent/50 transition-colors ${
                         selectedLane === lane.laneId ? 'border-primary' : ''
-                      }`}
+                      } ${lane.isCurrentChampion ? 'border-l-4 border-l-primary' : ''}`}
                       onClick={() => handleLaneSelect(lane.laneId)}
                     >
                       <CardHeader className="py-3">
                         <CardTitle className="text-base flex items-center justify-between">
-                          <span>Lane {lane.laneId}</span>
+                          <div className="flex items-center">
+                            <span>Lane {lane.laneId}</span>
+                            {lane.isCurrentChampion && (
+                              <Badge variant="default" className="ml-2 text-xs">Current Champion</Badge>
+                            )}
+                          </div>
                           <Badge variant="outline" className="ml-2">
                             {lane.champion.overallScore.toFixed(2)}
                           </Badge>
