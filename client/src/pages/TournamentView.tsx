@@ -40,6 +40,7 @@ const TournamentView = () => {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>('CLIN');
   const [reviewData, setReviewData] = useState<any>(null);
   const [isLoadingReview, setIsLoadingReview] = useState<boolean>(false);
+  const [viewingRound, setViewingRound] = useState<number | null>(null);
   
   const { 
     tournament, 
@@ -141,6 +142,38 @@ const TournamentView = () => {
   const getLaneData = () => {
     if (!ideas.length) return [];
     
+    // If viewing a specific round
+    if (viewingRound !== null) {
+      // For initial round (0), show only the seed ideas
+      if (viewingRound === 0) {
+        const seedIdeas = ideas.filter(i => i.round === 0);
+        return seedIdeas.map(idea => ({
+          laneId: idea.laneId,
+          champion: idea,
+          challengers: [] // No challengers in seed round
+        })).sort((a, b) => a.laneId - b.laneId);
+      }
+      
+      // For other rounds, show the champions and challengers for that specific round
+      const roundIdeas = ideas.filter(i => i.round === viewingRound);
+      const championsInRound = roundIdeas.filter(i => i.isChampion);
+      const laneData = championsInRound.map(champion => {
+        const challengers = roundIdeas.filter(i => 
+          i.laneId === champion.laneId && 
+          !i.isChampion
+        );
+        
+        return {
+          laneId: champion.laneId,
+          champion,
+          challengers
+        };
+      });
+      
+      return laneData.sort((a, b) => a.laneId - b.laneId);
+    }
+    
+    // Default view - current state
     const champions = ideas.filter(i => i.isChampion);
     const laneData = champions.map(champion => {
       const challengers = ideas.filter(i => 
@@ -230,6 +263,41 @@ const TournamentView = () => {
           <div className="text-sm whitespace-nowrap">
             Round {tournament.currentRound} of {tournament.maxRounds}
           </div>
+        </div>
+        
+        {/* Round Selector */}
+        <div className="mt-4 mb-2">
+          <div className="flex justify-between items-center mb-2">
+            <div className="text-sm font-medium">View progress by round:</div>
+            {viewingRound !== null && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setViewingRound(null)}
+                className="text-xs"
+              >
+                Return to current state
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {Array.from({ length: tournament.maxRounds + 1 }, (_, i) => (
+              <Button
+                key={i}
+                variant={viewingRound === i ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewingRound(i)}
+                className="flex-1"
+              >
+                {i === 0 ? "Initial" : `Round ${i}`}
+              </Button>
+            ))}
+          </div>
+          {viewingRound !== null && (
+            <div className="bg-muted/30 text-muted-foreground p-2 rounded-md mt-2 text-xs text-center">
+              Showing ideas from {viewingRound === 0 ? "initial seeding" : `round ${viewingRound}`}
+            </div>
+          )}
         </div>
         
         <div className="flex flex-wrap gap-2 mt-4">
