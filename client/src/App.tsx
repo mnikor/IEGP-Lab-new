@@ -47,6 +47,7 @@ function Router() {
             </TournamentProvider>
           )}
         </Route>
+
         <Route component={NotFound} />
       </Switch>
     </AppShell>

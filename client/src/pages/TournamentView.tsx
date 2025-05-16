@@ -402,9 +402,19 @@ const TournamentView = () => {
               {tournament.status === 'running' ? 'Tournament in progress' : 'Tournament complete'}
             </p>
           </div>
-          <Badge variant={tournament.status === 'completed' ? 'default' : 'secondary'} className="text-sm">
-            {tournament.status.toUpperCase()}
-          </Badge>
+          <div className="flex flex-col items-end">
+            <Badge variant={tournament.status === 'completed' ? 'default' : 'secondary'} className="text-sm mb-2">
+              {tournament.status.toUpperCase()}
+            </Badge>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-xs"
+              onClick={() => window.open(`/tournaments/${tournament.id}/research`)}
+            >
+              View Research Data
+            </Button>
+          </div>
         </div>
         
         <div className="flex items-center gap-4 mb-2">
