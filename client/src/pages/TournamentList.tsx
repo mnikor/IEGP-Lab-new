@@ -294,6 +294,19 @@ const TournamentList = () => {
                     </div>
                   ))}
                 </div>
+                
+                {formValues.strategicGoals.some(g => g.goal === 'other') && (
+                  <div className="mt-2">
+                    <Label htmlFor="otherStrategicGoalText" className="text-sm">Please specify other strategic goal</Label>
+                    <Input
+                      id="otherStrategicGoalText"
+                      placeholder="Enter your custom strategic goal"
+                      value={formValues.otherStrategicGoalText || ''}
+                      onChange={(e) => handleInputChange('otherStrategicGoalText', e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                )}
               </div>
               
               <div className="space-y-2">
