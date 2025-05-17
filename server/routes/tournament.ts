@@ -327,24 +327,30 @@ Analysis of recent clinical trials in ${indication} relevant to the development 
    - Patient-centric design considerations 
 
 3. **Recruitment and Inclusion Criteria Patterns**:
-   - Increasing focus on identifying appropriate biomarkers for patient selection
-   - Liquid biopsy techniques being developed to monitor treatment response and resistance development
+   - Typical inclusion/exclusion criteria in recent ${indication} trials
+   - Evolving patient population definitions
+   - Average enrollment rates and recruitment challenges
+   - Geographic distribution of clinical sites
 
-4. **Alternative Treatment Approaches**:
-   - Several competing bispecific antibodies targeting different combinations of receptors are in development
-   - Antibody-drug conjugates targeting EGFR are also being studied for CRC
+4. **Outcome Measurements**:
+   - Primary endpoints commonly used in recent ${indication} trials
+   - Secondary endpoints providing supportive evidence
+   - Novel endpoints gaining regulatory acceptance
+   - Quality of life and patient-reported outcomes
 
-5. **Emerging Data in Other Indications**:
-   - Promising efficacy and safety in NSCLC provides rationale for exploration in CRC
-   - Combination trials with checkpoint inhibitors may inform future CRC studies`,
+5. **Regulatory Considerations**:
+   - Pathways to approval for ${drugName} in ${indication}
+   - Recent precedents for similar drug approvals
+   - Special designations to consider (breakthrough, accelerated approval)
+   - Health authority feedback on similar development programs`,
       citations: [
-        "https://www.cancer.gov/about-cancer/treatment/drugs/amivantamab-vmjw",
-        "https://www.janssen.com/emea/sites/www_janssen_com_emea/files/rybrevant_summary_of_product_characteristics.pdf",
-        "https://www.accessdata.fda.gov/drugsatfda_docs/label/2021/761210s000lbl.pdf",
-        "https://clinicaltrials.gov/ct2/results?cond=Colorectal+Cancer&term=amivantamab&cntry=&state=&city=&dist=",
-        "https://ascopubs.org/doi/10.1200/JCO.2022.40.16_suppl.e15084",
-        "https://www.nature.com/articles/s41416-021-01553-0",
-        "https://www.thelancet.com/journals/lanonc/article/PIIS1470-2045(22)00603-6/fulltext"
+        "https://clinicaltrials.gov/search",
+        "https://pubmed.ncbi.nlm.nih.gov/",
+        "https://clinicaltrials.gov/",
+        "https://www.fda.gov/drugs/development-approval-process-drugs",
+        "https://www.ema.europa.eu/en/medicines",
+        "https://www.nature.com/subjects/clinical-trials",
+        "https://www.thelancet.com/journals/lanonc/home"
       ]
     };
     
