@@ -11,8 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Loader2, AlertCircle, Beaker, ChevronRight, CalendarDays, CheckCircle2, Clock } from 'lucide-react';
+import { Loader2, AlertCircle, Beaker, ChevronRight, CalendarDays, CheckCircle2, Clock, InfoIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { STRATEGIC_GOALS } from '@shared/strategicGoals';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Tournament {
   id: number;
@@ -86,21 +88,19 @@ const TournamentList = () => {
     }));
   };
 
-  const handleStrategicGoalChange = (displayGoal: string, checked: boolean) => {
+  const handleStrategicGoalChange = (goalId: string, checked: boolean) => {
     const weight = 1; // Default weight, can be made configurable later
-    // Map the display goal to the server-expected goal value
-    const mappedGoal = strategicGoalsMap[displayGoal as keyof typeof strategicGoalsMap];
     
     setFormValues(prev => {
       if (checked) {
         return {
           ...prev,
-          strategicGoals: [...prev.strategicGoals, { goal: mappedGoal, weight }]
+          strategicGoals: [...prev.strategicGoals, { goal: goalId, weight }]
         };
       } else {
         return {
           ...prev,
-          strategicGoals: prev.strategicGoals.filter(g => g.goal !== mappedGoal)
+          strategicGoals: prev.strategicGoals.filter(g => g.goal !== goalId)
         };
       }
     });
@@ -150,20 +150,13 @@ const TournamentList = () => {
     navigate(`/tournaments/${id}`);
   };
 
-  // Predefine some strategic goals with their API mapping
-  const strategicGoalsMap = {
-    'PRIMARY_EFFICACY': 'expand_label',
-    'SECONDARY_EFFICACY': 'defend_market_share',
-    'SAFETY_PROFILE': 'safety_risk_management',
-    'DOSING_OPTIMIZATION': 'dosing_optimization',
-    'MECHANISM_OF_ACTION': 'biomarker_validation',
-    'POPULATION_EXPANSION': 'accelerate_uptake',
-    'COMPARATIVE_EFFECTIVENESS': 'real_world_evidence',
-    'HEALTH_ECONOMICS': 'facilitate_market_access',
-    'REGULATORY_APPROVAL': 'combination_extension'
-  };
-  
-  const strategicGoals = Object.keys(strategicGoalsMap);
+  // Use standardized strategic goals
+  const strategicGoalsForTournament = STRATEGIC_GOALS.map(goal => ({
+    id: goal.id,
+    label: goal.label,
+    description: goal.description,
+    tooltip: goal.tooltip
+  }));
   
   // Predefine some geographic regions with ISO codes
   const geographicRegionsMap = {
@@ -276,18 +269,28 @@ const TournamentList = () => {
               <div className="space-y-2">
                 <Label>Strategic Goals</Label>
                 <div className="grid grid-cols-2 gap-2 mt-1">
-                  {strategicGoals.map((goal) => (
-                    <div key={goal} className="flex items-center space-x-2">
+                  {strategicGoalsForTournament.map((goal) => (
+                    <div key={goal.id} className="flex items-center space-x-2">
                       <input
                         type="checkbox"
-                        id={`goal-${goal}`}
-                        checked={formValues.strategicGoals.some(g => g.goal === strategicGoalsMap[goal as keyof typeof strategicGoalsMap])}
-                        onChange={(e) => handleStrategicGoalChange(goal, e.target.checked)}
+                        id={`goal-${goal.id}`}
+                        checked={formValues.strategicGoals.some(g => g.goal === goal.id)}
+                        onChange={(e) => handleStrategicGoalChange(goal.id, e.target.checked)}
                         className="rounded border-gray-300 text-primary focus:ring-primary"
                       />
-                      <label htmlFor={`goal-${goal}`} className="text-sm">
-                        {goal.replace(/_/g, ' ')}
-                      </label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <label htmlFor={`goal-${goal.id}`} className="text-sm flex items-center">
+                              {goal.label}
+                              <InfoIcon className="h-3 w-3 ml-1 text-muted-foreground" />
+                            </label>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">{goal.tooltip}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   ))}
                 </div>
