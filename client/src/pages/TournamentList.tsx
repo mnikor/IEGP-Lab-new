@@ -44,7 +44,8 @@ const TournamentList = () => {
     strategicGoals: [] as Array<{ goal: string, weight: number }>,
     geography: [] as string[],
     maxRounds: 3,
-    lanes: 5
+    lanes: 5,
+    otherStrategicGoalText: ''
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -67,7 +68,8 @@ const TournamentList = () => {
         strategicGoals: [],
         geography: [],
         maxRounds: 3,
-        lanes: 5
+        lanes: 5,
+        otherStrategicGoalText: ''
       });
       
       // Navigate to the new tournament
