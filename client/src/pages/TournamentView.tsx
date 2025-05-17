@@ -326,7 +326,10 @@ const TournamentView = () => {
     // Sort lanes by champion score (descending) to rank them
     return laneData.sort((a, b) => 
       b!.champion.overallScore - a!.champion.overallScore
-    );
+    ).map((lane, index) => ({
+      ...lane,
+      rank: index + 1  // Add ranking position (1st, 2nd, 3rd, etc.)
+    }));
   };
 
   // Get selected idea details
@@ -376,11 +379,14 @@ const TournamentView = () => {
   const laneData = getLaneData();
   const selectedIdea = getSelectedIdea();
   
-  // Calculate round progress - ensure it's at least 10% for visual feedback
-  // and set to 100% if tournament is completed
+  // Calculate round progress - ensure it's properly showing completion
+  // with 100% when completed and dynamic updates during processing
   let roundProgress = (tournament.currentRound / tournament.maxRounds) * 100;
   if (tournament.status === 'completed') {
     roundProgress = 100;
+  } else if (tournament.currentRound >= tournament.maxRounds) {
+    // If final round is reached but not marked completed yet
+    roundProgress = 95; // Almost complete
   } else if (roundProgress < 10) {
     roundProgress = 10; // Minimum visual indicator
   }
