@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useTournament } from '@/context/TournamentContext';
+import { ExtendedIdea, SuccessFactor } from '@/lib/tournamentTypes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
@@ -965,9 +966,9 @@ const TournamentView = () => {
                                 {/* Progress circle */}
                                 <circle
                                   className={`${
-                                    (selectedIdea.successProbability || 0) > 70 
+                                    ((selectedIdea as any).successProbability || 0) > 70 
                                       ? 'text-green-500' 
-                                      : (selectedIdea.successProbability || 0) > 40 
+                                      : ((selectedIdea as any).successProbability || 0) > 40 
                                         ? 'text-amber-500' 
                                         : 'text-red-500'
                                   } stroke-current`}
@@ -978,7 +979,7 @@ const TournamentView = () => {
                                   r="40"
                                   fill="transparent"
                                   strokeDasharray="251.2"
-                                  strokeDashoffset={251.2 - (251.2 * (selectedIdea.successProbability || 0)) / 100}
+                                  strokeDashoffset={251.2 - (251.2 * ((selectedIdea as any).successProbability || 0)) / 100}
                                   transform="rotate(-90 50 50)"
                                 />
                                 {/* Percentage text */}
@@ -989,7 +990,7 @@ const TournamentView = () => {
                                   dominantBaseline="middle"
                                   textAnchor="middle"
                                 >
-                                  {selectedIdea.successProbability ? Math.round(selectedIdea.successProbability) : "--"}%
+                                  {(selectedIdea as any).successProbability ? Math.round((selectedIdea as any).successProbability) : "--"}%
                                 </text>
                                 <text
                                   x="50"
@@ -1020,7 +1021,7 @@ const TournamentView = () => {
                             <div className="flex items-center justify-between">
                               <span className="text-sm">Study concept quality:</span>
                               <Badge variant="outline" className="font-mono">
-                                +{((selectedIdea.successProbability || 0) * 0.2).toFixed(2)} points
+                                +{(((selectedIdea as any).successProbability || 0) * 0.2).toFixed(2)} points
                               </Badge>
                             </div>
                             <p className="text-xs text-muted-foreground mt-2">
@@ -1032,9 +1033,9 @@ const TournamentView = () => {
                         {/* Success Factors Analysis */}
                         <div>
                           <h3 className="text-sm font-medium mb-3">Key Success Factors</h3>
-                          {selectedIdea.successFactors && selectedIdea.successFactors.factors ? (
+                          {(selectedIdea as any).successFactors && (selectedIdea as any).successFactors.factors ? (
                             <div className="space-y-2">
-                              {selectedIdea.successFactors.factors.map((factor, index) => (
+                              {(selectedIdea as any).successFactors.factors.map((factor: any, index: number) => (
                                 <div key={index} className="p-3 border rounded-md">
                                   <div className="flex justify-between items-center">
                                     <div className="text-sm font-medium">{factor.factor}</div>

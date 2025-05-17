@@ -16,8 +16,8 @@ export interface SuccessFactors {
 
 // Extend the Idea interface to include success probability fields
 export interface ExtendedIdea extends Idea {
-  successProbability?: number;
-  successFactors?: SuccessFactors;
+  successProbability?: number | null;
+  successFactors?: SuccessFactors | null;
 }
 
 // Tournament context state
