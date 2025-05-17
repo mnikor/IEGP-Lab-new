@@ -272,45 +272,61 @@ Current regulatory status and competitive landscape for ${drugName}:
 Based on our research, optimal trial design considerations for ${drugName} in ${indication} include:
 
 1. **Patient Population Selection**:
-   - First-line: FOLFOX/FOLFIRI ± bevacizumab (Avastin)
-   - For RAS wild-type: Anti-EGFR antibodies (cetuximab/Erbitux or panitumumab/Vectibix)
-   - Second/third-line: Regorafenib, TAS-102, pembrolizumab (for MSI-high)
-   - BRAF V600E mutations: Encorafenib + cetuximab combination
+   - Key patient selection criteria for ${indication}
+   - Relevant biomarkers to consider for enrollment
+   - Potential subpopulations where ${drugName} may show enhanced efficacy
+   - Considerations for treatment line (naive vs. previously treated)
 
-2. **Direct Competitors with Similar Mechanism**:
-   - Anti-EGFR monoclonal antibodies: cetuximab, panitumumab
-   - Dual MET/EGFR inhibition: telisotuzumab vedotin (antibody-drug conjugate)
-   - EGFR TKIs: erlotinib, gefitinib (limited efficacy in CRC)
+2. **Study Design Options**:
+   - Recommended phase and design type for ${drugName} in ${indication}
+   - Sample size considerations based on anticipated effect size
+   - Randomization strategies and control arm selection
+   - Adaptive design possibilities
 
-3. **Other Treatment Approaches in Development**:
-   - HER2-directed therapies for HER2+ CRC: trastuzumab/pertuzumab, trastuzumab deruxtecan
-   - KRAS G12C inhibitors: sotorasib, adagrasib for KRAS G12C mutant CRC
-   - Novel immunotherapy combinations with chemotherapy
-   - Circulating tumor DNA (ctDNA)-guided treatment approaches
+3. **Endpoint Selection**:
+   - Primary endpoint recommendations for ${drugName} in ${indication}
+   - Relevant secondary endpoints to consider
+   - Surrogate endpoint options and regulatory acceptance
+   - Patient-reported outcomes appropriate for this indication
+4. **Dose Selection and Schedule**:
+   - Recommended dosing strategies for ${drugName} in ${indication}
+   - Schedule considerations (frequency, duration, cycles)
+   - Combination dosing adjustments if applicable
+   - Management of dose-limiting toxicities
 
-4. **Market Position**:
-   - Cetuximab and panitumumab dominate the anti-EGFR space in CRC
-   - Bevacizumab has strong market position for first-line treatment
-   - Encorafenib + cetuximab has secured the BRAF V600E niche
+5. **Biomarker Strategy**:
+   - Recommended biomarkers for patient selection
+   - Companion diagnostic considerations
+   - Exploratory biomarkers for response prediction
+   - Pharmacodynamic markers for mechanism confirmation
+6. **Safety Monitoring Requirements**:
+   - Known safety profile considerations for ${drugName}
+   - Standard safety assessments for ${indication} studies
+   - Specific safety concerns requiring special monitoring
+   - Risk management strategies
+7. **Operational Considerations**:
+   - Geographic regions optimal for patient recruitment
+   - Potential challenges specific to ${indication} trials
+   - Standard costs and timeline expectations
+   - Key performance indicators for site selection
 
-5. **Potential Competitive Advantages**:
-   - Dual targeting of EGFR and MET could address resistance mechanisms
-   - May be effective in patients who develop resistance to cetuximab/panitumumab
-   - Could potentially work in combination with targeted therapies for specific mutations
+## Search Round 4: Recent Clinical Trials in ${indication}
 
-## Search Round 4: Recent Trials
+Analysis of recent clinical trials in ${indication} relevant to the development of ${drugName}:
 
-Recent clinical trials and emerging evidence for amivantamab in colorectal cancer are limited, as most research focuses on its approved NSCLC indication. However, some relevant developments include:
+1. **Landmark Studies**:
+   - Recent key Phase II/III trials in ${indication}
+   - Study designs that have shown success in this therapeutic area
+   - Common comparator arms used in registration-enabling studies
+   - Average sample sizes for pivotal trials
 
-1. **Ongoing Clinical Trials**:
-   - CHRYSALIS and CHRYSALIS-2: These are primarily studying amivantamab in NSCLC but have expansion cohorts for other solid tumors including limited CRC patients
-   - No Phase II/III trials specifically in CRC registered in the past 2-3 years
+2. **Study Design Trends**:
+   - Modern trial design elements gaining popularity in ${indication}
+   - Use of adaptive designs, basket trials, and platform studies
+   - Innovative endpoints being accepted by regulators
+   - Patient-centric design considerations 
 
-2. **Preclinical/Translational Research**:
-   - Recent studies have shown potential for dual EGFR-MET inhibition in overcoming resistance to EGFR-targeted therapy in CRC models
-   - Interest in using amivantamab in combination with other targeted agents in the CRC setting
-
-3. **Biomarker Development**:
+3. **Recruitment and Inclusion Criteria Patterns**:
    - Increasing focus on identifying appropriate biomarkers for patient selection
    - Liquid biopsy techniques being developed to monitor treatment response and resistance development
 
