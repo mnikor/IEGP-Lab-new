@@ -142,6 +142,16 @@ export type Idea = typeof ideas.$inferSelect;
 export type InsertIdea = z.infer<typeof insertIdeaSchema> & {
   improvementRationale?: string;
   keyImprovements?: string[];
+  successProbability?: number;
+  successFactors?: {
+    factors: Array<{
+      factor: string;
+      impact: number;
+      description: string;
+      isPositive: boolean;
+    }>;
+    recommendations: string[];
+  };
 };
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
