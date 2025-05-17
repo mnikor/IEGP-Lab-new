@@ -623,10 +623,10 @@ const TournamentView = () => {
                         <CardTitle className="text-base flex items-center justify-between">
                           <div className="flex items-center">
                             <span>Lane {lane.laneId}</span>
-                            {/* Only show rank badges if tournament is complete or nearly complete 
-                                AND we're in the main view (not historical) */}
-                            {viewingRound === null && 
-                              (tournament.status === 'completed' || tournament.currentRound >= tournament.maxRounds) && (
+                            {/* Show rank badges if tournament is complete or nearly complete
+                                AND either in the main view OR when viewing the final round */}
+                            {((viewingRound === null || viewingRound === tournament.maxRounds) && 
+                              (tournament.status === 'completed' || tournament.currentRound >= tournament.maxRounds)) && (
                               <>
                                 {index === 0 && (
                                   <Badge variant="default" className="ml-2 text-xs bg-yellow-500">🥇 1st Place</Badge>
@@ -641,10 +641,11 @@ const TournamentView = () => {
                             )}
                             {/* Show champion badge ONLY on ideas that are officially designated as champions,
                                 NOT in the top 3 (which already have place badges),
-                                and ONLY if the tournament has progressed beyond the seeding stage */}
+                                and ONLY if the tournament has progressed beyond the seeding stage,
+                                and NOT if we're viewing the final round for top 3 ideas */}
                             {actualChampionIds.includes(lane.champion.ideaId) && 
                              !isTournamentJustStarted && 
-                             !(tournament.status === 'completed' && index < 3) && (
+                             !((tournament.status === 'completed' || viewingRound === tournament.maxRounds) && index < 3) && (
                               <Badge variant="outline" className="ml-2 text-xs border-primary text-primary">Champion</Badge>
                             )}
                           </div>
