@@ -124,3 +124,12 @@ reviewer_axis_mapping:
     econ_impact: 0.5
     diff_vs_comp: 0.3
     LOE_potential: 0.2
+    
+  # Success Probability Expert - contributes across multiple axes
+  SUC:
+    unmet_need: 0.2
+    diff_vs_comp: 0.2
+    LOE_potential: 0.2
+    econ_impact: 0.2
+    feasibility: 0.1
+    safety: 0.1

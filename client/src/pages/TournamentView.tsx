@@ -964,7 +964,13 @@ const TournamentView = () => {
                                 />
                                 {/* Progress circle */}
                                 <circle
-                                  className="text-amber-500 stroke-current"
+                                  className={`${
+                                    (selectedIdea.successProbability || 0) > 70 
+                                      ? 'text-green-500' 
+                                      : (selectedIdea.successProbability || 0) > 40 
+                                        ? 'text-amber-500' 
+                                        : 'text-red-500'
+                                  } stroke-current`}
                                   strokeWidth="10"
                                   strokeLinecap="round"
                                   cx="50"
@@ -972,7 +978,7 @@ const TournamentView = () => {
                                   r="40"
                                   fill="transparent"
                                   strokeDasharray="251.2"
-                                  strokeDashoffset="125.6"
+                                  strokeDashoffset={251.2 - (251.2 * (selectedIdea.successProbability || 0)) / 100}
                                   transform="rotate(-90 50 50)"
                                 />
                                 {/* Percentage text */}
@@ -983,7 +989,7 @@ const TournamentView = () => {
                                   dominantBaseline="middle"
                                   textAnchor="middle"
                                 >
-                                  50%
+                                  {selectedIdea.successProbability ? Math.round(selectedIdea.successProbability) : "--"}%
                                 </text>
                                 <text
                                   x="50"
@@ -1007,73 +1013,72 @@ const TournamentView = () => {
                               Based on historical data, mechanism of action, endpoints, and feasibility factors
                             </p>
                           </div>
+                          
+                          {/* Impact on overall score */}
+                          <div className="mt-4 p-3 border rounded bg-white/50 dark:bg-black/20">
+                            <h4 className="text-xs font-medium mb-1">Impact on Overall Score</h4>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Study concept quality:</span>
+                              <Badge variant="outline" className="font-mono">
+                                +{((selectedIdea.successProbability || 0) * 0.2).toFixed(2)} points
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              The success probability contributes 20% to the overall study concept score
+                            </p>
+                          </div>
                         </div>
 
                         {/* Success Factors Analysis */}
                         <div>
                           <h3 className="text-sm font-medium mb-3">Key Success Factors</h3>
-                          <div className="space-y-2">
-                            <div className="p-3 border rounded-md">
-                              <div className="flex justify-between items-center">
-                                <div className="text-sm font-medium">Clinical Trial Feasibility</div>
-                                <Badge className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
-                                  +15%
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Well-defined endpoints and clear patient population criteria improve execution feasibility.
-                              </p>
+                          {selectedIdea.successFactors && selectedIdea.successFactors.factors ? (
+                            <div className="space-y-2">
+                              {selectedIdea.successFactors.factors.map((factor, index) => (
+                                <div key={index} className="p-3 border rounded-md">
+                                  <div className="flex justify-between items-center">
+                                    <div className="text-sm font-medium">{factor.factor}</div>
+                                    <Badge 
+                                      className={factor.isPositive 
+                                        ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100" 
+                                        : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100"
+                                      }
+                                    >
+                                      {factor.isPositive ? '+' : ''}{factor.impact}%
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {factor.description}
+                                  </p>
+                                </div>
+                              ))}
                             </div>
-                            
-                            <div className="p-3 border rounded-md">
-                              <div className="flex justify-between items-center">
-                                <div className="text-sm font-medium">Mechanism of Action Confidence</div>
-                                <Badge className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
-                                  +12%
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Strong preclinical evidence supports the proposed mechanism for this indication.
-                              </p>
+                          ) : (
+                            <div className="p-4 border border-dashed rounded-md text-center text-muted-foreground">
+                              {selectedIdea.successProbability 
+                                ? "Detailed success factor data not available" 
+                                : "Success probability assessment not available for this concept"
+                              }
                             </div>
-                            
-                            <div className="p-3 border rounded-md">
-                              <div className="flex justify-between items-center">
-                                <div className="text-sm font-medium">Patient Recruitment Challenges</div>
-                                <Badge className="bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100">
-                                  -8%
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Narrow eligibility criteria may limit patient pool for this rare mutation subtype.
-                              </p>
-                            </div>
-                            
-                            <div className="p-3 border rounded-md">
-                              <div className="flex justify-between items-center">
-                                <div className="text-sm font-medium">Regulatory Precedent</div>
-                                <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-800 dark:text-amber-100">
-                                  +5%
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Similar designs have been accepted by regulatory agencies, with some modifications.
-                              </p>
-                            </div>
-                          </div>
+                          )}
                         </div>
 
                         {/* Risk Mitigation Recommendations */}
                         <div>
                           <h3 className="text-sm font-medium mb-3">Risk Mitigation Recommendations</h3>
                           <div className="p-4 border rounded-md bg-accent/10">
-                            <ul className="space-y-2 list-disc list-inside">
-                              <li className="text-sm">Consider broadening eligibility criteria to improve recruitment rates</li>
-                              <li className="text-sm">Add interim analysis checkpoints to allow for early assessment of efficacy</li>
-                              <li className="text-sm">Include adaptive design elements to optimize dosing based on early signals</li>
-                              <li className="text-sm">Enhance site selection strategy to focus on locations with higher target population</li>
-                              <li className="text-sm">Implement a robust biomarker strategy to identify responders early</li>
-                            </ul>
+                            {selectedIdea.successFactors && selectedIdea.successFactors.recommendations && 
+                             selectedIdea.successFactors.recommendations.length > 0 ? (
+                              <ul className="space-y-2 list-disc list-inside">
+                                {selectedIdea.successFactors.recommendations.map((rec, i) => (
+                                  <li key={i} className="text-sm">{rec}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <div className="text-center text-muted-foreground">
+                                <p>No risk mitigation recommendations available</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
