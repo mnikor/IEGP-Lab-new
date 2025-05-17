@@ -379,33 +379,45 @@ const TournamentView = () => {
   const laneData = getLaneData();
   const selectedIdea = getSelectedIdea();
   
-  // Calculate round progress based on tournament data
+  // Calculate round progress based on tournament data and show gradual progression
   let roundProgress;
   
-  // Force completed tournaments to show 100%
+  // For completed tournaments, show 100%
   if (tournament.status === 'completed') {
     roundProgress = 100;
   } 
-  // Force running tournaments to show at least percentage based on rounds
+  // For running tournaments, calculate based on rounds and show incremental progress
   else if (tournament.status === 'running') {
-    // Each round is worth a percentage of progress
+    // Map the rounds to percentages with intermediate values
+    // For a 3-round tournament:
+    // - Initial setup: 10%
+    // - During round 1: 10-33%
+    // - During round 2: 33-66%
+    // - During round 3: 66-99%
+    // - Completed: 100%
     const totalRounds = tournament.maxRounds;
-    const completedRounds = Math.max(0, tournament.currentRound - 1); // Current round is in progress
+    const percentPerRound = (100 - 10) / totalRounds; // Excluding initial 10%
     
-    // Base progress is completed rounds / total rounds
-    roundProgress = (completedRounds / totalRounds) * 100;
+    // Base percentage from completed rounds
+    const completedRounds = Math.max(0, tournament.currentRound - 1);
+    const baseProgress = 10 + (completedRounds * percentPerRound);
     
-    // Add progress for current round (assumed to be 50% complete on average)
-    const currentRoundContribution = (1 / totalRounds) * 50;
-    roundProgress += currentRoundContribution;
+    // Simulation of progress within the current round
+    // This value should ideally come from the backend, but we'll simulate based on elapsed time
+    const inRoundProgress = percentPerRound * 0.5; // Assume halfway through the current round
     
-    // Ensure minimum visual indicator
-    roundProgress = Math.max(10, roundProgress);
+    roundProgress = baseProgress + inRoundProgress;
+    
+    // Ensure reasonable bounds
+    roundProgress = Math.max(10, Math.min(99, roundProgress));
   } 
   // Default calculation for other states
   else {
+    // Map round number directly to percentage
     roundProgress = (tournament.currentRound / tournament.maxRounds) * 100;
-    roundProgress = Math.max(10, roundProgress); // Minimum visual indicator
+    
+    // Ensure it's at least 10% and never 100% unless completed
+    roundProgress = Math.max(10, Math.min(99, roundProgress));
   }
   
   // Determine if a round is actively in progress (for UI indicators)
@@ -627,9 +639,12 @@ const TournamentView = () => {
                                 )}
                               </>
                             )}
-                            {/* Show champion badge ONLY on ideas that are officially designated as champions
+                            {/* Show champion badge ONLY on ideas that are officially designated as champions,
+                                NOT in the top 3 (which already have place badges),
                                 and ONLY if the tournament has progressed beyond the seeding stage */}
-                            {actualChampionIds.includes(lane.champion.ideaId) && !isTournamentJustStarted && (
+                            {actualChampionIds.includes(lane.champion.ideaId) && 
+                             !isTournamentJustStarted && 
+                             !(tournament.status === 'completed' && index < 3) && (
                               <Badge variant="outline" className="ml-2 text-xs border-primary text-primary">Champion</Badge>
                             )}
                           </div>
