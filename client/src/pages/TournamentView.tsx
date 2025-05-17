@@ -379,16 +379,33 @@ const TournamentView = () => {
   const laneData = getLaneData();
   const selectedIdea = getSelectedIdea();
   
-  // Calculate round progress - ensure it's properly showing completion
-  // with 100% when completed and dynamic updates during processing
-  let roundProgress = (tournament.currentRound / tournament.maxRounds) * 100;
+  // Calculate round progress based on tournament data
+  let roundProgress;
+  
+  // Force completed tournaments to show 100%
   if (tournament.status === 'completed') {
     roundProgress = 100;
-  } else if (tournament.currentRound >= tournament.maxRounds) {
-    // If final round is reached but not marked completed yet
-    roundProgress = 95; // Almost complete
-  } else if (roundProgress < 10) {
-    roundProgress = 10; // Minimum visual indicator
+  } 
+  // Force running tournaments to show at least percentage based on rounds
+  else if (tournament.status === 'running') {
+    // Each round is worth a percentage of progress
+    const totalRounds = tournament.maxRounds;
+    const completedRounds = Math.max(0, tournament.currentRound - 1); // Current round is in progress
+    
+    // Base progress is completed rounds / total rounds
+    roundProgress = (completedRounds / totalRounds) * 100;
+    
+    // Add progress for current round (assumed to be 50% complete on average)
+    const currentRoundContribution = (1 / totalRounds) * 50;
+    roundProgress += currentRoundContribution;
+    
+    // Ensure minimum visual indicator
+    roundProgress = Math.max(10, roundProgress);
+  } 
+  // Default calculation for other states
+  else {
+    roundProgress = (tournament.currentRound / tournament.maxRounds) * 100;
+    roundProgress = Math.max(10, roundProgress); // Minimum visual indicator
   }
   
   // Determine if a round is actively in progress (for UI indicators)
@@ -594,18 +611,19 @@ const TournamentView = () => {
                         <CardTitle className="text-base flex items-center justify-between">
                           <div className="flex items-center">
                             <span>Lane {lane.laneId}</span>
-                            {/* Only show rank badges if we're in the main view (not historical) 
-                                AND the tournament has progressed beyond seeding */}
-                            {viewingRound === null && !isTournamentJustStarted && (
+                            {/* Only show rank badges if tournament is complete or nearly complete 
+                                AND we're in the main view (not historical) */}
+                            {viewingRound === null && 
+                              (tournament.status === 'completed' || tournament.currentRound >= tournament.maxRounds) && (
                               <>
                                 {index === 0 && (
-                                  <Badge variant="default" className="ml-2 text-xs bg-yellow-500">1st Place</Badge>
+                                  <Badge variant="default" className="ml-2 text-xs bg-yellow-500">🥇 1st Place</Badge>
                                 )}
                                 {index === 1 && (
-                                  <Badge variant="default" className="ml-2 text-xs bg-gray-400">2nd Place</Badge>
+                                  <Badge variant="default" className="ml-2 text-xs bg-gray-400">🥈 2nd Place</Badge>
                                 )}
                                 {index === 2 && (
-                                  <Badge variant="default" className="ml-2 text-xs bg-amber-600">3rd Place</Badge>
+                                  <Badge variant="default" className="ml-2 text-xs bg-amber-600">🥉 3rd Place</Badge>
                                 )}
                               </>
                             )}
