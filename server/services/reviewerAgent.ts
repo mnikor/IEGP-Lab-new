@@ -2,12 +2,13 @@ import OpenAI from "openai";
 import { Idea, InsertReview, Review } from "@shared/tournament";
 import * as fs from 'fs';
 import * as path from 'path';
+import { storage } from '../storage';
 
 // Initialize OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Define the list of reviewer agent IDs
-export const REVIEWER_AGENTS = ['CLIN', 'STAT', 'SAF', 'REG', 'HEOR', 'OPS', 'PADV', 'ETH', 'COMM'];
+export const REVIEWER_AGENTS = ['CLIN', 'STAT', 'SAF', 'REG', 'HEOR', 'OPS', 'PADV', 'ETH', 'COMM', 'SUC'];
 
 /**
  * Gets the prompt template for a specific agent
@@ -84,6 +85,45 @@ export async function runReviewerAgent(idea: Idea, agentId: string): Promise<Ins
 }
 
 /**
+ * Process the success probability assessment from SUC agent and update the idea
+ * 
+ * @param idea The idea to update
+ * @param sucReview The review from the Success Probability Expert
+ */
+async function processSuccessProbabilityAssessment(idea: Idea, sucReview: InsertReview): Promise<void> {
+  try {
+    if (!sucReview || !sucReview.additionalMetrics) {
+      console.error(`No valid SUC review additionalMetrics found for idea ${idea.ideaId}`);
+      return;
+    }
+    
+    // Extract success probability data from the SUC review
+    const additionalMetrics = sucReview.additionalMetrics as Record<string, any>;
+    const success_probability = additionalMetrics.success_probability;
+    const success_factors = additionalMetrics.success_factors;
+    const mitigation_recommendations = additionalMetrics.mitigation_recommendations;
+    
+    if (typeof success_probability !== 'number') {
+      console.error(`Invalid success probability value for idea ${idea.ideaId}`);
+      return;
+    }
+    
+    // Update the idea with the success probability data
+    await storage.updateIdea(idea.ideaId, {
+      successProbability: success_probability,
+      successFactors: {
+        factors: success_factors || [],
+        recommendations: mitigation_recommendations || []
+      }
+    });
+    
+    console.log(`Updated idea ${idea.ideaId} with success probability assessment: ${success_probability}%`);
+  } catch (error) {
+    console.error(`Error processing success probability for idea ${idea.ideaId}:`, error);
+  }
+}
+
+/**
  * Runs all reviewer agents on an idea in parallel
  * 
  * @param idea The idea to review
@@ -98,6 +138,14 @@ export async function reviewIdeaWithAllAgents(idea: Idea): Promise<InsertReview[
     
     // Wait for all reviews to complete
     const reviews = await Promise.all(reviewPromises);
+    
+    // Find the SUC review if it exists
+    const sucReview = reviews.find(review => review.agentId === 'SUC');
+    
+    // Process the success probability assessment if available
+    if (sucReview) {
+      await processSuccessProbabilityAssessment(idea, sucReview);
+    }
     
     return reviews;
   } catch (error) {
