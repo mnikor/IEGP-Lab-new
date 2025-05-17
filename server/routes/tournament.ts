@@ -206,64 +206,72 @@ router.get('/:id/research-data', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Tournament not found' });
     }
     
-    // Try to get the research data from storage or generate a mock response for now
-    // In a real implementation, this would be stored in the database when generated
+    // In a real implementation, we would use a call to the Perplexity API here
+    // to dynamically generate research data based on the tournament details
+    
+    // For demonstration purposes, create dynamic research content based on drug and indication
+    const drugName = tournament.drugName || "amivantamab";
+    const indication = tournament.indication || "metastatic colorectal cancer";
+    
     const researchData = {
-      content: `## Search Round 1: Current Unmet Needs in ${tournament.indication}
+      content: `## Search Round 1: Current Unmet Needs in ${indication}
 
-Despite advances in treatment options, metastatic colorectal cancer (mCRC) continues to have significant unmet needs, particularly for patients who have progressed on standard therapies. Amivantamab, a bispecific antibody targeting EGFR and MET, is currently FDA-approved for NSCLC with EGFR exon 20 insertion mutations but has potential applications in colorectal cancer.
+Despite advances in treatment options for ${indication}, there remain significant unmet needs, particularly for patients who have progressed on standard therapies. ${drugName} is being investigated for potential applications beyond its current approved indications.
 
-Key unmet needs in mCRC treatment:
+Key unmet needs in ${indication} treatment:
 
-1. **Resistance to Current Therapies**: Approximately 50-60% of mCRC patients develop resistance to anti-EGFR therapies through various mechanisms including MET amplification, which amivantamab could potentially address.
+1. **Resistance to Current Therapies**: Many patients develop resistance to existing treatments through various molecular mechanisms, creating an urgent need for novel therapeutic approaches.
 
-2. **Limited Options for RAS Mutant Patients**: About 40-50% of mCRC patients have RAS mutations and cannot benefit from anti-EGFR therapies. Novel combination approaches are urgently needed.
+2. **Limited Options for Specific Genetic Subtypes**: There are limited effective treatments for certain molecular subtypes of ${indication}, highlighting the need for targeted therapies.
 
-3. **Need for Biomarker-Guided Approaches**: Precision medicine approaches that match patients to appropriate therapies based on molecular profiles are still evolving in mCRC.
+3. **Need for Biomarker-Guided Approaches**: Precision medicine approaches that match patients to appropriate therapies based on molecular profiles require further development for ${indication}.
 
-4. **Long-term Efficacy Challenges**: Current treatments often provide transient responses with median progression-free survival rarely exceeding 10-12 months.
+4. **Long-term Efficacy Challenges**: Current treatments often provide transient responses with limited durability, necessitating new therapeutic strategies.
 
-5. **Optimal Sequencing Strategies**: There is limited evidence on the optimal sequence of therapies, particularly for incorporating novel agents like bispecific antibodies.
+5. **Optimal Sequencing Strategies**: There is limited evidence on the optimal sequence of therapies for ${indication}, particularly for incorporating novel agents like ${drugName}.
 
-**Recent or Ongoing Studies with Amivantamab in CRC:**
+**Recent or Ongoing Studies with ${drugName} in ${indication}:**
 
-1. **NCT05568264**: Phase 1b study exploring amivantamab in combination with standard-of-care therapies in advanced solid tumors, including a colorectal cancer cohort (currently recruiting).
+1. **Clinical Trial Landscape**: There are multiple ongoing studies evaluating ${drugName} in various solid tumors, with several specifically recruiting patients with ${indication}.
 
-2. **NCT04988217**: Basket trial evaluating amivantamab in various solid tumors with MET amplification or exon 14 skipping mutations, including a small mCRC cohort.
+2. **Basket Trials**: Several basket trials are currently evaluating ${drugName} in biomarker-selected patient populations across multiple tumor types, including ${indication} cohorts.
 
-3. **Exploratory Analysis**: A retrospective analysis of 28 mCRC patients with MET amplification found that dual EGFR/MET inhibition showed promising activity (ORR 35%) in patients who had progressed on prior anti-EGFR therapy.
+3. **Combination Approaches**: Emerging evidence suggests potential synergistic activity when combining ${drugName} with existing standard-of-care therapies for ${indication}, warranting further investigation.
 
-## Search Round 2: Regulatory Status
+## Search Round 2: Regulatory Status and Competitive Landscape for ${drugName} in ${indication}
 
-Amivantamab (brand name Rybrevant) currently has the following regulatory status:
+Current regulatory status and competitive landscape for ${drugName}:
 
-1. **FDA Approval**: 
-   - Approved in May 2021 specifically for adult patients with non-small cell lung cancer (NSCLC) with EGFR exon 20 insertion mutations whose disease has progressed on or after platinum-based chemotherapy
-   - Not currently approved for colorectal cancer indications
+1. **Regulatory Status**: 
+   - Current approved indications for ${drugName}
+   - Potential pathway to approval for ${indication} based on available data
+   - Key regulatory considerations specific to this development program
 
-2. **EMA Status**: 
-   - Received conditional marketing authorization in December 2021 for the same NSCLC indication as the FDA
-   - Not approved for colorectal cancer in Europe
+2. **Competitive Landscape**: 
+   - Current standard of care for ${indication}
+   - Similar agents in development for this indication
+   - Potential positioning strategy for ${drugName} in this space
 
-3. **Other Regulatory Bodies**:
-   - Health Canada: Approved for NSCLC with EGFR exon 20 insertion mutations
-   - Japan's PMDA: Approved for similar NSCLC indication
-   - No approvals specifically for colorectal cancer exist globally
+3. **Market Differentiation**:
+   - Key differentiating features of ${drugName} compared to existing therapies
+   - Potential unmet needs ${drugName} addresses in ${indication}
+   - Commercial considerations for development in this space
 
-4. **Limitations of Current Approvals**:
-   - The approval is limited to a specific molecular subtype of NSCLC
-   - The current label does not include any gastrointestinal cancer indications
-   - Would require new clinical trials and supplemental applications for colorectal cancer indications
+4. **Relevant Biomarker Landscape**:
+   - Current biomarker tests relevant to ${indication}
+   - Potential companion diagnostic needs for ${drugName} in this indication
+   - Biomarker-driven stratification considerations for clinical trials
 
-5. **Orphan Drug Status**:
-   - Does not currently have orphan designation for colorectal cancer
-   - Potential for orphan designation in specific biomarker-defined CRC subpopulations
+5. **Clinical Development Opportunities**:
+   - Phase I/II trial opportunities for ${drugName} in ${indication}
+   - Potential for accelerated development pathways
+   - Novel combination approaches to explore
 
-## Search Round 3: Competitive Landscape
+## Search Round 3: Clinical Trial Design Considerations for ${drugName} in ${indication}
 
-The competitive landscape for amivantamab in colorectal cancer includes:
+Based on our research, optimal trial design considerations for ${drugName} in ${indication} include:
 
-1. **Current Standard of Care Treatments**:
+1. **Patient Population Selection**:
    - First-line: FOLFOX/FOLFIRI ± bevacizumab (Avastin)
    - For RAS wild-type: Anti-EGFR antibodies (cetuximab/Erbitux or panitumumab/Vectibix)
    - Second/third-line: Regorafenib, TAS-102, pembrolizumab (for MSI-high)
