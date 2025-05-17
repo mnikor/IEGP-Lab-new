@@ -31,6 +31,7 @@ const agentConfig = {
   'REG': { name: 'Regulatory Expert', icon: <LucideFlaskConical className="w-4 h-4" /> },
   'ETH': { name: 'Ethics Expert', icon: <LucideThumbsUp className="w-4 h-4" /> },
   'OPS': { name: 'Operations Expert', icon: <LucideClipboard className="w-4 h-4" /> },
+  'SUC': { name: 'Success Probability Expert', icon: <LucideThumbsUp className="w-4 h-4" /> },
 };
 
 const TournamentView = () => {

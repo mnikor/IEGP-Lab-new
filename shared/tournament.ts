@@ -59,6 +59,10 @@ export const ideas = pgTable("ideas", {
   feasibilityData: json("feasibility_data").notNull(),
   evidenceSources: json("evidence_sources").notNull(),
   
+  // Success probability data
+  successProbability: real("success_probability"), // Overall probability of success (0-100)
+  successFactors: json("success_factors"), // Factors influencing success probability
+  
   // Score data
   overallScore: real("overall_score").notNull(),
   scoreChange: real("score_change"), // Delta from previous round (for champions)
