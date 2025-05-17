@@ -639,13 +639,16 @@ const TournamentView = () => {
                                 )}
                               </>
                             )}
-                            {/* Show champion badge ONLY on ideas that are officially designated as champions,
-                                NOT in the top 3 (which already have place badges),
-                                and ONLY if the tournament has progressed beyond the seeding stage,
-                                and NOT if we're viewing the final round for top 3 ideas */}
+                            {/* Show champion badge ONLY if:
+                                1. The idea is officially designated as a champion,
+                                2. It's not in the top 3 (which already have place badges),
+                                3. The tournament has progressed beyond the seeding stage,
+                                4. We're not viewing the final round 
+                                   OR we're viewing the final round but it's not a top 3 idea */}
                             {actualChampionIds.includes(lane.champion.ideaId) && 
                              !isTournamentJustStarted && 
-                             !((tournament.status === 'completed' || viewingRound === tournament.maxRounds) && index < 3) && (
+                             !(viewingRound === tournament.maxRounds || tournament.status === 'completed') && 
+                             !(index < 3) && (
                               <Badge variant="outline" className="ml-2 text-xs border-primary text-primary">Champion</Badge>
                             )}
                           </div>
