@@ -99,9 +99,13 @@ async function processSuccessProbabilityAssessment(idea: Idea, sucReview: Insert
     
     // Extract success probability data from the SUC review
     const additionalMetrics = sucReview.additionalMetrics as Record<string, any>;
-    const success_probability = additionalMetrics.success_probability;
-    const success_factors = additionalMetrics.success_factors;
-    const mitigation_recommendations = additionalMetrics.mitigation_recommendations;
+    
+    // Extract from the overall_score field (0-100 scale)
+    const success_probability = additionalMetrics.overall_score;
+    
+    // Get success factors from the success_factors object
+    const success_factors = additionalMetrics.success_factors?.factors || [];
+    const recommendations = additionalMetrics.success_factors?.recommendations || [];
     
     if (typeof success_probability !== 'number') {
       console.error(`Invalid success probability value for idea ${idea.ideaId}`);
@@ -112,8 +116,8 @@ async function processSuccessProbabilityAssessment(idea: Idea, sucReview: Insert
     await storage.updateIdea(idea.ideaId, {
       successProbability: success_probability,
       successFactors: {
-        factors: success_factors || [],
-        recommendations: mitigation_recommendations || []
+        factors: success_factors,
+        recommendations: recommendations
       }
     });
     

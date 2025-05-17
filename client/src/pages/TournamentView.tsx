@@ -1056,7 +1056,7 @@ const TournamentView = () => {
                             </div>
                           ) : (
                             <div className="p-4 border border-dashed rounded-md text-center text-muted-foreground">
-                              {selectedIdea.successProbability 
+                              {(selectedIdea as any).successProbability 
                                 ? "Detailed success factor data not available" 
                                 : "Success probability assessment not available for this concept"
                               }
@@ -1068,10 +1068,10 @@ const TournamentView = () => {
                         <div>
                           <h3 className="text-sm font-medium mb-3">Risk Mitigation Recommendations</h3>
                           <div className="p-4 border rounded-md bg-accent/10">
-                            {selectedIdea.successFactors && selectedIdea.successFactors.recommendations && 
-                             selectedIdea.successFactors.recommendations.length > 0 ? (
+                            {(selectedIdea as any).successFactors && (selectedIdea as any).successFactors.recommendations && 
+                             (selectedIdea as any).successFactors.recommendations.length > 0 ? (
                               <ul className="space-y-2 list-disc list-inside">
-                                {selectedIdea.successFactors.recommendations.map((rec, i) => (
+                                {(selectedIdea as any).successFactors.recommendations.map((rec: string, i: number) => (
                                   <li key={i} className="text-sm">{rec}</li>
                                 ))}
                               </ul>
