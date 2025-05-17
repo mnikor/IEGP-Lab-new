@@ -764,6 +764,7 @@ const TournamentView = () => {
                     <TabsList className="mb-4">
                       <TabsTrigger value="overview">Overview</TabsTrigger>
                       <TabsTrigger value="reviews">Expert Reviews</TabsTrigger>
+                      <TabsTrigger value="success">Success Probability</TabsTrigger>
                       <TabsTrigger value="details">Full Details</TabsTrigger>
                       {selectedIdea.parentIdeaId && (
                         <TabsTrigger value="improvements">Improvements</TabsTrigger>
@@ -937,6 +938,142 @@ const TournamentView = () => {
                                 ))}
                               </ul>
                             </div>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    {/* Success Probability Tab */}
+                    <TabsContent value="success">
+                      <div className="space-y-6">
+                        {/* Main Success Probability Score */}
+                        <div className="bg-accent/20 rounded-lg p-6 mb-4">
+                          <h3 className="text-sm font-medium mb-3">Overall Probability of Success</h3>
+                          <div className="flex items-center justify-center">
+                            <div className="relative w-40 h-40">
+                              {/* Circular progress bar */}
+                              <svg className="w-full h-full" viewBox="0 0 100 100">
+                                {/* Background circle */}
+                                <circle
+                                  className="text-muted-foreground/20 stroke-current"
+                                  strokeWidth="10"
+                                  cx="50"
+                                  cy="50"
+                                  r="40"
+                                  fill="transparent"
+                                />
+                                {/* Progress circle */}
+                                <circle
+                                  className="text-amber-500 stroke-current"
+                                  strokeWidth="10"
+                                  strokeLinecap="round"
+                                  cx="50"
+                                  cy="50"
+                                  r="40"
+                                  fill="transparent"
+                                  strokeDasharray="251.2"
+                                  strokeDashoffset="125.6"
+                                  transform="rotate(-90 50 50)"
+                                />
+                                {/* Percentage text */}
+                                <text
+                                  x="50"
+                                  y="50"
+                                  className="text-2xl font-bold"
+                                  dominantBaseline="middle"
+                                  textAnchor="middle"
+                                >
+                                  50%
+                                </text>
+                                <text
+                                  x="50"
+                                  y="65"
+                                  className="text-xs"
+                                  dominantBaseline="middle"
+                                  textAnchor="middle"
+                                >
+                                  success probability
+                                </text>
+                              </svg>
+                            </div>
+                          </div>
+                          
+                          <div className="text-center mt-4 text-sm">
+                            <p className="mb-2">
+                              <span className="font-medium">Assessment by: </span>
+                              <span>Success Probability Expert (SUC)</span>
+                            </p>
+                            <p className="text-muted-foreground">
+                              Based on historical data, mechanism of action, endpoints, and feasibility factors
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Success Factors Analysis */}
+                        <div>
+                          <h3 className="text-sm font-medium mb-3">Key Success Factors</h3>
+                          <div className="space-y-2">
+                            <div className="p-3 border rounded-md">
+                              <div className="flex justify-between items-center">
+                                <div className="text-sm font-medium">Clinical Trial Feasibility</div>
+                                <Badge className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                  +15%
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Well-defined endpoints and clear patient population criteria improve execution feasibility.
+                              </p>
+                            </div>
+                            
+                            <div className="p-3 border rounded-md">
+                              <div className="flex justify-between items-center">
+                                <div className="text-sm font-medium">Mechanism of Action Confidence</div>
+                                <Badge className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                  +12%
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Strong preclinical evidence supports the proposed mechanism for this indication.
+                              </p>
+                            </div>
+                            
+                            <div className="p-3 border rounded-md">
+                              <div className="flex justify-between items-center">
+                                <div className="text-sm font-medium">Patient Recruitment Challenges</div>
+                                <Badge className="bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100">
+                                  -8%
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Narrow eligibility criteria may limit patient pool for this rare mutation subtype.
+                              </p>
+                            </div>
+                            
+                            <div className="p-3 border rounded-md">
+                              <div className="flex justify-between items-center">
+                                <div className="text-sm font-medium">Regulatory Precedent</div>
+                                <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-800 dark:text-amber-100">
+                                  +5%
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Similar designs have been accepted by regulatory agencies, with some modifications.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Risk Mitigation Recommendations */}
+                        <div>
+                          <h3 className="text-sm font-medium mb-3">Risk Mitigation Recommendations</h3>
+                          <div className="p-4 border rounded-md bg-accent/10">
+                            <ul className="space-y-2 list-disc list-inside">
+                              <li className="text-sm">Consider broadening eligibility criteria to improve recruitment rates</li>
+                              <li className="text-sm">Add interim analysis checkpoints to allow for early assessment of efficacy</li>
+                              <li className="text-sm">Include adaptive design elements to optimize dosing based on early signals</li>
+                              <li className="text-sm">Enhance site selection strategy to focus on locations with higher target population</li>
+                              <li className="text-sm">Implement a robust biomarker strategy to identify responders early</li>
+                            </ul>
                           </div>
                         </div>
                       </div>
