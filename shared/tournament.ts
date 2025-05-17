@@ -114,11 +114,13 @@ export const newTournamentRequestSchema = z.object({
       "defend_market_share", 
       "accelerate_uptake", 
       "facilitate_market_access", 
-      "real_world_evidence", 
-      "dosing_optimization", 
-      "biomarker_validation", 
-      "safety_risk_management", 
-      "combination_extension", 
+      "generate_real_world_evidence", 
+      "optimise_dosing", 
+      "validate_biomarker", 
+      "manage_safety_risk", 
+      "extend_lifecycle_combinations", 
+      "secure_initial_approval",
+      "demonstrate_poc",
       "other"
     ]),
     weight: z.number().min(0).max(1)

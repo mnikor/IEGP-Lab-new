@@ -8,12 +8,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, InfoIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { EvidenceUploader } from "@/components/shared/EvidenceUploader";
 import { StudyConcept, EvidenceFile, GenerateConceptRequest, StrategicGoal, strategicGoalLabels } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { STRATEGIC_GOALS } from "@shared/strategicGoals";
 
 interface ConceptFormProps {
   onGenerateSuccess: (concepts: StudyConcept[]) => void;
@@ -30,11 +32,13 @@ const formSchema = z.object({
     "defend_market_share", 
     "accelerate_uptake", 
     "facilitate_market_access", 
-    "real_world_evidence", 
-    "dosing_optimization", 
-    "biomarker_validation", 
-    "safety_risk_management", 
-    "combination_extension", 
+    "generate_real_world_evidence", 
+    "optimise_dosing", 
+    "validate_biomarker", 
+    "manage_safety_risk", 
+    "extend_lifecycle_combinations", 
+    "secure_initial_approval",
+    "demonstrate_poc",
     "other"
   ])).min(1, "Please select at least one strategic goal"),
   otherStrategicGoalText: z.string().optional(),
@@ -349,20 +353,37 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                 <div>
                   <FormLabel>Strategic Goals</FormLabel>
                   <div className="flex flex-wrap gap-2 mt-1 mb-2">
-                    {selectedStrategicGoals.map(goal => (
-                      <Badge key={goal} variant="secondary" className="bg-blue-100 text-primary hover:bg-blue-200">
-                        {strategicGoalLabels[goal]}
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-4 w-4 p-0 ml-1 text-blue-500 hover:text-blue-700 hover:bg-transparent"
-                          onClick={() => removeStrategicGoal(goal)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    ))}
+                    {selectedStrategicGoals.map(goalId => {
+                      const goal = STRATEGIC_GOALS.find(g => g.id === goalId) || 
+                        { id: goalId, label: strategicGoalLabels[goalId as StrategicGoal], description: "", tooltip: "" };
+                      
+                      return (
+                        <Badge key={goalId} variant="secondary" className="bg-blue-100 text-primary hover:bg-blue-200">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="flex items-center">
+                                  {goal.label}
+                                  <InfoIcon className="h-3 w-3 ml-1 text-muted-foreground" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="max-w-xs">{goal.tooltip || goal.description}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-4 w-4 p-0 ml-1 text-blue-500 hover:text-blue-700 hover:bg-transparent"
+                            onClick={() => removeStrategicGoal(goalId as StrategicGoal)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      );
+                    })}
                     <Select 
                       onValueChange={(value) => addStrategicGoal(value as StrategicGoal)}
                       value=""
@@ -371,11 +392,14 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                         <span className="text-xs">+ Add</span>
                       </SelectTrigger>
                       <SelectContent>
-                        {(Object.keys(strategicGoalLabels) as StrategicGoal[])
-                          .filter(goal => !selectedStrategicGoals.includes(goal))
+                        {STRATEGIC_GOALS
+                          .filter(goal => !selectedStrategicGoals.includes(goal.id as StrategicGoal))
                           .map(goal => (
-                            <SelectItem key={goal} value={goal}>
-                              {strategicGoalLabels[goal]}
+                            <SelectItem key={goal.id} value={goal.id as string}>
+                              <div className="flex flex-col">
+                                <span>{goal.label}</span>
+                                <span className="text-xs text-muted-foreground">{goal.description}</span>
+                              </div>
                             </SelectItem>
                           ))
                         }
@@ -386,7 +410,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                     <p className="text-sm text-destructive">Please select at least one strategic goal</p>
                   )}
                   
-                  {selectedStrategicGoals.includes("other") && (
+                  {selectedStrategicGoals.includes("other" as StrategicGoal) && (
                     <div className="mt-2">
                       <FormLabel htmlFor="otherStrategicGoalText" className="text-sm">Please specify other strategic goal</FormLabel>
                       <Input
