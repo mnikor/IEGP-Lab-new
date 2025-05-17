@@ -391,33 +391,32 @@ const TournamentView = () => {
     // Map the rounds to percentages with intermediate values
     // For a 3-round tournament:
     // - Initial setup: 10%
-    // - During round 1: 10-33%
-    // - During round 2: 33-66%
-    // - During round 3: 66-99%
+    // - During round 1: 10-40%
+    // - During round 2: 40-70%
+    // - During round 3: 70-99%
     // - Completed: 100%
     const totalRounds = tournament.maxRounds;
     const percentPerRound = (100 - 10) / totalRounds; // Excluding initial 10%
     
-    // Base percentage from completed rounds
-    const completedRounds = Math.max(0, tournament.currentRound - 1);
-    const baseProgress = 10 + (completedRounds * percentPerRound);
-    
-    // Simulation of progress within the current round
-    // This value should ideally come from the backend, but we'll simulate based on elapsed time
-    const inRoundProgress = percentPerRound * 0.5; // Assume halfway through the current round
-    
-    roundProgress = baseProgress + inRoundProgress;
+    // Calculate progress based on current round
+    // If currentRound is 0, we're at the beginning (10%)
+    // If currentRound is 1, we're in or have completed round 1 (40%)
+    // If currentRound is 2, we're in or have completed round 2 (70%)
+    // If currentRound is 3, we're in or have completed round 3 (99%)
+    const baseProgress = 10 + (tournament.currentRound * percentPerRound);
     
     // Ensure reasonable bounds
-    roundProgress = Math.max(10, Math.min(99, roundProgress));
+    roundProgress = Math.max(10, Math.min(99, baseProgress));
   } 
   // Default calculation for other states
   else {
-    // Map round number directly to percentage
-    roundProgress = (tournament.currentRound / tournament.maxRounds) * 100;
+    // For any other state, calculate based on the current round
+    const percentComplete = tournament.currentRound > 0 
+      ? (tournament.currentRound / tournament.maxRounds) * 100
+      : 10; // At least 10% if we're just starting
     
-    // Ensure it's at least 10% and never 100% unless completed
-    roundProgress = Math.max(10, Math.min(99, roundProgress));
+    // Ensure it's never 100% unless completed
+    roundProgress = Math.max(10, Math.min(99, percentComplete));
   }
   
   // Determine if a round is actively in progress (for UI indicators)
@@ -477,7 +476,7 @@ const TournamentView = () => {
                   });
               }}
             >
-              View Perplexity Research Data
+              Situational Analysis
             </Button>
           </div>
         </div>
