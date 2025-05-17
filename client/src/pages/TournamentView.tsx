@@ -449,23 +449,62 @@ const TournamentView = () => {
         
         <div className="flex items-center gap-4 mb-2">
           <div className="flex-1 relative">
-            <Progress value={roundProgress} className={`h-2 ${isRoundInProgress ? 'animate-pulse' : ''}`} />
+            {/* Progress bar with percentage and visual indicators */}
+            <div className="flex justify-between text-xs mb-1">
+              <span>Progress: {Math.round(roundProgress)}%</span>
+              <span>
+                {isRoundInProgress 
+                  ? `Processing round ${tournament.currentRound}` 
+                  : tournament.status === 'completed' 
+                    ? 'Tournament completed' 
+                    : `Round ${tournament.currentRound} of ${tournament.maxRounds}`
+                }
+              </span>
+            </div>
+            
+            <Progress value={roundProgress} className={`h-3 ${isRoundInProgress ? 'animate-pulse' : ''}`} />
+            
+            {/* Visual animation for processing state */}
             {isRoundInProgress && (
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/30 to-transparent animate-[shimmer_1.5s_infinite] opacity-70"></div>
             )}
+            
+            {/* Progress stages */}
+            <div className="flex justify-between mt-2 text-xs">
+              <div className={`flex flex-col items-center ${tournament.currentRound >= 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-3 h-3 rounded-full ${tournament.currentRound >= 0 ? 'bg-primary' : 'bg-muted'}`}></div>
+                <span>Initial</span>
+              </div>
+              <div className={`flex flex-col items-center ${tournament.currentRound >= 1 ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-3 h-3 rounded-full ${tournament.currentRound >= 1 ? 'bg-primary' : 'bg-muted'}`}></div>
+                <span>Round 1</span>
+              </div>
+              <div className={`flex flex-col items-center ${tournament.currentRound >= 2 ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-3 h-3 rounded-full ${tournament.currentRound >= 2 ? 'bg-primary' : 'bg-muted'}`}></div>
+                <span>Round 2</span>
+              </div>
+              <div className={`flex flex-col items-center ${tournament.currentRound >= 3 ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-3 h-3 rounded-full ${tournament.currentRound >= 3 ? 'bg-primary' : 'bg-muted'}`}></div>
+                <span>Final</span>
+              </div>
+            </div>
           </div>
+          
+          {/* Current status indicator */}
           <div className="text-sm whitespace-nowrap flex items-center">
             {isRoundInProgress && (
-              <>
-                <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
-                <span className="font-medium text-green-600 dark:text-green-400">Processing</span>
-                <span className="mx-2">•</span>
-              </>
+              <div className="flex items-center bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 px-3 py-1 rounded-full">
+                <span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-2 animate-pulse"></span>
+                <span className="font-medium">Processing round {tournament.currentRound}</span>
+              </div>
             )}
-            <span>
-              Round {tournament.currentRound} of {tournament.maxRounds}
-              {isRoundInProgress && ' (in progress)'}
-            </span>
+            
+            {!isRoundInProgress && tournament.status === 'completed' && (
+              <div className="flex items-center bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-3 py-1 rounded-full">
+                <LucideThumbsUp className="w-4 h-4 mr-2" />
+                <span className="font-medium">Tournament completed</span>
+              </div>
+            )}
           </div>
         </div>
         

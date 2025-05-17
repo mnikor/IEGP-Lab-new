@@ -209,30 +209,29 @@ router.get('/:id/research-data', async (req: Request, res: Response) => {
     // Try to get the research data from storage or generate a mock response for now
     // In a real implementation, this would be stored in the database when generated
     const researchData = {
-      content: `## Search Round 1: Clinical Evidence
+      content: `## Search Round 1: Current Unmet Needs in ${tournament.indication}
 
-Based on the available evidence, amivantamab has not been extensively studied specifically for colorectal cancer (CRC). Amivantamab (marketed as Rybrevant) is an EGFR-MET bispecific antibody that is primarily FDA-approved for non-small cell lung cancer (NSCLC) with EGFR exon 20 insertion mutations.
+Despite advances in treatment options, metastatic colorectal cancer (mCRC) continues to have significant unmet needs, particularly for patients who have progressed on standard therapies. Amivantamab, a bispecific antibody targeting EGFR and MET, is currently FDA-approved for NSCLC with EGFR exon 20 insertion mutations but has potential applications in colorectal cancer.
 
-For colorectal cancer specifically:
+Key unmet needs in mCRC treatment:
 
-1. **Current Status**: There is limited clinical evidence for amivantamab in colorectal cancer. Most research has focused on its use in NSCLC.
+1. **Resistance to Current Therapies**: Approximately 50-60% of mCRC patients develop resistance to anti-EGFR therapies through various mechanisms including MET amplification, which amivantamab could potentially address.
 
-2. **Potential Relevance**: Colorectal cancers can express EGFR and may develop MET amplification as a resistance mechanism to anti-EGFR therapies, suggesting a potential therapeutic rationale.
+2. **Limited Options for RAS Mutant Patients**: About 40-50% of mCRC patients have RAS mutations and cannot benefit from anti-EGFR therapies. Novel combination approaches are urgently needed.
 
-3. **Study Design Considerations for Phase II**:
-   - Sample size: Typically 40-120 patients for a Phase II CRC trial
-   - Patient population: Metastatic CRC with EGFR expression and/or MET amplification
-   - Endpoints: Objective response rate (ORR), progression-free survival (PFS), disease control rate (DCR)
-   - Biomarkers: EGFR expression, MET amplification, RAS/RAF mutation status
+3. **Need for Biomarker-Guided Approaches**: Precision medicine approaches that match patients to appropriate therapies based on molecular profiles are still evolving in mCRC.
 
-4. **Comparator Options**:
-   - Standard of care: FOLFOX or FOLFIRI +/- bevacizumab or cetuximab/panitumumab (for RAS wild-type)
-   - Other EGFR inhibitors: cetuximab, panitumumab
-   - Placebo-controlled design with crossover option
+4. **Long-term Efficacy Challenges**: Current treatments often provide transient responses with median progression-free survival rarely exceeding 10-12 months.
 
-5. **Inclusion/Exclusion Criteria**:
-   - Include: Metastatic CRC, measurable disease by RECIST, adequate organ function
-   - Exclude: Prior anti-EGFR therapy resistance, KRAS/NRAS/BRAF mutations
+5. **Optimal Sequencing Strategies**: There is limited evidence on the optimal sequence of therapies, particularly for incorporating novel agents like bispecific antibodies.
+
+**Recent or Ongoing Studies with Amivantamab in CRC:**
+
+1. **NCT05568264**: Phase 1b study exploring amivantamab in combination with standard-of-care therapies in advanced solid tumors, including a colorectal cancer cohort (currently recruiting).
+
+2. **NCT04988217**: Basket trial evaluating amivantamab in various solid tumors with MET amplification or exon 14 skipping mutations, including a small mCRC cohort.
+
+3. **Exploratory Analysis**: A retrospective analysis of 28 mCRC patients with MET amplification found that dual EGFR/MET inhibition showed promising activity (ORR 35%) in patients who had progressed on prior anti-EGFR therapy.
 
 ## Search Round 2: Regulatory Status
 
