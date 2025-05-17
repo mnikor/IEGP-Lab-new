@@ -5,11 +5,13 @@ export type StrategicGoal =
   "defend_market_share" | 
   "accelerate_uptake" | 
   "facilitate_market_access" | 
-  "real_world_evidence" | 
-  "dosing_optimization" | 
-  "biomarker_validation" | 
-  "safety_risk_management" | 
-  "combination_extension" | 
+  "generate_real_world_evidence" | 
+  "optimise_dosing" | 
+  "validate_biomarker" | 
+  "manage_safety_risk" | 
+  "extend_lifecycle_combinations" | 
+  "secure_initial_approval" |
+  "demonstrate_poc" |
   "other";
 
 // Strategic goal label mapping
@@ -18,11 +20,13 @@ export const strategicGoalLabels: Record<StrategicGoal, string> = {
   "defend_market_share": "Defend Market Share",
   "accelerate_uptake": "Accelerate Uptake",
   "facilitate_market_access": "Facilitate Market Access",
-  "real_world_evidence": "Real World Evidence",
-  "dosing_optimization": "Dosing Optimization",
-  "biomarker_validation": "Biomarker Validation",
-  "safety_risk_management": "Safety Risk Management",
-  "combination_extension": "Combination Extension",
+  "generate_real_world_evidence": "Generate Real-World Evidence",
+  "optimise_dosing": "Optimise Dosing / Formulation",
+  "validate_biomarker": "Validate Biomarker / MOA",
+  "manage_safety_risk": "Manage Safety & Risk",
+  "extend_lifecycle_combinations": "Extend Lifecycle via Combinations",
+  "secure_initial_approval": "Secure Initial Label Approval",
+  "demonstrate_poc": "Demonstrate Mechanism Proof-of-Concept",
   "other": "Other"
 };
 export type StudyPhase = "I" | "II" | "III" | "IV" | "any";
