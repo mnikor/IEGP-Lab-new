@@ -386,37 +386,39 @@ const TournamentView = () => {
   if (tournament.status === 'completed') {
     roundProgress = 100;
   } 
-  // For running tournaments, calculate based on rounds and show incremental progress
-  else if (tournament.status === 'running') {
-    // Map the rounds to percentages with intermediate values
-    // For a 3-round tournament:
-    // - Initial setup: 10%
-    // - During round 1: 10-40%
-    // - During round 2: 40-70%
-    // - During round 3: 70-99%
-    // - Completed: 100%
-    const totalRounds = tournament.maxRounds;
-    const percentPerRound = (100 - 10) / totalRounds; // Excluding initial 10%
-    
-    // Calculate progress based on current round
-    // If currentRound is 0, we're at the beginning (10%)
-    // If currentRound is 1, we're in or have completed round 1 (40%)
-    // If currentRound is 2, we're in or have completed round 2 (70%)
-    // If currentRound is 3, we're in or have completed round 3 (99%)
-    const baseProgress = 10 + (tournament.currentRound * percentPerRound);
-    
-    // Ensure reasonable bounds
-    roundProgress = Math.max(10, Math.min(99, baseProgress));
-  } 
-  // Default calculation for other states
+  // For running tournaments, use a more reliable formula
   else {
-    // For any other state, calculate based on the current round
-    const percentComplete = tournament.currentRound > 0 
-      ? (tournament.currentRound / tournament.maxRounds) * 100
-      : 10; // At least 10% if we're just starting
+    // Fixed progress calculation using explicit milestones
+    // This ensures the bar moves consistently through the tournament
     
-    // Ensure it's never 100% unless completed
-    roundProgress = Math.max(10, Math.min(99, percentComplete));
+    // Define breakpoints for each round
+    // For a 3-round tournament:
+    // Round 0 (initial seeding): 10%
+    // Round 1: 40% 
+    // Round 2: 70%
+    // Round 3: 95%
+    // Completed: 100%
+    
+    let milestones: Record<number, number> = {};
+    
+    // Calculate milestone percentages based on maxRounds
+    // Always reserve 10% for initial setup, and remaining 90% distributed per round
+    for (let i = 0; i <= tournament.maxRounds; i++) {
+      if (i === 0) {
+        // Starting point
+        milestones[i] = 10;
+      } else if (i === tournament.maxRounds) {
+        // Final round but not complete
+        milestones[i] = 95;
+      } else {
+        // Intermediate rounds
+        const segmentSize = 85 / tournament.maxRounds;
+        milestones[i] = 10 + (i * segmentSize);
+      }
+    }
+    
+    // Get the milestone percentage for the current round
+    roundProgress = milestones[tournament.currentRound] || 10;
   }
   
   // Determine if a round is actively in progress (for UI indicators)
