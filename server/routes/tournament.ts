@@ -142,12 +142,26 @@ async function calculateTournamentProgress(tournamentId: number): Promise<number
   return Math.min(finalPercentage, completedRoundsProgress + currentRoundProgress);
 }
 
+// Define the type for tournament winners with rank and medal
+interface TournamentWinner {
+  ideaId: string;
+  tournamentId: number;
+  laneId: number;
+  round: number;
+  isChampion: boolean;
+  title: string;
+  overallScore: number;
+  rank: number;
+  medal: 'gold' | 'silver' | 'bronze' | null;
+  [key: string]: any; // Allow other Idea properties
+}
+
 /**
  * Get tournament winners with ranking information
  * @param tournamentId The tournament ID
  * @returns Top ranked ideas with placement information
  */
-async function getTournamentWinners(tournamentId: number) {
+async function getTournamentWinners(tournamentId: number): Promise<TournamentWinner[]> {
   // Get all ideas for this tournament
   const ideas = await storage.getIdeasByTournament(tournamentId);
   
@@ -191,7 +205,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     const progress = await calculateTournamentProgress(tournamentId);
     
     // Get winners if tournament is completed
-    let winners = [];
+    let winners: TournamentWinner[] = [];
     if (tournament.status === 'completed') {
       winners = await getTournamentWinners(tournamentId);
     }
