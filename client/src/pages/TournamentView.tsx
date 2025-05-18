@@ -403,31 +403,56 @@ const TournamentView = () => {
     // Round 3: 95%
     // Completed: 100%
     
+    // Calculate milestone percentages based on maxRounds
+    const basePercentage = 10; // Initial seeding
+    const remainingPercentage = 85; // Remaining percentage after initial seeding, before completion
+    
+    // Create milestone percentages for each round
     let milestones: Record<number, number> = {};
     
-    // Calculate milestone percentages based on maxRounds
-    // Always reserve 10% for initial setup, and remaining 90% distributed per round
     for (let i = 0; i <= tournament.maxRounds; i++) {
       if (i === 0) {
-        // Starting point
-        milestones[i] = 10;
+        // Starting point - initial seeding
+        milestones[i] = basePercentage;
       } else if (i === tournament.maxRounds) {
         // Final round but not complete
         milestones[i] = 95;
       } else {
-        // Intermediate rounds
-        const segmentSize = 85 / tournament.maxRounds;
-        milestones[i] = 10 + (i * segmentSize);
+        // Intermediate rounds - distribute the remaining percentage evenly
+        const segmentSize = remainingPercentage / tournament.maxRounds;
+        milestones[i] = basePercentage + (i * segmentSize);
       }
     }
     
-    // Get the milestone percentage for the current round
-    // Force at least the tournament's current round percentage to ensure progress
-    const minProgress = milestones[tournament.currentRound] || 10;
+    // For better visual feedback, we'll interpolate between milestone values
+    // This creates a smoother progress experience
+    const currentRound = tournament.currentRound;
     
-    // If just connected through SSE, we might be in the middle of a round
-    // Use higher values if there are more rounds already completed
-    roundProgress = Math.max(minProgress, tournament.currentRound / tournament.maxRounds * 100);
+    // Get the current round's milestone percentage
+    const currentMilestone = milestones[currentRound] || basePercentage;
+    
+    // Calculate progress as a percentage of completion through current round
+    // Use the ideas to determine how far along we are in the current round
+    const ideasInCurrentRound = ideas.filter(idea => idea.round === currentRound).length;
+    const expectedIdeasPerRound = tournament.lanes * 2; // Champions + challengers
+    
+    // Calculate progress within the current round (0 to 1)
+    const intraRoundProgress = Math.min(1, ideasInCurrentRound / expectedIdeasPerRound);
+    
+    // If we're at round 0, use a simpler calculation
+    if (currentRound === 0) {
+      roundProgress = currentMilestone;
+    } else {
+      // For rounds > 0, interpolate between previous and current milestone
+      const prevMilestone = milestones[currentRound - 1] || 0;
+      roundProgress = prevMilestone + ((currentMilestone - prevMilestone) * intraRoundProgress);
+    }
+    
+    // Ensure progress is at least the previous milestone
+    roundProgress = Math.max(roundProgress, milestones[Math.max(0, currentRound - 1)] || 0);
+    
+    // Cap progress at 95% until tournament is complete
+    roundProgress = Math.min(roundProgress, 95);
   }
   
   // Determine if a round is actively in progress (for UI indicators)
@@ -492,7 +517,7 @@ const TournamentView = () => {
                   </div>
                   <h3 className="font-medium line-clamp-2">{lane!.champion.title}</h3>
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-3">
-                    {lane!.champion.summary || "No description available"}
+                    {lane!.champion.title}
                   </p>
                   <Button 
                     variant="ghost" 
@@ -570,22 +595,28 @@ const TournamentView = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/30 to-transparent animate-[shimmer_1.5s_infinite] opacity-70"></div>
             )}
             
-            {/* Progress stages */}
+            {/* Progress stages - dynamically generate based on maxRounds */}
             <div className="flex justify-between mt-2 text-xs">
+              {/* Initial stage */}
               <div className={`flex flex-col items-center ${tournament.currentRound >= 0 ? 'text-primary' : 'text-muted-foreground'}`}>
                 <div className={`w-3 h-3 rounded-full ${tournament.currentRound >= 0 ? 'bg-primary' : 'bg-muted'}`}></div>
                 <span>Initial</span>
               </div>
-              <div className={`flex flex-col items-center ${tournament.currentRound >= 1 ? 'text-primary' : 'text-muted-foreground'}`}>
-                <div className={`w-3 h-3 rounded-full ${tournament.currentRound >= 1 ? 'bg-primary' : 'bg-muted'}`}></div>
-                <span>Round 1</span>
-              </div>
-              <div className={`flex flex-col items-center ${tournament.currentRound >= 2 ? 'text-primary' : 'text-muted-foreground'}`}>
-                <div className={`w-3 h-3 rounded-full ${tournament.currentRound >= 2 ? 'bg-primary' : 'bg-muted'}`}></div>
-                <span>Round 2</span>
-              </div>
-              <div className={`flex flex-col items-center ${tournament.currentRound >= 3 ? 'text-primary' : 'text-muted-foreground'}`}>
-                <div className={`w-3 h-3 rounded-full ${tournament.currentRound >= 3 ? 'bg-primary' : 'bg-muted'}`}></div>
+
+              {/* Middle rounds */}
+              {Array.from({ length: tournament.maxRounds - 1 }, (_, index) => (
+                <div 
+                  key={`round-${index + 1}`} 
+                  className={`flex flex-col items-center ${tournament.currentRound >= index + 1 ? 'text-primary' : 'text-muted-foreground'}`}
+                >
+                  <div className={`w-3 h-3 rounded-full ${tournament.currentRound >= index + 1 ? 'bg-primary' : 'bg-muted'}`}></div>
+                  <span>Round {index + 1}</span>
+                </div>
+              ))}
+
+              {/* Final round */}
+              <div className={`flex flex-col items-center ${tournament.currentRound >= tournament.maxRounds ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-3 h-3 rounded-full ${tournament.currentRound >= tournament.maxRounds ? 'bg-primary' : 'bg-muted'}`}></div>
                 <span>Final</span>
               </div>
             </div>
