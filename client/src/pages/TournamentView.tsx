@@ -21,7 +21,9 @@ import {
   LucideArrowUpRight,
   LucideArrowRight,
   LucideX,
-  LucideArrowLeft
+  LucideArrowLeft,
+  Trophy,
+  CheckCircle2
 } from 'lucide-react';
 
 // Mapping of agent IDs to their display names and icons
@@ -420,7 +422,12 @@ const TournamentView = () => {
     }
     
     // Get the milestone percentage for the current round
-    roundProgress = milestones[tournament.currentRound] || 10;
+    // Force at least the tournament's current round percentage to ensure progress
+    const minProgress = milestones[tournament.currentRound] || 10;
+    
+    // If just connected through SSE, we might be in the middle of a round
+    // Use higher values if there are more rounds already completed
+    roundProgress = Math.max(minProgress, tournament.currentRound / tournament.maxRounds * 100);
   }
   
   // Determine if a round is actively in progress (for UI indicators)
@@ -449,6 +456,62 @@ const TournamentView = () => {
       />
       
       {/* Tournament Header */}
+      {/* Winner's podium for completed tournaments */}
+      {tournament.status === 'completed' && (
+        <Card className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-primary/20">
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center">
+              <Trophy className="mr-2 h-5 w-5 text-amber-500" />
+              Tournament Results
+            </CardTitle>
+            <CardDescription>
+              The tournament has finished after {tournament.currentRound} rounds. Here are the top winners:
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {laneData.slice(0, 3).map((lane, index) => (
+                <div key={lane!.laneId} 
+                  className={`p-4 rounded-lg border ${
+                    index === 0 
+                      ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' 
+                      : index === 1 
+                        ? 'bg-slate-50 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800' 
+                        : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <Badge className={`
+                      ${index === 0 ? 'bg-amber-500 hover:bg-amber-600' : 
+                        index === 1 ? 'bg-slate-500 hover:bg-slate-600' : 
+                                       'bg-orange-500 hover:bg-orange-600'}
+                    `}>
+                      {index === 0 ? '1st Place 🥇' : index === 1 ? '2nd Place 🥈' : '3rd Place 🥉'}
+                    </Badge>
+                    <Badge variant="outline">Score: {lane!.champion.overallScore.toFixed(2)}</Badge>
+                  </div>
+                  <h3 className="font-medium line-clamp-2">{lane!.champion.title}</h3>
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-3">
+                    {lane!.champion.summary || "No description available"}
+                  </p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="mt-2 w-full"
+                    onClick={() => {
+                      handleLaneSelect(lane!.laneId);
+                      handleIdeaSelect(lane!.champion.ideaId);
+                    }}
+                  >
+                    View Details
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
