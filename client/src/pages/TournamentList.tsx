@@ -227,7 +227,7 @@ const TournamentList = () => {
               New Tournament
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Start a New Concept Tournament</DialogTitle>
               <DialogDescription>
@@ -242,7 +242,7 @@ const TournamentList = () => {
               </Alert>
             )}
             
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-4 py-4 overflow-y-auto pr-2 max-h-[70vh]">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="drugName">Drug Name</Label>
