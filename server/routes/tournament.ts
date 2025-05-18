@@ -33,6 +33,15 @@ router.post('/new-concept', async (req: Request, res: Response) => {
       studyPhasePref: data.studyPhasePref,
       maxRounds: data.maxRounds || 3,
       lanes: data.lanes || 5,
+      // Additional fields
+      otherStrategicGoalText: data.otherStrategicGoalText,
+      budgetCeilingEur: data.budgetCeilingEur,
+      timelineCeilingMonths: data.timelineCeilingMonths,
+      salesImpactThreshold: data.salesImpactThreshold,
+      anticipatedFpiDate: data.anticipatedFpiDate,
+      globalLoeDate: data.globalLoeDate,
+      patentExtensionPotential: data.patentExtensionPotential,
+      additionalContext: data.additionalContext,
     });
     
     console.log(`Created tournament with ID ${tournament.id}`);

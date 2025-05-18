@@ -144,6 +144,16 @@ export const newTournamentRequestSchema = z.object({
   studyPhasePref: z.enum(["I", "II", "III", "IV", "any"]),
   maxRounds: z.number().int().positive().optional().default(3),
   lanes: z.number().int().positive().optional().default(5),
+  
+  // Optional additional fields from New Concept functionality
+  otherStrategicGoalText: z.string().optional(),
+  budgetCeilingEur: z.number().int().positive().nullish(),
+  timelineCeilingMonths: z.number().int().positive().nullish(),
+  salesImpactThreshold: z.number().int().positive().nullish(),
+  anticipatedFpiDate: z.string().optional(),
+  globalLoeDate: z.string().optional(),
+  patentExtensionPotential: z.boolean().optional().default(false),
+  additionalContext: z.string().optional(),
 });
 
 // Export types
