@@ -383,77 +383,9 @@ const TournamentView = () => {
   const laneData = getLaneData();
   const selectedIdea = getSelectedIdea();
   
-  // Calculate round progress based on tournament data and show gradual progression
-  let roundProgress;
-  
-  // For completed tournaments, show 100%
-  if (tournament.status === 'completed') {
-    roundProgress = 100;
-  } 
-  // For running tournaments, use a more reliable formula
-  else {
-    // Fixed progress calculation using explicit milestones
-    // This ensures the bar moves consistently through the tournament
-    
-    // Define breakpoints for each round
-    // For a 3-round tournament:
-    // Round 0 (initial seeding): 10%
-    // Round 1: 40% 
-    // Round 2: 70%
-    // Round 3: 95%
-    // Completed: 100%
-    
-    // Calculate milestone percentages based on maxRounds
-    const basePercentage = 10; // Initial seeding
-    const remainingPercentage = 85; // Remaining percentage after initial seeding, before completion
-    
-    // Create milestone percentages for each round
-    let milestones: Record<number, number> = {};
-    
-    for (let i = 0; i <= tournament.maxRounds; i++) {
-      if (i === 0) {
-        // Starting point - initial seeding
-        milestones[i] = basePercentage;
-      } else if (i === tournament.maxRounds) {
-        // Final round but not complete
-        milestones[i] = 95;
-      } else {
-        // Intermediate rounds - distribute the remaining percentage evenly
-        const segmentSize = remainingPercentage / tournament.maxRounds;
-        milestones[i] = basePercentage + (i * segmentSize);
-      }
-    }
-    
-    // For better visual feedback, we'll interpolate between milestone values
-    // This creates a smoother progress experience
-    const currentRound = tournament.currentRound;
-    
-    // Get the current round's milestone percentage
-    const currentMilestone = milestones[currentRound] || basePercentage;
-    
-    // Calculate progress as a percentage of completion through current round
-    // Use the ideas to determine how far along we are in the current round
-    const ideasInCurrentRound = ideas.filter(idea => idea.round === currentRound).length;
-    const expectedIdeasPerRound = tournament.lanes * 2; // Champions + challengers
-    
-    // Calculate progress within the current round (0 to 1)
-    const intraRoundProgress = Math.min(1, ideasInCurrentRound / expectedIdeasPerRound);
-    
-    // If we're at round 0, use a simpler calculation
-    if (currentRound === 0) {
-      roundProgress = currentMilestone;
-    } else {
-      // For rounds > 0, interpolate between previous and current milestone
-      const prevMilestone = milestones[currentRound - 1] || 0;
-      roundProgress = prevMilestone + ((currentMilestone - prevMilestone) * intraRoundProgress);
-    }
-    
-    // Ensure progress is at least the previous milestone
-    roundProgress = Math.max(roundProgress, milestones[Math.max(0, currentRound - 1)] || 0);
-    
-    // Cap progress at 95% until tournament is complete
-    roundProgress = Math.min(roundProgress, 95);
-  }
+  // Use server-calculated progress value from TournamentContext
+  const { progress: serverProgress } = useTournament();
+  const roundProgress = serverProgress;
   
   // Determine if a round is actively in progress (for UI indicators)
   const isRoundInProgress = tournament.status === 'running';
@@ -468,6 +400,72 @@ const TournamentView = () => {
     .filter(idea => idea.isChampion)
     .map(idea => idea.ideaId);
 
+  // Winners Podium component
+  const WinnersPodium = () => {
+    const { winners } = useTournament();
+    
+    if (!tournament.status || tournament.status !== 'completed' || winners.length === 0) {
+      return null;
+    }
+    
+    return (
+      <Card className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-primary/20">
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center">
+            <Trophy className="mr-2 h-5 w-5 text-amber-500" />
+            Tournament Results
+          </CardTitle>
+          <CardDescription>
+            Congratulations! Here are the top performing study concepts:
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {winners.slice(0, 3).map((winner, index) => (
+              <div key={winner.ideaId} 
+                className={`p-4 rounded-lg border ${
+                  index === 0 
+                    ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' 
+                    : index === 1 
+                      ? 'bg-slate-50 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800' 
+                      : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+                }`}
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <Badge className={`
+                    ${index === 0 ? 'bg-amber-500 hover:bg-amber-600' : 
+                      index === 1 ? 'bg-slate-500 hover:bg-slate-600' : 
+                                   'bg-orange-500 hover:bg-orange-600'}
+                  `}>
+                    {index === 0 ? '🥇 1st Place' : index === 1 ? '🥈 2nd Place' : '🥉 3rd Place'}
+                  </Badge>
+                  <Badge variant="outline">Score: {winner.overallScore.toFixed(2)}</Badge>
+                </div>
+                <h3 className="font-medium line-clamp-2">{winner.title}</h3>
+                {winner.laneId && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Lane {winner.laneId}
+                  </p>
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2 w-full"
+                  onClick={() => {
+                    setSelectedLane(winner.laneId);
+                    setSelectedIdeaId(winner.ideaId);
+                  }}
+                >
+                  View Details
+                </Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4">
       {/* Research Data Modal */}
@@ -480,62 +478,10 @@ const TournamentView = () => {
         isLoading={isLoadingResearch}
       />
       
+      {/* Display Winners Podium for completed tournaments */}
+      <WinnersPodium />
+      
       {/* Tournament Header */}
-      {/* Winner's podium for completed tournaments */}
-      {tournament.status === 'completed' && (
-        <Card className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-primary/20">
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center">
-              <Trophy className="mr-2 h-5 w-5 text-amber-500" />
-              Tournament Results
-            </CardTitle>
-            <CardDescription>
-              The tournament has finished after {tournament.currentRound} rounds. Here are the top winners:
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {laneData.slice(0, 3).map((lane, index) => (
-                <div key={lane!.laneId} 
-                  className={`p-4 rounded-lg border ${
-                    index === 0 
-                      ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' 
-                      : index === 1 
-                        ? 'bg-slate-50 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800' 
-                        : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
-                  }`}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <Badge className={`
-                      ${index === 0 ? 'bg-amber-500 hover:bg-amber-600' : 
-                        index === 1 ? 'bg-slate-500 hover:bg-slate-600' : 
-                                       'bg-orange-500 hover:bg-orange-600'}
-                    `}>
-                      {index === 0 ? '1st Place 🥇' : index === 1 ? '2nd Place 🥈' : '3rd Place 🥉'}
-                    </Badge>
-                    <Badge variant="outline">Score: {lane!.champion.overallScore.toFixed(2)}</Badge>
-                  </div>
-                  <h3 className="font-medium line-clamp-2">{lane!.champion.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-3">
-                    {lane!.champion.title}
-                  </p>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="mt-2 w-full"
-                    onClick={() => {
-                      handleLaneSelect(lane!.laneId);
-                      handleIdeaSelect(lane!.champion.ideaId);
-                    }}
-                  >
-                    View Details
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
       
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">

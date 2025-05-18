@@ -98,6 +98,11 @@ export interface TournamentRoundUpdate {
   timestamp: string;
 }
 
+export interface TournamentWinner extends Idea {
+  rank: number;
+  medal: 'gold' | 'silver' | 'bronze' | null;
+}
+
 interface TournamentContextType {
   tournament: Tournament | null;
   ideas: Idea[];
@@ -105,6 +110,8 @@ interface TournamentContextType {
   currentRound: number;
   isLoading: boolean;
   error: string | null;
+  progress: number;
+  winners: TournamentWinner[];
   connectToTournament: (tournamentId: number) => void;
   disconnectFromTournament: () => void;
   getReviewForIdea: (ideaId: string, agentId: string) => Promise<Review>;
@@ -120,6 +127,8 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
+  const [progress, setProgress] = useState<number>(0);
+  const [winners, setWinners] = useState<TournamentWinner[]>([]);
 
   // Cleanup event source on unmount
   // Cleanup event source on unmount or when tournament changes
@@ -158,6 +167,18 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
       }
 
       setTournament(tournamentData.tournament);
+      
+      // Set progress from server-calculated value
+      if (tournamentData.progress !== undefined) {
+        setProgress(tournamentData.progress);
+      }
+      
+      // Set winners if tournament is completed
+      if (tournamentData.winners && tournamentData.winners.length > 0) {
+        setWinners(tournamentData.winners);
+      } else {
+        setWinners([]);
+      }
       
       // Ensure currentRound is never less than 1 for completed tournaments
       if (tournamentData.tournament.status === 'completed' && tournamentData.tournament.currentRound === 0) {
@@ -300,6 +321,8 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
         currentRound,
         isLoading,
         error,
+        progress,
+        winners,
         connectToTournament,
         disconnectFromTournament,
         getReviewForIdea
