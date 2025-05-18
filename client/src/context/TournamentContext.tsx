@@ -248,8 +248,12 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
               setCurrentRound(data.round);
             }
             
-            // Refresh ideas list after a round update
-            refreshIdeas(tournamentId);
+            // Immediately after a round update, poll the tournament data to get progress
+            // This is the most reliable way to get the latest progress value
+            setTimeout(() => {
+              console.log('Fetching latest tournament data after round update');
+              refreshTournament(tournamentId);
+            }, 1000);
           } catch (err) {
             console.error('Error processing SSE message:', err);
           }
@@ -283,8 +287,28 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
     setCurrentRound(0);
   };
 
-  const refreshIdeas = async (tournamentId: number) => {
+  const refreshTournament = async (tournamentId: number) => {
     try {
+      // Refresh tournament details including progress and winners
+      const tournamentResponse = await apiRequest('GET', `/api/tournaments/${tournamentId}`);
+      const tournamentData = await tournamentResponse.json();
+      
+      if (tournamentData.tournament) {
+        setTournament(tournamentData.tournament);
+        
+        // Update progress from server
+        if (tournamentData.progress !== undefined) {
+          console.log(`Updating progress to ${tournamentData.progress}%`);
+          setProgress(tournamentData.progress);
+        }
+        
+        // Update winners if tournament is completed
+        if (tournamentData.tournament.status === 'completed' && tournamentData.winners) {
+          setWinners(tournamentData.winners);
+        }
+      }
+      
+      // Also refresh ideas
       const ideasResponse = await apiRequest('GET', `/api/tournaments/${tournamentId}/ideas`);
       const ideasData = await ideasResponse.json();
 
@@ -292,7 +316,7 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
         setIdeas(ideasData);
       }
     } catch (err) {
-      console.error('Error refreshing ideas:', err);
+      console.error('Error refreshing tournament data:', err);
     }
   };
 
