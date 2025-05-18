@@ -385,12 +385,6 @@ const TournamentView = () => {
   
   // Directly use server-calculated progress value from TournamentContext
   const { progress: serverProgress } = useTournament();
-  
-  // Debug output to track progress changes
-  useEffect(() => {
-    console.log(`Tournament progress updated to: ${serverProgress}%`);
-  }, [serverProgress]);
-  
   const roundProgress = serverProgress;
   
   // Determine if a round is actively in progress (for UI indicators)

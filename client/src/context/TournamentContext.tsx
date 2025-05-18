@@ -248,12 +248,26 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
               setCurrentRound(data.round);
             }
             
-            // Immediately after a round update, poll the tournament data to get progress
-            // This is the most reliable way to get the latest progress value
-            setTimeout(() => {
-              console.log('Fetching latest tournament data after round update');
-              refreshTournament(tournamentId);
-            }, 1000);
+            // Immediately after a round update, poll the tournament data multiple times
+            // to ensure progress updates are caught as the tournament advances
+            const pollInterval = 2000; // 2 seconds
+            const pollCount = 5; // Poll 5 times
+            
+            // Create a function to poll for updates
+            const pollForUpdates = (count: number) => {
+              if (count <= 0) return;
+              
+              setTimeout(() => {
+                console.log(`Polling for tournament updates (${count} remaining)`);
+                refreshTournament(tournamentId);
+                
+                // Continue polling if more polls are scheduled
+                pollForUpdates(count - 1);
+              }, pollInterval);
+            };
+            
+            // Start polling
+            pollForUpdates(pollCount);
           } catch (err) {
             console.error('Error processing SSE message:', err);
           }
