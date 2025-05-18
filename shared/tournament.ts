@@ -35,6 +35,8 @@ export const insertTournamentSchema = createInsertSchema(tournaments).omit({
   completedAt: true,
   currentRound: true,
   status: true,
+}).extend({
+  otherStrategicGoalText: z.string().optional(),
 });
 
 // Define tournament idea schema

@@ -94,6 +94,81 @@ router.get('/stream/:id', (req: Request, res: Response) => {
 });
 
 /**
+ * Calculate the progress of a tournament based on its current state
+ * @param tournamentId The ID of the tournament to calculate progress for
+ * @returns A progress percentage from 0-100
+ */
+async function calculateTournamentProgress(tournamentId: number): Promise<number> {
+  const tournament = await storage.getTournament(tournamentId);
+  if (!tournament) return 0;
+  
+  // If tournament is completed, return 100%
+  if (tournament.status === 'completed') {
+    return 100;
+  }
+  
+  // Get all ideas for this tournament
+  const ideas = await storage.getIdeasByTournament(tournamentId);
+  
+  // Base percentages
+  const initialPercentage = 10; // Starting point after initialization
+  const finalPercentage = 95;   // Max percentage before completion
+  
+  // If no rounds have started yet
+  if (tournament.currentRound === 0) {
+    const seedIdeas = ideas.filter(idea => idea.round === 0);
+    // Check if we have seed ideas (initialized)
+    if (seedIdeas.length > 0) {
+      return initialPercentage;
+    }
+    return 5; // Just created, not yet initialized
+  }
+  
+  // Calculate progress based on rounds completed and current round progress
+  const totalRounds = tournament.maxRounds;
+  const currentRound = tournament.currentRound;
+  
+  // Each round represents a portion of the progress
+  const progressPerRound = (finalPercentage - initialPercentage) / totalRounds;
+  
+  // Calculate progress for completed rounds
+  const completedRoundsProgress = initialPercentage + ((currentRound - 1) * progressPerRound);
+  
+  // Calculate progress within the current round
+  const ideasInCurrentRound = ideas.filter(idea => idea.round === currentRound).length;
+  const expectedIdeasPerRound = tournament.lanes * 2; // Champions and challengers
+  const currentRoundProgress = Math.min(1, ideasInCurrentRound / expectedIdeasPerRound) * progressPerRound;
+  
+  return Math.min(finalPercentage, completedRoundsProgress + currentRoundProgress);
+}
+
+/**
+ * Get tournament winners with ranking information
+ * @param tournamentId The tournament ID
+ * @returns Top ranked ideas with placement information
+ */
+async function getTournamentWinners(tournamentId: number) {
+  // Get all ideas for this tournament
+  const ideas = await storage.getIdeasByTournament(tournamentId);
+  
+  // Get champions and latest round ideas
+  const latestRound = Math.max(...ideas.map(i => i.round));
+  const bestIdeas = ideas.filter(idea => 
+    idea.isChampion || (idea.round === latestRound && idea.round > 0)
+  );
+  
+  // Sort by overall score (descending)
+  const sortedIdeas = [...bestIdeas].sort((a, b) => b.overallScore - a.overallScore);
+  
+  // Return the top ideas with ranking information
+  return sortedIdeas.map((idea, index) => ({
+    ...idea,
+    rank: index + 1,
+    medal: index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : null
+  }));
+}
+
+/**
  * Get details about a specific tournament
  */
 router.get('/:id', async (req: Request, res: Response) => {
@@ -112,8 +187,22 @@ router.get('/:id', async (req: Request, res: Response) => {
     // Get all rounds for this tournament
     const rounds = await storage.getTournamentRoundsByTournament(tournamentId);
     
-    // Return the tournament with rounds
-    return res.json({ tournament, rounds });
+    // Calculate progress percentage
+    const progress = await calculateTournamentProgress(tournamentId);
+    
+    // Get winners if tournament is completed
+    let winners = [];
+    if (tournament.status === 'completed') {
+      winners = await getTournamentWinners(tournamentId);
+    }
+    
+    // Return the tournament with enhanced information
+    return res.json({ 
+      tournament, 
+      rounds, 
+      progress: Math.round(progress),
+      winners: tournament.status === 'completed' ? winners : []
+    });
   } catch (error) {
     console.error('Error getting tournament:', error);
     return res.status(500).json({ error: 'Failed to get tournament' });
