@@ -12,6 +12,17 @@ export const tournaments = pgTable("tournaments", {
   studyPhasePref: text("study_phase_pref").notNull(),
   maxRounds: integer("max_rounds").notNull().default(3),
   lanes: integer("lanes").notNull().default(5),
+  
+  // Additional fields from the New Concept functionality
+  budgetCeilingEur: integer("budget_ceiling_eur"),
+  timelineCeilingMonths: integer("timeline_ceiling_months"),
+  salesImpactThreshold: integer("sales_impact_threshold"),
+  anticipatedFpiDate: text("anticipated_fpi_date"),
+  globalLoeDate: text("global_loe_date"),
+  patentExtensionPotential: boolean("patent_extension_potential").default(false),
+  additionalContext: text("additional_context"),
+  
+  // Tournament status tracking
   currentRound: integer("current_round").notNull().default(0),
   status: text("status").notNull().default("in_progress"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

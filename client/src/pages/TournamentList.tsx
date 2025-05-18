@@ -45,7 +45,15 @@ const TournamentList = () => {
     geography: [] as string[],
     maxRounds: 3,
     lanes: 5,
-    otherStrategicGoalText: ''
+    otherStrategicGoalText: '',
+    // Additional fields from the New Concept functionality
+    budgetCeilingEur: null as number | null,
+    timelineCeilingMonths: null as number | null,
+    salesImpactThreshold: null as number | null,
+    anticipatedFpiDate: '',
+    globalLoeDate: '',
+    patentExtensionPotential: false,
+    additionalContext: ''
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -64,12 +72,19 @@ const TournamentList = () => {
       setFormValues({
         drugName: '',
         indication: '',
-        studyPhasePref: '2',
+        studyPhasePref: 'II',
         strategicGoals: [],
         geography: [],
         maxRounds: 3,
         lanes: 5,
-        otherStrategicGoalText: ''
+        otherStrategicGoalText: '',
+        budgetCeilingEur: null,
+        timelineCeilingMonths: null,
+        salesImpactThreshold: null,
+        anticipatedFpiDate: '',
+        globalLoeDate: '',
+        patentExtensionPotential: false,
+        additionalContext: ''
       });
       
       // Navigate to the new tournament
@@ -331,6 +346,102 @@ const TournamentList = () => {
                 </div>
               </div>
               
+              {/* Budget, Timeline, and Sales Impact */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="budgetCeilingEur">Budget Ceiling (EUR)</Label>
+                  <Input 
+                    id="budgetCeilingEur"
+                    type="number"
+                    min={0}
+                    placeholder="e.g., 2000000"
+                    value={formValues.budgetCeilingEur !== null ? formValues.budgetCeilingEur : ''}
+                    onChange={(e) => handleInputChange('budgetCeilingEur', e.target.value ? parseInt(e.target.value) : null)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="timelineCeilingMonths">Timeline Ceiling (Months)</Label>
+                  <Input 
+                    id="timelineCeilingMonths"
+                    type="number"
+                    min={1}
+                    placeholder="e.g., 24"
+                    value={formValues.timelineCeilingMonths !== null ? formValues.timelineCeilingMonths : ''}
+                    onChange={(e) => handleInputChange('timelineCeilingMonths', e.target.value ? parseInt(e.target.value) : null)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="salesImpactThreshold">Sales Impact Threshold</Label>
+                  <Input 
+                    id="salesImpactThreshold"
+                    type="number"
+                    min={0}
+                    placeholder="e.g., 10000000"
+                    value={formValues.salesImpactThreshold !== null ? formValues.salesImpactThreshold : ''}
+                    onChange={(e) => handleInputChange('salesImpactThreshold', e.target.value ? parseInt(e.target.value) : null)}
+                  />
+                </div>
+              </div>
+              
+              {/* Study Timeline Information */}
+              <div className="space-y-2">
+                <Label>Study Timeline Information</Label>
+                <div className="space-y-2 mt-2">
+                  <Label htmlFor="anticipatedFpiDate" className="text-sm">Anticipated FPI Date</Label>
+                  <Input 
+                    id="anticipatedFpiDate"
+                    type="date"
+                    value={formValues.anticipatedFpiDate}
+                    onChange={(e) => handleInputChange('anticipatedFpiDate', e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    When do you expect First Patient In (FPI)? If not provided, defaults to 12 months from now.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Patent Exclusivity Information */}
+              <div className="space-y-2">
+                <Label>Patent Exclusivity Information</Label>
+                <div className="space-y-2 mt-2">
+                  <Label htmlFor="globalLoeDate" className="text-sm">Global LOE Date</Label>
+                  <Input 
+                    id="globalLoeDate"
+                    type="date"
+                    value={formValues.globalLoeDate}
+                    onChange={(e) => handleInputChange('globalLoeDate', e.target.value)}
+                  />
+                  <div className="flex items-center space-x-2 mt-2">
+                    <input
+                      type="checkbox"
+                      id="patentExtensionPotential"
+                      checked={formValues.patentExtensionPotential}
+                      onChange={(e) => handleInputChange('patentExtensionPotential', e.target.checked)}
+                      className="rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="patentExtensionPotential" className="text-sm">
+                      Patent Extension Potential
+                    </label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Could this study potentially extend patent exclusivity?
+                  </p>
+                </div>
+              </div>
+              
+              {/* Additional Context */}
+              <div className="space-y-2">
+                <Label htmlFor="additionalContext">Additional Context</Label>
+                <Textarea 
+                  id="additionalContext"
+                  placeholder="Provide any additional context that might be relevant for the study concept generation."
+                  value={formValues.additionalContext}
+                  onChange={(e) => handleInputChange('additionalContext', e.target.value)}
+                  rows={3}
+                />
+              </div>
+              
+              {/* Tournament Parameters */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="maxRounds">Max Rounds</Label>
