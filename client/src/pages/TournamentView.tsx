@@ -41,6 +41,7 @@ const agentConfig = {
   'REG': { name: 'Regulatory Expert', icon: <LucideFlaskConical className="w-4 h-4" /> },
   'ETH': { name: 'Ethics Expert', icon: <LucideThumbsUp className="w-4 h-4" /> },
   'OPS': { name: 'Operations Expert', icon: <LucideClipboard className="w-4 h-4" /> },
+  'COMM': { name: 'Commercial Expert', icon: <LucideArrowUpRight className="w-4 h-4" /> },
   'SUC': { name: 'Success Probability Expert', icon: <LucideThumbsUp className="w-4 h-4" /> },
 };
 
@@ -1210,37 +1211,126 @@ const TournamentView = () => {
                             {reviewData.additionalMetrics && Object.keys(reviewData.additionalMetrics).length > 0 && (
                               <div>
                                 <h4 className="text-sm font-medium mb-2">Additional Metrics</h4>
-                                <div className="grid grid-cols-2 gap-2">
-                                  {Object.entries(reviewData.additionalMetrics).map(([key, value]: [string, any]) => (
-                                    <div key={key} className="p-2 border rounded-md">
-                                      {key === 'overall_score' ? (
-                                        <TooltipProvider>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <div className="flex items-center gap-1">
-                                                <div className="text-xs text-muted-foreground capitalize">
-                                                  {key.replace(/([A-Z])/g, ' $1').trim()}
-                                                </div>
-                                                <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                                              </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent className="max-w-xs">
-                                              <p className="font-semibold">Success Probability Percentage</p>
-                                              <p className="text-xs mt-1">This score (0-100 scale) represents the estimated probability of success as a percentage based on all factors analyzed for this study concept.</p>
-                                            </TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
-                                      ) : (
-                                        <div className="text-xs text-muted-foreground capitalize">
-                                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                                
+                                {/* Specialized view for Commercial Expert with market impact metrics */}
+                                {selectedAgentId === 'COMM' && reviewData.additionalMetrics.marketImpactAssessment ? (
+                                  <div className="space-y-4">
+                                    {/* Market Impact Assessment */}
+                                    <div className="p-3 border rounded-md bg-blue-50/30">
+                                      <h5 className="text-sm font-medium mb-2 flex items-center">
+                                        <LucideArrowUpRight className="w-4 h-4 mr-1 text-blue-600" />
+                                        Market Impact Assessment
+                                      </h5>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <div className="p-2 bg-white rounded border">
+                                          <div className="text-xs text-muted-foreground">Target Population</div>
+                                          <div className="font-medium">
+                                            {reviewData.additionalMetrics.marketImpactAssessment.targetPopulationSize?.toLocaleString()} patients
+                                          </div>
                                         </div>
-                                      )}
-                                      <div className="font-medium">
-                                        {typeof value === 'number' ? value.toFixed(2) : value.toString()}
+                                        <div className="p-2 bg-white rounded border">
+                                          <div className="text-xs text-muted-foreground">Market Share Impact</div>
+                                          <div className="font-medium text-green-600">
+                                            +{reviewData.additionalMetrics.marketImpactAssessment.marketShareImpact}%
+                                          </div>
+                                        </div>
+                                        <div className="p-2 bg-white rounded border">
+                                          <div className="text-xs text-muted-foreground">Peak Sales Impact</div>
+                                          <div className="font-medium">
+                                            ${(reviewData.additionalMetrics.marketImpactAssessment.peakSalesDeltaUSD / 1000000).toFixed(1)}M
+                                          </div>
+                                        </div>
+                                        <div className="p-2 bg-white rounded border">
+                                          <div className="text-xs text-muted-foreground">ROI Timeframe</div>
+                                          <div className="font-medium">
+                                            {reviewData.additionalMetrics.marketImpactAssessment.roiTimeframe} years
+                                          </div>
+                                        </div>
                                       </div>
                                     </div>
-                                  ))}
-                                </div>
+                                    
+                                    {/* Regional Impact */}
+                                    {reviewData.additionalMetrics.regionalImpact && (
+                                      <div className="p-3 border rounded-md">
+                                        <h5 className="text-sm font-medium mb-2">Regional Impact</h5>
+                                        <div className="grid grid-cols-3 gap-2">
+                                          <div className="p-2 border rounded">
+                                            <div className="text-xs text-muted-foreground">US Market</div>
+                                            <div className="font-medium">
+                                              {(reviewData.additionalMetrics.regionalImpact.us * 100).toFixed(0)}%
+                                            </div>
+                                          </div>
+                                          <div className="p-2 border rounded">
+                                            <div className="text-xs text-muted-foreground">EU Market</div>
+                                            <div className="font-medium">
+                                              {(reviewData.additionalMetrics.regionalImpact.eu * 100).toFixed(0)}%
+                                            </div>
+                                          </div>
+                                          <div className="p-2 border rounded">
+                                            <div className="text-xs text-muted-foreground">Asia Market</div>
+                                            <div className="font-medium">
+                                              {(reviewData.additionalMetrics.regionalImpact.asia * 100).toFixed(0)}%
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Commercial Timing */}
+                                    {reviewData.additionalMetrics.commercialTiming && (
+                                      <div className="p-3 border rounded-md">
+                                        <h5 className="text-sm font-medium mb-2">Commercial Timing</h5>
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <div className="p-2 border rounded">
+                                            <div className="text-xs text-muted-foreground">Time to Impact</div>
+                                            <div className="font-medium">
+                                              {reviewData.additionalMetrics.commercialTiming.timeToImpact} years
+                                            </div>
+                                          </div>
+                                          <div className="p-2 border rounded">
+                                            <div className="text-xs text-muted-foreground">Patent Leverage</div>
+                                            <div className="font-medium">
+                                              {(reviewData.additionalMetrics.commercialTiming.patentLeverageScore * 100).toFixed(0)}%
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  /* Default view for other experts */
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {Object.entries(reviewData.additionalMetrics).map(([key, value]: [string, any]) => (
+                                      <div key={key} className="p-2 border rounded-md">
+                                        {key === 'overall_score' ? (
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <div className="flex items-center gap-1">
+                                                  <div className="text-xs text-muted-foreground capitalize">
+                                                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                                                  </div>
+                                                  <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                                                </div>
+                                              </TooltipTrigger>
+                                              <TooltipContent className="max-w-xs">
+                                                <p className="font-semibold">Success Probability Percentage</p>
+                                                <p className="text-xs mt-1">This score (0-100 scale) represents the estimated probability of success as a percentage based on all factors analyzed for this study concept.</p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        ) : (
+                                          <div className="text-xs text-muted-foreground capitalize">
+                                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                                          </div>
+                                        )}
+                                        <div className="font-medium">
+                                          {typeof value === 'number' ? value.toFixed(2) : value.toString()}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
