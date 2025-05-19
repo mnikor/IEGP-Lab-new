@@ -1159,9 +1159,22 @@ const TournamentView = () => {
                               <h3 className="text-lg font-medium">
                                 {selectedAgentId && agentConfig[selectedAgentId as keyof typeof agentConfig] ? agentConfig[selectedAgentId as keyof typeof agentConfig].name : 'Expert'} Review
                               </h3>
-                              <Badge variant="outline">
-                                Score: {reviewData.score.toFixed(2)}
-                              </Badge>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div>
+                                      <Badge variant="outline" className="flex items-center gap-1">
+                                        Score: {reviewData.score.toFixed(2)}
+                                        <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                                      </Badge>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-xs">
+                                    <p className="font-semibold">Normalized Component Score</p>
+                                    <p className="text-xs mt-1">This score (0-1 scale) represents how much this expert's assessment contributes to the final weighted score for ranking ideas in the tournament.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </div>
                             
                             <Separator />
@@ -1200,9 +1213,28 @@ const TournamentView = () => {
                                 <div className="grid grid-cols-2 gap-2">
                                   {Object.entries(reviewData.additionalMetrics).map(([key, value]: [string, any]) => (
                                     <div key={key} className="p-2 border rounded-md">
-                                      <div className="text-xs text-muted-foreground capitalize">
-                                        {key.replace(/([A-Z])/g, ' $1').trim()}
-                                      </div>
+                                      {key === 'overall_score' ? (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <div className="flex items-center gap-1">
+                                                <div className="text-xs text-muted-foreground capitalize">
+                                                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                                                </div>
+                                                <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                                              </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent className="max-w-xs">
+                                              <p className="font-semibold">Success Probability Percentage</p>
+                                              <p className="text-xs mt-1">This score (0-100 scale) represents the estimated probability of success as a percentage based on all factors analyzed for this study concept.</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      ) : (
+                                        <div className="text-xs text-muted-foreground capitalize">
+                                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                                        </div>
+                                      )}
                                       <div className="font-medium">
                                         {typeof value === 'number' ? value.toFixed(2) : value.toString()}
                                       </div>
