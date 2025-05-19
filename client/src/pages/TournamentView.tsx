@@ -11,6 +11,12 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@/components/ui/tooltip';
+import { 
   LucideBeaker,
   LucideClipboard,
   LucideFlaskConical,
@@ -23,7 +29,8 @@ import {
   LucideX,
   LucideArrowLeft,
   Trophy,
-  CheckCircle2
+  CheckCircle2,
+  HelpCircle
 } from 'lucide-react';
 
 // Mapping of agent IDs to their display names and icons
