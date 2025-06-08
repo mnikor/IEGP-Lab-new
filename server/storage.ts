@@ -452,9 +452,15 @@ export class MemStorage implements IStorage {
         projectedROI: 3.8,
         recruitmentRate: 0.65,
         completionRisk: 0.35,
-        timeToLoe: 84, // 7 years from data readout
-        globalLoeDate: "2032-06-15", // Set a fixed LOE date as a sample
-        estimatedFpiDate: "2025-06-15", // Set a sample FPI date
+        sampleSize: 150,
+        sampleSizeJustification: "Based on 80% power to detect 40% improvement in CNS response rate (primary endpoint), with alpha=0.05 and assuming 15% dropout rate.",
+        numberOfSites: 25,
+        numberOfCountries: 3,
+        recruitmentPeriodMonths: 18,
+        followUpPeriodMonths: 12,
+        timeToLoe: 84,
+        globalLoeDate: "2032-06-15",
+        estimatedFpiDate: "2025-06-15",
         regionalLoeData: [
           {
             region: "United States",
@@ -471,7 +477,26 @@ export class MemStorage implements IStorage {
             notes: "SPC extension granted until 2032"
           }
         ],
-        postLoeValue: 0.25 // 25% value retention after LOE
+        postLoeValue: 0.25, // 25% value retention after LOE
+        
+        // Cost breakdown components
+        siteCosts: 625000,
+        personnelCosts: 1260000,
+        materialCosts: 630000,
+        monitoringCosts: 840000,
+        dataCosts: 420000,
+        regulatoryCosts: 425000,
+        
+        // Statistical power analysis details
+        statisticalPower: 0.8,
+        alphaLevel: 0.05,
+        effectSize: 0.4,
+        endpointType: "response_rate",
+        powerAnalysis: "Sample size calculated for 80% power to detect 40% improvement in CNS response rate over historical control of 15%, with two-sided alpha=0.05",
+        
+        // Risk factors
+        dropoutRate: 0.15,
+        complexityFactor: 0.75
       },
       evidenceSources: [
         {
