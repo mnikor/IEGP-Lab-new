@@ -200,6 +200,7 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
   1. FIRST, analyze the evidence to identify what is ALREADY KNOWN about ${data.drugName} in ${data.indication}.
   2. SECOND, identify critical KNOWLEDGE GAPS that align with the strategic goals "${data.strategicGoals.map(goal => goal.replace('_', ' ')).join(', ')}".
   3. THIRD, design NOVEL study concepts that address these gaps and advance the strategic goal, rather than replicating existing studies.
+  4. FOURTH, for each concept, build compelling "Reasons to Believe" based on the available evidence that justify why this study has a good probability of success.
   
   ## Design Requirements:
   1. Create truly innovative studies that build upon existing evidence rather than duplicating what's already been done.
@@ -212,6 +213,16 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
   - "Current evidence shows drug X has been studied in combination with Y for indication Z."
   - "However, there's limited data on its efficacy in specific subpopulations with biomarker W."
   - "Given the strategic goal is to expand label, a study targeting this subpopulation would address this knowledge gap."
+  
+  ## Reasons to Believe Requirements:
+  For each concept, provide compelling evidence-based justification including:
+  - SCIENTIFIC: Cite specific preclinical data, mechanism of action studies, or biomarker evidence from the literature
+  - CLINICAL: Reference prior phase data, safety profiles, or efficacy signals that support the proposed approach
+  - REGULATORY: Identify similar approved therapies, regulatory guidance, or precedent that supports feasibility
+  - MARKET: Demonstrate clear unmet need and competitive advantages based on current treatment landscape
+  - OPERATIONAL: Assess patient accessibility, endpoint viability, and development readiness
+  
+  Base all reasons on the provided evidence rather than generic statements. If evidence is limited, acknowledge this and focus on the strongest available data points.
   
   Respond with a JSON object in this format:
   {
@@ -227,6 +238,29 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
         "comparatorDrugs": ["Array of comparator drugs (use the provided values or suggest appropriate ones)"],
         "knowledgeGapAddressed": "Detailed explanation of the specific knowledge gap this study addresses based on current evidence",
         "innovationJustification": "Explanation of why this study design is novel and how it advances the strategic goal",
+        "reasonsToBelieve": {
+          "scientificRationale": {
+            "mechanismOfAction": "Evidence supporting the drug's mechanism in this indication",
+            "preclinicalData": "Key preclinical findings that support efficacy",
+            "biomarkerSupport": "Biomarker or target engagement evidence"
+          },
+          "clinicalEvidence": {
+            "priorPhaseData": "Relevant data from earlier phases or related studies",
+            "safetyProfile": "Safety advantages or manageable risk profile",
+            "efficacySignals": "Early efficacy signals or proof-of-concept data"
+          },
+          "marketRegulatory": {
+            "regulatoryPrecedent": "Similar approved therapies or regulatory guidance support",
+            "unmetNeed": "Clear evidence of unmet medical need in target population",
+            "competitiveAdvantage": "Differentiation from existing treatments"
+          },
+          "developmentFeasibility": {
+            "patientAccess": "Evidence that target patients can be identified and recruited",
+            "endpointViability": "Validation that endpoints are achievable and regulatory-acceptable",
+            "operationalReadiness": "Manufacturing, supply chain, or operational advantages"
+          },
+          "overallConfidence": "High/Medium/Low confidence rating with brief justification"
+        },
         "picoData": {
           "population": "Detailed description of the study population",
           "intervention": "Detailed description of the intervention",
