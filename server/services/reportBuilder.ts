@@ -121,7 +121,151 @@ export async function generatePdfReport(concepts: StudyConcept[]): Promise<Buffe
         doc.fontSize(10).font('Helvetica-Bold').text('Projected ROI: ').font('Helvetica').text(`${feasibilityData.projectedROI.toFixed(1)}x`);
         doc.fontSize(10).font('Helvetica-Bold').text('Recruitment Rate: ').font('Helvetica').text(`${(feasibilityData.recruitmentRate * 100).toFixed(0)}%`);
         doc.fontSize(10).font('Helvetica-Bold').text('Completion Risk: ').font('Helvetica').text(`${(feasibilityData.completionRisk * 100).toFixed(0)}%`);
+        doc.moveDown(0.5);
+        
+        // Cost Breakdown
+        doc.fontSize(11).font('Helvetica-Bold').text('Cost Breakdown:', { underline: true });
+        doc.moveDown(0.3);
+        
+        // Calculate percentages and display individual cost components
+        const totalCost = feasibilityData.estimatedCost;
+        const siteCosts = feasibilityData.siteCosts || 0;
+        const personnelCosts = feasibilityData.personnelCosts || 0;
+        const materialCosts = feasibilityData.materialCosts || 0;
+        const monitoringCosts = feasibilityData.monitoringCosts || 0;
+        const dataCosts = feasibilityData.dataCosts || 0;
+        const regulatoryCosts = feasibilityData.regulatoryCosts || 0;
+        
+        doc.fontSize(9).font('Helvetica-Bold').text('Site Costs: ').font('Helvetica').text(`€${(siteCosts / 1000).toFixed(0)}K (${((siteCosts / totalCost) * 100).toFixed(0)}%)`);
+        doc.fontSize(9).font('Helvetica-Bold').text('Personnel Costs: ').font('Helvetica').text(`€${(personnelCosts / 1000).toFixed(0)}K (${((personnelCosts / totalCost) * 100).toFixed(0)}%)`);
+        doc.fontSize(9).font('Helvetica-Bold').text('Materials & Supplies: ').font('Helvetica').text(`€${(materialCosts / 1000).toFixed(0)}K (${((materialCosts / totalCost) * 100).toFixed(0)}%)`);
+        doc.fontSize(9).font('Helvetica-Bold').text('Monitoring: ').font('Helvetica').text(`€${(monitoringCosts / 1000).toFixed(0)}K (${((monitoringCosts / totalCost) * 100).toFixed(0)}%)`);
+        doc.fontSize(9).font('Helvetica-Bold').text('Data Management: ').font('Helvetica').text(`€${(dataCosts / 1000).toFixed(0)}K (${((dataCosts / totalCost) * 100).toFixed(0)}%)`);
+        doc.fontSize(9).font('Helvetica-Bold').text('Regulatory Fees: ').font('Helvetica').text(`€${(regulatoryCosts / 1000).toFixed(0)}K (${((regulatoryCosts / totalCost) * 100).toFixed(0)}%)`);
+        doc.fontSize(9).font('Helvetica-Bold').text('Total Cost: ').font('Helvetica').text(`€${(totalCost / 1000).toFixed(0)}K`);
+        
+        // Timeline Breakdown
+        doc.moveDown(0.5);
+        doc.fontSize(11).font('Helvetica-Bold').text('Timeline Breakdown:', { underline: true });
+        doc.moveDown(0.3);
+        
+        const recruitmentPeriod = feasibilityData.recruitmentPeriodMonths || Math.round(feasibilityData.timeline * 0.6);
+        const followUpPeriod = feasibilityData.followUpPeriodMonths || Math.round(feasibilityData.timeline * 0.4);
+        
+        doc.fontSize(9).font('Helvetica-Bold').text('Recruitment Period: ').font('Helvetica').text(`${recruitmentPeriod} months`);
+        doc.fontSize(9).font('Helvetica-Bold').text('Follow-up Period: ').font('Helvetica').text(`${followUpPeriod} months`);
+        doc.fontSize(9).font('Helvetica-Bold').text('Total Timeline: ').font('Helvetica').text(`${feasibilityData.timeline} months`);
+        
+        // Financial Impact  
+        doc.moveDown(0.5);
+        doc.fontSize(11).font('Helvetica-Bold').text('Financial Impact:', { underline: true });
+        doc.moveDown(0.3);
+        
+        const projectedRoi = feasibilityData.projectedROI || 2.5;
+        const expectedReturn = totalCost * projectedRoi;
+        
+        doc.fontSize(9).font('Helvetica-Bold').text('Projected ROI: ').font('Helvetica').text(`${projectedRoi.toFixed(1)}x`);
+        doc.fontSize(9).font('Helvetica-Bold').text('Expected Return: ').font('Helvetica').text(`€${(expectedReturn / 1000000).toFixed(1)}M`);
+        doc.fontSize(9).font('Helvetica-Bold').text('Net Benefit: ').font('Helvetica').text(`€${((expectedReturn - totalCost) / 1000000).toFixed(1)}M`);
+        
         doc.moveDown();
+        
+        // Reasons to Believe
+        if (concept.reasonsToBelieve) {
+          doc.fontSize(12).font('Helvetica-Bold').text('Reasons to Believe', { underline: true });
+          doc.moveDown(0.5);
+          
+          const reasonsToBelieve = concept.reasonsToBelieve as {
+            scientificRationale?: {
+              mechanismOfAction?: string;
+              preclinicalData?: string;
+              biomarkerSupport?: string;
+            };
+            clinicalEvidence?: {
+              priorPhaseData?: string;
+              safetyProfile?: string;
+              efficacySignals?: string;
+            };
+            marketRegulatory?: {
+              regulatoryPrecedent?: string;
+              unmetNeed?: string;
+              competitiveAdvantage?: string;
+            };
+            developmentFeasibility?: {
+              patientAccess?: string;
+              endpointViability?: string;
+              operationalReadiness?: string;
+            };
+            overallConfidence?: string;
+          };
+          
+          // Scientific Rationale
+          if (reasonsToBelieve.scientificRationale) {
+            doc.fontSize(10).font('Helvetica-Bold').text('Scientific Rationale:');
+            if (reasonsToBelieve.scientificRationale.mechanismOfAction) {
+              doc.fontSize(9).font('Helvetica').text(`• Mechanism: ${reasonsToBelieve.scientificRationale.mechanismOfAction}`);
+            }
+            if (reasonsToBelieve.scientificRationale.preclinicalData) {
+              doc.fontSize(9).font('Helvetica').text(`• Preclinical: ${reasonsToBelieve.scientificRationale.preclinicalData}`);
+            }
+            if (reasonsToBelieve.scientificRationale.biomarkerSupport) {
+              doc.fontSize(9).font('Helvetica').text(`• Biomarkers: ${reasonsToBelieve.scientificRationale.biomarkerSupport}`);
+            }
+            doc.moveDown(0.3);
+          }
+          
+          // Clinical Evidence
+          if (reasonsToBelieve.clinicalEvidence) {
+            doc.fontSize(10).font('Helvetica-Bold').text('Clinical Evidence:');
+            if (reasonsToBelieve.clinicalEvidence.priorPhaseData) {
+              doc.fontSize(9).font('Helvetica').text(`• Prior Data: ${reasonsToBelieve.clinicalEvidence.priorPhaseData}`);
+            }
+            if (reasonsToBelieve.clinicalEvidence.safetyProfile) {
+              doc.fontSize(9).font('Helvetica').text(`• Safety: ${reasonsToBelieve.clinicalEvidence.safetyProfile}`);
+            }
+            if (reasonsToBelieve.clinicalEvidence.efficacySignals) {
+              doc.fontSize(9).font('Helvetica').text(`• Efficacy: ${reasonsToBelieve.clinicalEvidence.efficacySignals}`);
+            }
+            doc.moveDown(0.3);
+          }
+          
+          // Market & Regulatory
+          if (reasonsToBelieve.marketRegulatory) {
+            doc.fontSize(10).font('Helvetica-Bold').text('Market & Regulatory:');
+            if (reasonsToBelieve.marketRegulatory.regulatoryPrecedent) {
+              doc.fontSize(9).font('Helvetica').text(`• Regulatory: ${reasonsToBelieve.marketRegulatory.regulatoryPrecedent}`);
+            }
+            if (reasonsToBelieve.marketRegulatory.unmetNeed) {
+              doc.fontSize(9).font('Helvetica').text(`• Unmet Need: ${reasonsToBelieve.marketRegulatory.unmetNeed}`);
+            }
+            if (reasonsToBelieve.marketRegulatory.competitiveAdvantage) {
+              doc.fontSize(9).font('Helvetica').text(`• Advantage: ${reasonsToBelieve.marketRegulatory.competitiveAdvantage}`);
+            }
+            doc.moveDown(0.3);
+          }
+          
+          // Development Feasibility
+          if (reasonsToBelieve.developmentFeasibility) {
+            doc.fontSize(10).font('Helvetica-Bold').text('Development Feasibility:');
+            if (reasonsToBelieve.developmentFeasibility.patientAccess) {
+              doc.fontSize(9).font('Helvetica').text(`• Patient Access: ${reasonsToBelieve.developmentFeasibility.patientAccess}`);
+            }
+            if (reasonsToBelieve.developmentFeasibility.endpointViability) {
+              doc.fontSize(9).font('Helvetica').text(`• Endpoints: ${reasonsToBelieve.developmentFeasibility.endpointViability}`);
+            }
+            if (reasonsToBelieve.developmentFeasibility.operationalReadiness) {
+              doc.fontSize(9).font('Helvetica').text(`• Operations: ${reasonsToBelieve.developmentFeasibility.operationalReadiness}`);
+            }
+            doc.moveDown(0.3);
+          }
+          
+          // Overall Confidence
+          if (reasonsToBelieve.overallConfidence) {
+            doc.fontSize(10).font('Helvetica-Bold').text('Overall Confidence: ').font('Helvetica').text(reasonsToBelieve.overallConfidence);
+          }
+          
+          doc.moveDown();
+        }
         
         // SWOT Analysis
         doc.fontSize(12).font('Helvetica-Bold').text('SWOT Analysis', { underline: true });
