@@ -1,5 +1,6 @@
 import { StudyConcept, GenerateConceptRequest } from "@shared/schema";
 import { FeasibilityData, RegionalLoeData } from "@/lib/types";
+import { calculateSampleSize } from "./sampleSizeCalculator";
 
 // TypeScript interface for the extended request type including anticipatedFpiDate
 interface ExtendedGenerateConceptRequest extends GenerateConceptRequest {
@@ -48,40 +49,16 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   const hasTargetSubpopulation = !!concept.targetSubpopulation;
   const comparatorCount = concept.comparatorDrugs?.length || 0;
   
-  // Step 2: Calculate patient numbers based on phase, indication, and study type
-  // These are estimated average patient numbers by phase with adjustments for oncology and RWE
-  const basePatientsByPhase: { [key: string]: number } = {
-    'I': isRealWorldEvidence ? 200 : (isOncology ? 40 : 50),
-    'II': isRealWorldEvidence ? 500 : (isOncology ? 150 : 200),
-    'III': isRealWorldEvidence ? 2500 : (isOncology ? 800 : 1000),
-    'IV': isRealWorldEvidence ? 3500 : (isOncology ? 1800 : 1500),
-    'any': isRealWorldEvidence ? 1200 : (isOncology ? 600 : 500)
-  };
+  // Step 2: Calculate patient numbers using statistical power analysis
+  const sampleSizeCalculation = calculateSampleSize(concept, requestData);
   
-  // Vary patient counts to ensure each concept has different numbers
-  // Apply a randomization factor unique to each concept using hash of title
-  const titleHash = concept.title ? concept.title.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : 0;
-  const randomFactor = 0.85 + ((titleHash % 30) / 100); // Generates a factor between 0.85 and 1.15
+  let patientCount = sampleSizeCalculation.sampleSize;
+  let sampleSizeJustification = sampleSizeCalculation.justification;
   
-  let patientCount = Math.round(basePatientsByPhase[studyPhase] * randomFactor);
-  
-  // Adjust patient count based on subpopulation (more targeted = fewer patients)
-  if (hasTargetSubpopulation) {
-    patientCount *= 0.8;
-  }
-  
-  // Generate sample size justification based on statistical power analysis
-  let sampleSizeJustification = "";
-  if (studyPhase === 'I') {
-    sampleSizeJustification = `Sample size of ${patientCount} determined for safety and early efficacy signals with 80% power.`;
-  } else if (studyPhase === 'II') {
-    sampleSizeJustification = `Sample size of ${patientCount} calculated to detect 20% improvement in primary endpoint with 80% power and alpha of 0.05.`;
-  } else if (studyPhase === 'III') {
-    sampleSizeJustification = `Sample size of ${patientCount} required to achieve 90% power for detecting statistically significant difference in primary endpoint of 15%, accounting for 20% dropout rate.`;
-  } else if (studyPhase === 'IV') {
-    sampleSizeJustification = `Sample size of ${patientCount} determined through power analysis to detect real-world treatment effects and rare adverse events with 80% confidence.`;
-  } else {
-    sampleSizeJustification = `Sample size of ${patientCount} based on statistical power analysis for primary endpoint with considerations for dropout rate and stratification factors.`;
+  // For Real World Evidence studies, adjust the calculated sample size upward
+  if (isRealWorldEvidence) {
+    patientCount = Math.round(patientCount * 2.5); // RWE studies need larger populations
+    sampleSizeJustification = `${sampleSizeJustification} Sample size increased for real-world evidence collection to ensure adequate representation across diverse patient populations and practice settings.`;
   }
   
   // Step 3: Calculate site numbers based on geography and patient count
@@ -100,46 +77,61 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   // Minimum sites per geography
   totalSites = Math.max(totalSites, geographyCount * 2);
   
-  // Step 4: Calculate cost based on patient and site numbers, indication, and study type
-  // Average cost per patient by phase (in EUR), with significant adjustments for oncology
-  let costPerPatientByPhase: { [key: string]: number };
+  // Step 4: Calculate cost based on statistical sample size and study complexity
+  // Base cost per patient varies by endpoint complexity and phase requirements
+  let costPerPatient: number;
   
-  if (isOncology) {
-    // Oncology studies are significantly more expensive
-    costPerPatientByPhase = {
-      'I': 35000,  // Phase I oncology trials often include complex biomarker analysis
-      'II': 45000, // Phase II involves more extensive monitoring and imaging
-      'III': 60000, // Phase III oncology trials are very expensive due to long-term follow-up
-      'IV': 20000, // Post-market still costly for cancer
-      'any': 40000  // Default for oncology is high
-    };
+  // Adjust base cost by endpoint type from sample size calculation
+  const calculatedEndpointType = sampleSizeCalculation.endpoint.type;
+  
+  if (endpointType === 'survival') {
+    costPerPatient = isOncology ? 55000 : 35000; // Survival endpoints require extensive follow-up
+  } else if (endpointType === 'response_rate') {
+    costPerPatient = isOncology ? 40000 : 25000; // Response rate studies need imaging/biomarkers
+  } else if (endpointType === 'biomarker') {
+    costPerPatient = 30000; // Biomarker studies have high laboratory costs
+  } else if (endpointType === 'safety') {
+    costPerPatient = studyPhase === 'I' ? 35000 : 20000; // Phase I safety studies are intensive
   } else {
-    // Non-oncology studies
-    costPerPatientByPhase = {
-      'I': 25000,
-      'II': 20000,
-      'III': 30000,
-      'IV': 10000,
-      'any': 18000
-    };
+    costPerPatient = isOncology ? 35000 : 22000; // Continuous endpoints
   }
+  
+  // Adjust for study phase complexity
+  const phaseMultipliers = {
+    'I': 1.2,   // Phase I requires intensive monitoring
+    'II': 1.0,  // Base cost
+    'III': 1.3, // Phase III has complex logistics
+    'IV': 0.7,  // Post-market studies are less intensive
+    'any': 1.0
+  };
+  
+  costPerPatient *= phaseMultipliers[studyPhase as keyof typeof phaseMultipliers] || 1.0;
+  
+  // Adjust for statistical power requirements (higher power = more rigorous = more expensive)
+  const powerAdjustment = 0.8 + (sampleSizeCalculation.parameters.power * 0.4); // 0.8 to 1.2 multiplier
+  costPerPatient *= powerAdjustment;
   
   // Adjust for real world evidence studies
   if (isRealWorldEvidence) {
-    // RWE studies typically have more data collection but less intensive interventions
-    Object.keys(costPerPatientByPhase).forEach(phase => {
-      costPerPatientByPhase[phase] = Math.round(costPerPatientByPhase[phase] * 0.8);
-    });
+    costPerPatient *= 0.75; // RWE studies have less intensive interventions but more data collection
   }
   
-  // Site setup cost per site (in EUR) - higher for multisite studies
-  const siteSetupCost = geographyCount > 5 ? 35000 : 25000;
+  // Site setup cost per site (in EUR) - varies by geography and study complexity
+  let siteSetupCost = 25000;
+  if (geographyCount > 5) siteSetupCost = 35000; // Multi-regional studies
+  if (endpointType === 'survival') siteSetupCost *= 1.2; // Survival studies need more site infrastructure
+  if (comparatorCount > 0) siteSetupCost *= 1.1; // Complex study designs
   
-  let estimatedCost = (patientCount * costPerPatientByPhase[studyPhase]) + (totalSites * siteSetupCost);
+  let estimatedCost = (patientCount * costPerPatient) + (totalSites * siteSetupCost);
   
-  // Additional costs for complex studies
+  // Additional costs for study complexity
   if (comparatorCount > 0) {
-    estimatedCost *= (1 + (comparatorCount * 0.1)); // 10% increase per comparator
+    estimatedCost *= (1 + (comparatorCount * 0.15)); // 15% increase per comparator arm
+  }
+  
+  // Cost adjustment for subpopulation studies (require more screening)
+  if (hasTargetSubpopulation) {
+    estimatedCost *= 1.25; // 25% increase for targeted populations
   }
   
   // Regulatory costs vary by geography, phase, and therapeutic area
@@ -155,28 +147,59 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   const regulatoryCost = regulatoryCostBase + (Math.log2(geographyCount) * regulatoryCostBase * 0.5);
   estimatedCost += regulatoryCost;
   
-  // Step 5: Calculate timeline based on recruitment rates and processing time
-  // Base monthly recruitment rate per site
-  const monthlyRecruitmentPerSite = 1.5;
+  // Step 5: Calculate timeline based on statistical power-informed recruitment
+  // Monthly recruitment rate per site varies by phase and indication complexity
+  let monthlyRecruitmentPerSite = 1.5; // Base rate
   
-  // Base processing times (in months)
-  const baseProcessingTimes: { [key: string]: number } = {
-    'I': 6,  // Setup + analysis
-    'II': 8,
-    'III': 10,
-    'IV': 6,
-    'any': 8
-  };
+  // Adjust recruitment rate based on study characteristics
+  if (isOncology) {
+    monthlyRecruitmentPerSite *= 0.7; // Oncology patients harder to recruit
+  }
   
-  // Calculate recruitment period
+  if (hasTargetSubpopulation) {
+    monthlyRecruitmentPerSite *= 0.6; // Subpopulations are more difficult to find
+  }
+  
+  if (studyPhase === 'I') {
+    monthlyRecruitmentPerSite *= 0.8; // Phase I often slower due to safety concerns
+  } else if (studyPhase === 'III') {
+    monthlyRecruitmentPerSite *= 1.2; // Phase III often has broader criteria
+  }
+  
+  // Calculate realistic recruitment period based on statistical sample size
   const recruitmentPeriod = Math.ceil(patientCount / (totalSites * monthlyRecruitmentPerSite));
   
-  // Total timeline from FPI (First Patient In) to completion of follow-up
-  let timeline = recruitmentPeriod + baseProcessingTimes[studyPhase];
+  // Follow-up periods based on endpoint type from sample size calculation
+  let followUpPeriod: number;
+  const endpointType = sampleSizeCalculation.endpoint.type;
   
-  // Adjust timeline for multi-geography studies (regulatory delays)
+  if (endpointType === 'survival') {
+    followUpPeriod = isOncology ? 24 : 18; // Longer follow-up for survival endpoints
+  } else if (endpointType === 'safety') {
+    followUpPeriod = studyPhase === 'I' ? 6 : 12; // Safety follow-up varies by phase
+  } else if (endpointType === 'response_rate') {
+    followUpPeriod = isOncology ? 12 : 6; // Response assessment period
+  } else if (endpointType === 'biomarker') {
+    followUpPeriod = 3; // Biomarker studies have shorter follow-up
+  } else {
+    followUpPeriod = 9; // Default continuous endpoint follow-up
+  }
+  
+  // Database lock and analysis period
+  const analysisProcessingTime = studyPhase === 'III' ? 6 : 4;
+  
+  // Total timeline from FPI to final report
+  let timeline = recruitmentPeriod + followUpPeriod + analysisProcessingTime;
+  
+  // Adjust timeline for multi-geography studies (regulatory and coordination delays)
   if (geographyCount > 1) {
-    timeline += Math.log2(geographyCount) * 2; // Logarithmic increase for additional geographies
+    const additionalTime = Math.log2(geographyCount) * 3; // More realistic delay for multiple countries
+    timeline += additionalTime;
+  }
+  
+  // Adjust for study complexity based on comparators
+  if (comparatorCount > 0) {
+    timeline += comparatorCount * 2; // Additional time for complex study designs
   }
   
   // Step 6: Calculate recruitment rate (0-1 scale)
@@ -282,13 +305,27 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
     recruitmentRate: parseFloat(recruitmentRate.toFixed(2)),
     completionRisk: parseFloat(completionRisk.toFixed(2)),
     
-    // Enhanced study details
+    // Enhanced study details with statistical power analysis
     sampleSize: patientCount,
     sampleSizeJustification: sampleSizeJustification,
     numberOfSites: totalSites,
     numberOfCountries: geographyCount,
     recruitmentPeriodMonths: recruitmentPeriod,
-    followUpPeriodMonths: Math.round(timeline - recruitmentPeriod),
+    followUpPeriodMonths: followUpPeriod,
+    
+    // Statistical power analysis details
+    statisticalPower: sampleSizeCalculation.parameters.power,
+    alphaLevel: sampleSizeCalculation.parameters.alpha,
+    effectSize: sampleSizeCalculation.parameters.effectSize,
+    endpointType: sampleSizeCalculation.endpoint.type,
+    powerAnalysis: sampleSizeCalculation.powerAnalysis,
+    
+    // LOE data
+    globalLoeDate: requestData.globalLoeDate || loeData.globalLoeDate,
+    regionalLoeData: loeData.regionalLoeData,
+    timeToLoe: loeData.timeToLoe,
+    postLoeValue: loeData.postLoeValue,
+    estimatedFpiDate: requestData.anticipatedFpiDate || loeData.estimatedFpiDate,
     
     // Cost breakdown
     siteCosts: siteCosts,
