@@ -263,7 +263,7 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
           }
         ]
       }
-      // Additional concepts (generate 3 total)
+      // Additional concepts (generate ${numberOfConcepts} total)
     ]
   }
 
