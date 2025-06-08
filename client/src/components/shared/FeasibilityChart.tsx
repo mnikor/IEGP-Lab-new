@@ -7,6 +7,13 @@ interface FeasibilityChartProps {
 }
 
 const FeasibilityChart: React.FC<FeasibilityChartProps> = ({ feasibilityData }) => {
+  // Debug: log the feasibility data to see what's being received
+  React.useEffect(() => {
+    console.log('FeasibilityChart received data:', feasibilityData);
+    console.log('estimatedCost:', feasibilityData?.estimatedCost);
+    console.log('timeline:', feasibilityData?.timeline);
+  }, [feasibilityData]);
+
   // Transform data for the chart
   const chartData = [
     {
