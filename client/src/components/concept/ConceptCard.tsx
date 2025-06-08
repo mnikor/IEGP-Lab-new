@@ -9,6 +9,7 @@ import FeasibilityChart from "@/components/shared/FeasibilityChart";
 import FeasibilityDetails from "@/components/shared/FeasibilityDetails";
 import CurrentEvidence from "@/components/shared/CurrentEvidence";
 import LoeDetails from "@/components/shared/LoeDetails";
+import ReasonsToBelieve from "@/components/shared/ReasonsToBelieve";
 // Debug import to check feasibility data
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,13 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
           ))}
         </div>
         
+        {/* Reasons to Believe - Prominent placement */}
+        {concept.reasonsToBelieve && (
+          <div className="mb-4">
+            <ReasonsToBelieve reasonsToBelieve={concept.reasonsToBelieve} />
+          </div>
+        )}
+
         {/* Knowledge Gap & Innovation Justification */}
         {(concept.knowledgeGapAddressed || concept.innovationJustification) && (
           <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4">

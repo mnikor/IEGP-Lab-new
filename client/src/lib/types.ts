@@ -120,6 +120,30 @@ export interface CurrentEvidence {
   citations: EvidenceCitation[];
 }
 
+export interface ReasonsToBelieve {
+  scientificRationale?: {
+    mechanismOfAction?: string;
+    preclinicalData?: string;
+    biomarkerSupport?: string;
+  };
+  clinicalEvidence?: {
+    priorPhaseData?: string;
+    safetyProfile?: string;
+    efficacySignals?: string;
+  };
+  marketRegulatory?: {
+    regulatoryPrecedent?: string;
+    unmetNeed?: string;
+    competitiveAdvantage?: string;
+  };
+  developmentFeasibility?: {
+    patientAccess?: string;
+    endpointViability?: string;
+    operationalReadiness?: string;
+  };
+  overallConfidence?: string;
+}
+
 export interface StudyConcept {
   id?: number;
   title: string;
@@ -136,6 +160,7 @@ export interface StudyConcept {
   salesImpactThreshold?: number;
   knowledgeGapAddressed?: string;
   innovationJustification?: string;
+  reasonsToBelieve?: ReasonsToBelieve;
   picoData: PicoData;
   mcdaScores: McDAScore;
   swotAnalysis: SwotAnalysis;

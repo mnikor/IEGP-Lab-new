@@ -423,6 +423,29 @@ export class MemStorage implements IStorage {
           "Reimbursement challenges for combination therapy"
         ]
       },
+      reasonsToBelieve: {
+        scientificRationale: {
+          mechanismOfAction: "PD-1 inhibition has shown efficacy across blood-brain barrier in preclinical models, with pembrolizumab demonstrating CNS penetration in pharmacokinetic studies.",
+          preclinicalData: "Mouse models with brain metastases showed 40% tumor reduction with PD-1 blockade. Pembrolizumab CSF concentrations reach 0.1-1% of plasma levels, sufficient for target engagement.",
+          biomarkerSupport: "PD-L1 expression in brain metastases correlates with systemic tumor expression in 78% of cases, supporting biomarker-driven patient selection."
+        },
+        clinicalEvidence: {
+          priorPhaseData: "KEYNOTE-001 showed 33% response rate in NSCLC brain metastases subset (n=18). KEYNOTE-189 excluded active brain metastases but treated patients showed 21-month median OS.",
+          safetyProfile: "No increased CNS toxicity observed in 1,500+ pembrolizumab-treated NSCLC patients. Immune-related AEs manageable with established protocols.",
+          efficacySignals: "Case series reported 6 complete CNS responses in 15 patients with brain metastases, suggesting meaningful clinical activity."
+        },
+        marketRegulatory: {
+          regulatoryPrecedent: "FDA approved nivolumab for brain metastases indication in melanoma based on CNS efficacy data. EMA guidance supports brain metastases as distinct indication.",
+          unmetNeed: "40-60% of NSCLC patients develop brain metastases. Current treatments (radiation, surgery) have limited durability. Median survival <12 months.",
+          competitiveAdvantage: "First PD-1 inhibitor with dedicated brain metastases trial design. Combination with chemotherapy could establish new standard of care."
+        },
+        developmentFeasibility: {
+          patientAccess: "25 comprehensive cancer centers already identified with >50 eligible patients/year each. MRI screening protocols established.",
+          endpointViability: "CNS response per RANO-BM criteria accepted by FDA. Overall survival endpoint provides regulatory certainty for approval.",
+          operationalReadiness: "Pembrolizumab supply secured. CRO partnerships in place. Regulatory pre-submission meetings scheduled Q2 2024."
+        },
+        overallConfidence: "High confidence based on strong biological rationale, supportive clinical signals, clear regulatory pathway, and established operational infrastructure."
+      },
       feasibilityData: {
         estimatedCost: 4200000,
         timeline: 32,
