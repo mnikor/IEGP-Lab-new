@@ -3,48 +3,50 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { FeasibilityData } from '@/lib/types';
 
 interface FeasibilityChartProps {
-  feasibilityData: FeasibilityData;
+  feasibilityData: FeasibilityData | null | undefined;
 }
 
 const FeasibilityChart: React.FC<FeasibilityChartProps> = ({ feasibilityData }) => {
-  // Debug: log the feasibility data to see what's being received
-  React.useEffect(() => {
-    console.log('FeasibilityChart received data:', feasibilityData);
-    console.log('estimatedCost:', feasibilityData?.estimatedCost);
-    console.log('timeline:', feasibilityData?.timeline);
-  }, [feasibilityData]);
+  // Handle missing or null feasibility data
+  if (!feasibilityData) {
+    return (
+      <div className="h-60 bg-neutral-lightest rounded-md p-3 border border-neutral-light flex items-center justify-center">
+        <p className="text-neutral-medium text-sm">No feasibility data available</p>
+      </div>
+    );
+  }
 
-  // Transform data for the chart
+  // Transform data for the chart with proper null handling
   const chartData = [
     {
       name: 'Cost',
-      value: feasibilityData.estimatedCost != null ? feasibilityData.estimatedCost / 1000000 : 0, // Convert to millions
+      value: feasibilityData?.estimatedCost != null ? feasibilityData.estimatedCost / 1000000 : 0, // Convert to millions
       unit: 'M €',
-      display: feasibilityData.estimatedCost != null ? `${(feasibilityData.estimatedCost / 1000000).toFixed(1)}M €` : 'N/A',
+      display: feasibilityData?.estimatedCost != null ? `${(feasibilityData.estimatedCost / 1000000).toFixed(1)}M €` : 'N/A',
     },
     {
       name: 'Timeline',
-      value: feasibilityData.timeline != null ? feasibilityData.timeline : 0,
+      value: feasibilityData?.timeline != null ? feasibilityData.timeline : 0,
       unit: 'mo',
-      display: feasibilityData.timeline != null ? `${feasibilityData.timeline} months` : 'N/A',
+      display: feasibilityData?.timeline != null ? `${feasibilityData.timeline} months` : 'N/A',
     },
     {
       name: 'ROI',
-      value: feasibilityData.projectedROI != null ? feasibilityData.projectedROI : 2.5,
+      value: feasibilityData?.projectedROI != null ? feasibilityData.projectedROI : 2.5,
       unit: 'x',
-      display: feasibilityData.projectedROI != null ? `${feasibilityData.projectedROI.toFixed(1)}x` : '2.5x',
+      display: feasibilityData?.projectedROI != null ? `${feasibilityData.projectedROI.toFixed(1)}x` : '2.5x',
     },
     {
       name: 'Recruitment',
-      value: feasibilityData.recruitmentRate != null ? feasibilityData.recruitmentRate * 100 : 0, // Convert to percentage
+      value: feasibilityData?.recruitmentRate != null ? feasibilityData.recruitmentRate * 100 : 0, // Convert to percentage
       unit: '%',
-      display: feasibilityData.recruitmentRate != null ? `${(feasibilityData.recruitmentRate * 100).toFixed(0)}%` : 'N/A',
+      display: feasibilityData?.recruitmentRate != null ? `${(feasibilityData.recruitmentRate * 100).toFixed(0)}%` : 'N/A',
     },
     {
       name: 'Completion Risk',
-      value: feasibilityData.completionRisk != null ? (1 - feasibilityData.completionRisk) * 100 : 0, // Convert to success percentage
+      value: feasibilityData?.completionRisk != null ? (1 - feasibilityData.completionRisk) * 100 : 0, // Convert to success percentage
       unit: '%',
-      display: feasibilityData.completionRisk != null ? `${((1 - feasibilityData.completionRisk) * 100).toFixed(0)}%` : 'N/A',
+      display: feasibilityData?.completionRisk != null ? `${((1 - feasibilityData.completionRisk) * 100).toFixed(0)}%` : 'N/A',
     },
   ];
 
