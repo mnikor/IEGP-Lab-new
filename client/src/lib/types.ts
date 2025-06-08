@@ -95,6 +95,13 @@ export interface FeasibilityData {
   dataCosts: number;
   regulatoryCosts: number;
   
+  // Statistical power analysis details
+  statisticalPower?: number;
+  alphaLevel?: number;
+  effectSize?: number;
+  endpointType?: string;
+  powerAnalysis?: string;
+  
   // Risk factors
   dropoutRate: number;
   complexityFactor: number;

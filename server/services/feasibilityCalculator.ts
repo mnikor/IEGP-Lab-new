@@ -22,7 +22,7 @@ export type ConceptWithFeasibility = Partial<StudyConcept> & {
 export function calculateFeasibility(concept: ConceptWithFeasibility, requestData: Partial<ExtendedGenerateConceptRequest>): FeasibilityData {
   // Step 1: Determine the study phase and complexity factors
   const studyPhase = concept.studyPhase || 'any';
-  const isRealWorldEvidence = concept.strategicGoal === 'real_world_evidence';
+  const isRealWorldEvidence = concept.strategicGoals?.includes('generate_real_world_evidence') || false;
   const isOncology = (concept.indication || '').toLowerCase().includes('cancer') || 
                     (concept.indication || '').toLowerCase().includes('oncol') || 
                     (concept.indication || '').toLowerCase().includes('tumor') ||
@@ -84,13 +84,13 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   // Adjust base cost by endpoint type from sample size calculation
   const calculatedEndpointType = sampleSizeCalculation.endpoint.type;
   
-  if (endpointType === 'survival') {
+  if (calculatedEndpointType === 'survival') {
     costPerPatient = isOncology ? 55000 : 35000; // Survival endpoints require extensive follow-up
-  } else if (endpointType === 'response_rate') {
+  } else if (calculatedEndpointType === 'response_rate') {
     costPerPatient = isOncology ? 40000 : 25000; // Response rate studies need imaging/biomarkers
-  } else if (endpointType === 'biomarker') {
+  } else if (calculatedEndpointType === 'biomarker') {
     costPerPatient = 30000; // Biomarker studies have high laboratory costs
-  } else if (endpointType === 'safety') {
+  } else if (calculatedEndpointType === 'safety') {
     costPerPatient = studyPhase === 'I' ? 35000 : 20000; // Phase I safety studies are intensive
   } else {
     costPerPatient = isOncology ? 35000 : 22000; // Continuous endpoints
@@ -119,7 +119,7 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   // Site setup cost per site (in EUR) - varies by geography and study complexity
   let siteSetupCost = 25000;
   if (geographyCount > 5) siteSetupCost = 35000; // Multi-regional studies
-  if (endpointType === 'survival') siteSetupCost *= 1.2; // Survival studies need more site infrastructure
+  if (calculatedEndpointType === 'survival') siteSetupCost *= 1.2; // Survival studies need more site infrastructure
   if (comparatorCount > 0) siteSetupCost *= 1.1; // Complex study designs
   
   let estimatedCost = (patientCount * costPerPatient) + (totalSites * siteSetupCost);
@@ -171,15 +171,15 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   
   // Follow-up periods based on endpoint type from sample size calculation
   let followUpPeriod: number;
-  const endpointType = sampleSizeCalculation.endpoint.type;
+  const timelineEndpointType = sampleSizeCalculation.endpoint.type;
   
-  if (endpointType === 'survival') {
+  if (timelineEndpointType === 'survival') {
     followUpPeriod = isOncology ? 24 : 18; // Longer follow-up for survival endpoints
-  } else if (endpointType === 'safety') {
+  } else if (timelineEndpointType === 'safety') {
     followUpPeriod = studyPhase === 'I' ? 6 : 12; // Safety follow-up varies by phase
-  } else if (endpointType === 'response_rate') {
+  } else if (timelineEndpointType === 'response_rate') {
     followUpPeriod = isOncology ? 12 : 6; // Response assessment period
-  } else if (endpointType === 'biomarker') {
+  } else if (timelineEndpointType === 'biomarker') {
     followUpPeriod = 3; // Biomarker studies have shorter follow-up
   } else {
     followUpPeriod = 9; // Default continuous endpoint follow-up

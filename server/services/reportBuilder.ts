@@ -168,6 +168,21 @@ export async function generatePdfReport(concepts: StudyConcept[]): Promise<Buffe
         doc.fontSize(9).font('Helvetica-Bold').text('Expected Return: ').font('Helvetica').text(`€${(expectedReturn / 1000000).toFixed(1)}M`);
         doc.fontSize(9).font('Helvetica-Bold').text('Net Benefit: ').font('Helvetica').text(`€${((expectedReturn - totalCost) / 1000000).toFixed(1)}M`);
         
+        // Statistical Power Analysis
+        if (feasibilityData.statisticalPower && feasibilityData.powerAnalysis) {
+          doc.moveDown(0.5);
+          doc.fontSize(11).font('Helvetica-Bold').text('Statistical Power Analysis:', { underline: true });
+          doc.moveDown(0.3);
+          
+          doc.fontSize(9).font('Helvetica-Bold').text('Statistical Power: ').font('Helvetica').text(`${(feasibilityData.statisticalPower * 100).toFixed(0)}%`);
+          doc.fontSize(9).font('Helvetica-Bold').text('Alpha Level: ').font('Helvetica').text(`${feasibilityData.alphaLevel?.toFixed(3) || '0.050'}`);
+          doc.fontSize(9).font('Helvetica-Bold').text('Effect Size: ').font('Helvetica').text(`${feasibilityData.effectSize?.toFixed(2) || 'N/A'}`);
+          doc.fontSize(9).font('Helvetica-Bold').text('Primary Endpoint: ').font('Helvetica').text(`${feasibilityData.endpointType || 'Not specified'}`);
+          
+          doc.moveDown(0.3);
+          doc.fontSize(9).font('Helvetica').text(`Power Analysis: ${feasibilityData.powerAnalysis}`);
+        }
+        
         doc.moveDown();
         
         // Reasons to Believe
