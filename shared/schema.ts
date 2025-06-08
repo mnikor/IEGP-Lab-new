@@ -133,6 +133,7 @@ export const generateConceptRequestSchema = z.object({
     date: z.string()
   })).optional(),
   hasPatentExtensionPotential: z.boolean().optional(),
+  numberOfConcepts: z.number().min(1).max(10).default(3),
 });
 
 export const validateSynopsisRequestSchema = z.object({

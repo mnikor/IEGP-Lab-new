@@ -65,6 +65,7 @@ const formSchema = z.object({
   anticipatedFpiDate: z.string().optional(),
   globalLoeDate: z.string().optional(),
   hasPatentExtensionPotential: z.boolean().optional().default(false),
+  numberOfConcepts: z.number().min(1, "Must generate at least 1 concept").max(10, "Maximum 10 concepts allowed").default(3),
 });
 
 const ConceptForm: React.FC<ConceptFormProps> = ({ 
@@ -97,6 +98,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
       anticipatedFpiDate: "",
       globalLoeDate: "",
       hasPatentExtensionPotential: false,
+      numberOfConcepts: 3,
     },
   });
 
@@ -321,7 +323,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                 // Proceed with form submission
                 form.handleSubmit(onSubmit)(e);
               }} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="drugName"
@@ -344,6 +346,36 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                         <FormControl>
                           <Input placeholder="e.g., Non-small cell lung cancer" {...field} />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="numberOfConcepts"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Number of Concepts</FormLabel>
+                        <FormControl>
+                          <Select 
+                            value={field.value?.toString()} 
+                            onValueChange={(value) => field.onChange(parseInt(value))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select number" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                                <SelectItem key={num} value={num.toString()}>
+                                  {num} concept{num > 1 ? 's' : ''}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormDescription>
+                          Generate 1-10 study concepts (default: 3)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -177,8 +177,9 @@ export async function extractPicoFromText(text: string): Promise<PicoData> {
  * Builds a prompt for concept generation
  */
 function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResults: { content: string; citations: string[] }): string {
+  const numberOfConcepts = data.numberOfConcepts || 3;
   return `
-  Based on the following parameters and evidence, generate 3 distinct clinical study concepts for ${data.drugName} in ${data.indication}.
+  Based on the following parameters and evidence, generate ${numberOfConcepts} distinct clinical study concepts for ${data.drugName} in ${data.indication}.
 
   # Parameters:
   - Drug: ${data.drugName}
