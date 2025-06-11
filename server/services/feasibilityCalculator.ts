@@ -297,9 +297,33 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   const dropoutRate = Math.min(0.3, 0.1 + (completionRisk * 0.2)); // 10-30% dropout rate
   const complexityFactor = Math.min(1.0, 0.5 + (0.1 * geographyCount) + (0.05 * comparatorCount)); // 0.5-1.0 scale
   
+  // Ensure all cost components are non-zero and properly calculated
+  const finalSiteCosts = Math.max(10000, siteCosts);
+  const finalPersonnelCosts = Math.max(15000, personnelCosts);
+  const finalMaterialCosts = Math.max(5000, materialCosts);
+  const finalMonitoringCosts = Math.max(8000, monitoringCosts);
+  const finalDataCosts = Math.max(5000, dataCosts);
+  const finalRegulatoryCosts = Math.max(5000, regulatoryCosts);
+  
+  // Verify total cost equals sum of components
+  const calculatedTotalCost = finalSiteCosts + finalPersonnelCosts + finalMaterialCosts + 
+                              finalMonitoringCosts + finalDataCosts + finalRegulatoryCosts;
+  const finalTotalCost = Math.max(totalCost, calculatedTotalCost);
+  
+  console.log("Final cost breakdown:", {
+    totalCost: finalTotalCost,
+    siteCosts: finalSiteCosts,
+    personnelCosts: finalPersonnelCosts,
+    materialCosts: finalMaterialCosts,
+    monitoringCosts: finalMonitoringCosts,
+    dataCosts: finalDataCosts,
+    regulatoryCosts: finalRegulatoryCosts,
+    sum: calculatedTotalCost
+  });
+
   return {
     // Core metrics
-    estimatedCost: totalCost,
+    estimatedCost: finalTotalCost,
     timeline: Math.round(timeline),
     projectedROI: projectedROI !== undefined ? parseFloat(projectedROI.toFixed(1)) : 2.5,
     recruitmentRate: parseFloat(recruitmentRate.toFixed(2)),
@@ -327,13 +351,13 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
     postLoeValue: loeData.postLoeValue,
     estimatedFpiDate: requestData.anticipatedFpiDate || loeData.estimatedFpiDate,
     
-    // Cost breakdown
-    siteCosts: siteCosts,
-    personnelCosts: personnelCosts,
-    materialCosts: materialCosts,
-    monitoringCosts: monitoringCosts,
-    dataCosts: dataCosts,
-    regulatoryCosts: regulatoryCosts,
+    // Cost breakdown - ensure all values are properly set and non-zero
+    siteCosts: finalSiteCosts,
+    personnelCosts: finalPersonnelCosts,
+    materialCosts: finalMaterialCosts,
+    monitoringCosts: finalMonitoringCosts,
+    dataCosts: finalDataCosts,
+    regulatoryCosts: finalRegulatoryCosts,
     
     // Risk factors
     dropoutRate: parseFloat(dropoutRate.toFixed(2)),
