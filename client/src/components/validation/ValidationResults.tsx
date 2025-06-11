@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ValidationResults as ValidationResultsType, strategicGoalLabels } from "@/lib/types";
 import PicoFramework from "@/components/shared/PicoFramework";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
-import FeasibilityDetails from "@/components/shared/FeasibilityDetails";
+import FeasibilityDashboard from "@/components/shared/FeasibilityDashboard";
 import CurrentEvidence from "@/components/shared/CurrentEvidence";
 import LoeDetails from "@/components/shared/LoeDetails";
 import { Badge } from "@/components/ui/badge";
@@ -351,7 +351,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results }) => {
           {results.feasibilityData && (
             <div className="mb-6">
               <h3 className="text-md font-medium text-neutral-dark mb-3">Feasibility Analysis</h3>
-              <FeasibilityDetails feasibilityData={results.feasibilityData} />
+              <FeasibilityDashboard feasibilityData={results.feasibilityData} />
             </div>
           )}
           
