@@ -55,11 +55,21 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   let patientCount = sampleSizeCalculation.sampleSize;
   let sampleSizeJustification = sampleSizeCalculation.justification;
   
+  // Ensure minimum realistic patient count
+  patientCount = Math.max(patientCount, 20); // Minimum 20 patients for any study
+  
   // For Real World Evidence studies, adjust the calculated sample size upward
   if (isRealWorldEvidence) {
     patientCount = Math.round(patientCount * 2.5); // RWE studies need larger populations
     sampleSizeJustification = `${sampleSizeJustification} Sample size increased for real-world evidence collection to ensure adequate representation across diverse patient populations and practice settings.`;
   }
+  
+  console.log("Sample size calculation:", {
+    originalSampleSize: sampleSizeCalculation.sampleSize,
+    adjustedPatientCount: patientCount,
+    geographyCount: geographyCount,
+    studyPhase: studyPhase
+  });
   
   // Step 3: Calculate site numbers based on geography and patient count
   // These are estimated patients per site by phase
@@ -71,11 +81,31 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
     'any': 18
   };
   
-  let sitesPerGeography = Math.ceil(patientCount / (patientsPerSiteByPhase[studyPhase] * geographyCount));
-  let totalSites = sitesPerGeography * geographyCount;
+  // Calculate patients per site for the given phase
+  const patientsPerSite = patientsPerSiteByPhase[studyPhase] || 18;
   
-  // Minimum sites per geography
-  totalSites = Math.max(totalSites, geographyCount * 2);
+  // Calculate total sites needed across all geographies
+  let totalSites = Math.ceil(patientCount / patientsPerSite);
+  
+  // Ensure minimum sites per geography (at least 2 sites per geography)
+  const minimumSitesTotal = geographyCount * 2;
+  totalSites = Math.max(totalSites, minimumSitesTotal);
+  
+  // Ensure we don't have more sites than makes sense (max 50 sites per geography for very large studies)
+  const maximumSitesTotal = geographyCount * 50;
+  totalSites = Math.min(totalSites, maximumSitesTotal);
+  
+  // Final safety check - ensure totalSites is never zero or negative
+  totalSites = Math.max(totalSites, minimumSitesTotal);
+  
+  console.log("Site calculation:", {
+    patientCount: patientCount,
+    patientsPerSite: patientsPerSite,
+    calculatedSites: Math.ceil(patientCount / patientsPerSite),
+    minimumSitesTotal: minimumSitesTotal,
+    finalTotalSites: totalSites,
+    geographyCount: geographyCount
+  });
   
   // Step 4: Calculate cost based on statistical sample size and study complexity
   // Base cost per patient varies by endpoint complexity and phase requirements
@@ -483,8 +513,9 @@ function calculateProjectedROI(
     return 2.5; // Return default if no cost data yet
   }
   
-  // Step 1: Determine base factors based on strategic goal
-  const strategicGoal = concept.strategicGoal || requestData.strategicGoal || 'expand_label';
+  // Step 1: Determine base factors based on strategic goals
+  const strategicGoals = concept.strategicGoals || requestData.strategicGoals || ['expand_label'];
+  const primaryStrategicGoal = strategicGoals[0] || 'expand_label';
   const studyPhase = concept.studyPhase || 'any';
   
   // Market impact multipliers by strategic goal (5-year horizon)
