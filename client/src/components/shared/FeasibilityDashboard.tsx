@@ -34,6 +34,13 @@ interface FeasibilityDashboardProps {
 }
 
 const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibilityData, className = '' }) => {
+  // Helper function for parsing potentially string values to numbers
+  const parseNumber = (value: any, defaultValue: number): number => {
+    if (typeof value === 'string') return parseFloat(value) || defaultValue;
+    if (typeof value === 'number') return value;
+    return defaultValue;
+  };
+
   // Debug the full feasibility data structure
   console.log('Full feasibilityData object:', JSON.stringify(feasibilityData, null, 2));
   console.log('Individual field checks:', {
@@ -73,24 +80,29 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
     return `${value.toFixed(1)}x`;
   };
 
-  // Prepare cost breakdown data for pie chart
+  // Prepare cost breakdown data for pie chart with proper number parsing
   const costBreakdownData = [
-    { name: 'Site Costs', value: feasibilityData.siteCosts || 0, color: '#8884d8' },
-    { name: 'Personnel', value: feasibilityData.personnelCosts || 0, color: '#82ca9d' },
-    { name: 'Materials', value: feasibilityData.materialCosts || 0, color: '#ffc658' },
-    { name: 'Monitoring', value: feasibilityData.monitoringCosts || 0, color: '#ff7c7c' },
-    { name: 'Data Management', value: feasibilityData.dataCosts || 0, color: '#8dd1e1' },
-    { name: 'Regulatory', value: feasibilityData.regulatoryCosts || 0, color: '#d084d0' }
+    { name: 'Site Costs', value: parseNumber(feasibilityData.siteCosts, 0), color: '#8884d8' },
+    { name: 'Personnel', value: parseNumber(feasibilityData.personnelCosts, 0), color: '#82ca9d' },
+    { name: 'Materials', value: parseNumber(feasibilityData.materialCosts, 0), color: '#ffc658' },
+    { name: 'Monitoring', value: parseNumber(feasibilityData.monitoringCosts, 0), color: '#ff7c7c' },
+    { name: 'Data Management', value: parseNumber(feasibilityData.dataCosts, 0), color: '#8dd1e1' },
+    { name: 'Regulatory', value: parseNumber(feasibilityData.regulatoryCosts, 0), color: '#d084d0' }
   ].filter(item => item.value > 0);
 
   // Risk vs ROI scatter plot data with reference points for context
-  const currentRisk = (feasibilityData.completionRisk || 0) * 100;
-  const currentROI = feasibilityData.projectedROI || 0;
+  // Ensure numeric conversion since JSON serialization may convert to strings
+  const currentRisk = ((typeof feasibilityData.completionRisk === 'string' ? 
+    parseFloat(feasibilityData.completionRisk) : feasibilityData.completionRisk) || 0) * 100;
+  const currentROI = typeof feasibilityData.projectedROI === 'string' ? 
+    parseFloat(feasibilityData.projectedROI) : (feasibilityData.projectedROI || 0);
   
   console.log('ROI Debug:', {
     projectedROI: feasibilityData.projectedROI,
+    projectedROIType: typeof feasibilityData.projectedROI,
     currentROI,
     completionRisk: feasibilityData.completionRisk,
+    completionRiskType: typeof feasibilityData.completionRisk,
     currentRisk
   });
   
@@ -127,17 +139,20 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
     }
   ];
 
-  // Timeline breakdown data with minimum values to ensure visibility
-  const recruitmentMonths = feasibilityData.recruitmentPeriodMonths || Math.max(6, Math.round((feasibilityData.timeline || 24) * 0.4));
-  const followUpMonths = feasibilityData.followUpPeriodMonths || Math.max(3, Math.round((feasibilityData.timeline || 24) * 0.3));
-  const analysisMonths = Math.max(2, (feasibilityData.timeline || 24) - recruitmentMonths - followUpMonths);
+  // Timeline breakdown data with proper string-to-number conversion and minimum values
+  const timelineTotal = parseNumber(feasibilityData.timeline, 24);
+  const recruitmentMonths = parseNumber(feasibilityData.recruitmentPeriodMonths, 0) || Math.max(6, Math.round(timelineTotal * 0.4));
+  const followUpMonths = parseNumber(feasibilityData.followUpPeriodMonths, 0) || Math.max(3, Math.round(timelineTotal * 0.3));
+  const analysisMonths = Math.max(2, timelineTotal - recruitmentMonths - followUpMonths);
   
   // Debug logging
-  console.log('FeasibilityData timeline values:', {
-    recruitmentPeriodMonths: feasibilityData.recruitmentPeriodMonths,
-    followUpPeriodMonths: feasibilityData.followUpPeriodMonths,
-    timeline: feasibilityData.timeline,
-    calculatedValues: { recruitmentMonths, followUpMonths, analysisMonths }
+  console.log('Timeline data conversion:', {
+    raw: {
+      recruitmentPeriodMonths: feasibilityData.recruitmentPeriodMonths,
+      followUpPeriodMonths: feasibilityData.followUpPeriodMonths,
+      timeline: feasibilityData.timeline
+    },
+    parsed: { recruitmentMonths, followUpMonths, analysisMonths, timelineTotal }
   });
   
   const timelineData = [
@@ -160,8 +175,8 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
   
   console.log('Timeline data for chart:', timelineData);
 
-  const recruitmentProgress = (feasibilityData.recruitmentRate || 0) * 100;
-  const completionRisk = (feasibilityData.completionRisk || 0) * 100;
+  const recruitmentProgress = parseNumber(feasibilityData.recruitmentRate, 0) * 100;
+  const completionRisk = parseNumber(feasibilityData.completionRisk, 0) * 100;
 
   return (
     <div className={`${className} space-y-6`}>
