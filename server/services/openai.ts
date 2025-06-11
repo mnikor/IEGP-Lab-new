@@ -1,8 +1,6 @@
 import OpenAI from "openai";
-import { GenerateConceptRequest, StudyConcept } from "@shared/schema";
+import { GenerateConceptRequest, StudyConcept, AIModel } from "@shared/schema";
 import { PicoData } from "@/lib/types";
-
-// Use gpt-4.1 model as specified by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
@@ -11,12 +9,14 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
  * @param searchResults The results from the Perplexity search
  * @param data Request data containing study parameters
  * @param isValidation Whether this is a validation request (true) or concept generation (false)
+ * @param aiModel The AI model to use for analysis
  * @returns Generated concepts or validation results
  */
 export async function analyzeWithOpenAI(
   searchResults: { content: string; citations: string[] },
   data: any,
-  isValidation: boolean = false
+  isValidation: boolean = false,
+  aiModel: AIModel = "gpt-4o"
 ): Promise<any> {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -31,15 +31,23 @@ export async function analyzeWithOpenAI(
       ? buildValidationPrompt(data, searchResults)
       : buildConceptGenerationPrompt(data, searchResults);
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4.1",
+    // Build request parameters based on model capabilities
+    const requestParams: any = {
+      model: aiModel,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
-    });
+    };
+
+    // o3 and o3-mini models don't use temperature or max_tokens parameters
+    // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+    if (!aiModel.startsWith("o3")) {
+      requestParams.temperature = 0.7;
+    }
+
+    const response = await openai.chat.completions.create(requestParams);
 
     // Parse the JSON response carefully
     let result;
@@ -143,8 +151,9 @@ export async function extractPicoFromText(text: string): Promise<PicoData> {
       throw new Error("OPENAI_API_KEY environment variable not found");
     }
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4.1",
+    // Build request parameters for PICO extraction
+    const picoRequestParams: any = {
+      model: "gpt-4o", // Default to gpt-4o for PICO extraction
       messages: [
         {
           role: "system",
@@ -156,8 +165,14 @@ export async function extractPicoFromText(text: string): Promise<PicoData> {
         }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.3,
-    });
+    };
+
+    // Add temperature if not using o3 models
+    if (!picoRequestParams.model.startsWith("o3")) {
+      picoRequestParams.temperature = 0.3;
+    }
+
+    const response = await openai.chat.completions.create(picoRequestParams);
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
     

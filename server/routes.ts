@@ -110,8 +110,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "nature.com"
       ]);
 
-      // Step 2: Generate concepts using OpenAI
-      const concepts = await analyzeWithOpenAI(searchResults, data);
+      // Step 2: Generate concepts using OpenAI with selected model
+      const concepts = await analyzeWithOpenAI(searchResults, data, false, data.aiModel || "gpt-4o");
 
       // Step 3: For each concept, calculate feasibility, MCDA scores, and SWOT analysis
       // Added debug logs for anticipatedFpiDate

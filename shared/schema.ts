@@ -96,6 +96,9 @@ export const insertSynopsisValidationSchema = createInsertSchema(synopsisValidat
   createdAt: true,
 });
 
+// Available AI models for concept generation and validation
+export const aiModelSchema = z.enum(["gpt-4o", "gpt-4-turbo", "o3-mini", "o3"]);
+
 // Input schemas for API requests
 export const generateConceptRequestSchema = z.object({
   drugName: z.string().min(1, "Drug name is required"),
@@ -124,6 +127,9 @@ export const generateConceptRequestSchema = z.object({
   timelineCeilingMonths: z.number().positive().optional(),
   salesImpactThreshold: z.number().positive().optional(),
   
+  // AI model selection
+  aiModel: aiModelSchema.default("gpt-4o"),
+  
   // Study timeline information
   anticipatedFpiDate: z.string().optional(), // ISO date string for First Patient In
   
@@ -138,6 +144,8 @@ export const generateConceptRequestSchema = z.object({
 });
 
 export const validateSynopsisRequestSchema = z.object({
+  // AI model selection
+  aiModel: aiModelSchema.default("gpt-4o"),
   drugName: z.string().min(1, "Drug name is required"),
   indication: z.string().min(1, "Indication is required"),
   strategicGoals: z.array(z.enum([
@@ -189,3 +197,4 @@ export type SynopsisValidation = typeof synopsisValidations.$inferSelect;
 export type InsertSynopsisValidation = z.infer<typeof insertSynopsisValidationSchema>;
 export type GenerateConceptRequest = z.infer<typeof generateConceptRequestSchema>;
 export type ValidateSynopsisRequest = z.infer<typeof validateSynopsisRequestSchema>;
+export type AIModel = z.infer<typeof aiModelSchema>;
