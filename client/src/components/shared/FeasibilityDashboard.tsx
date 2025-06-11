@@ -34,6 +34,19 @@ interface FeasibilityDashboardProps {
 }
 
 const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibilityData, className = '' }) => {
+  // Debug the full feasibility data structure
+  console.log('Full feasibilityData object:', JSON.stringify(feasibilityData, null, 2));
+  console.log('Individual field checks:', {
+    projectedROI: feasibilityData?.projectedROI,
+    projectedROIType: typeof feasibilityData?.projectedROI,
+    recruitmentPeriodMonths: feasibilityData?.recruitmentPeriodMonths,
+    followUpPeriodMonths: feasibilityData?.followUpPeriodMonths,
+    timeline: feasibilityData?.timeline,
+    completionRisk: feasibilityData?.completionRisk,
+    siteCosts: feasibilityData?.siteCosts,
+    personnelCosts: feasibilityData?.personnelCosts
+  });
+
   if (!feasibilityData) {
     return null;
   }
@@ -74,6 +87,13 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
   const currentRisk = (feasibilityData.completionRisk || 0) * 100;
   const currentROI = feasibilityData.projectedROI || 0;
   
+  console.log('ROI Debug:', {
+    projectedROI: feasibilityData.projectedROI,
+    currentROI,
+    completionRisk: feasibilityData.completionRisk,
+    currentRisk
+  });
+  
   const riskRoiData = [
     // Current study
     {
@@ -112,6 +132,14 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
   const followUpMonths = feasibilityData.followUpPeriodMonths || Math.max(3, Math.round((feasibilityData.timeline || 24) * 0.3));
   const analysisMonths = Math.max(2, (feasibilityData.timeline || 24) - recruitmentMonths - followUpMonths);
   
+  // Debug logging
+  console.log('FeasibilityData timeline values:', {
+    recruitmentPeriodMonths: feasibilityData.recruitmentPeriodMonths,
+    followUpPeriodMonths: feasibilityData.followUpPeriodMonths,
+    timeline: feasibilityData.timeline,
+    calculatedValues: { recruitmentMonths, followUpMonths, analysisMonths }
+  });
+  
   const timelineData = [
     { 
       phase: 'Recruitment', 
@@ -129,6 +157,8 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
       color: '#ffc658'
     }
   ];
+  
+  console.log('Timeline data for chart:', timelineData);
 
   const recruitmentProgress = (feasibilityData.recruitmentRate || 0) * 100;
   const completionRisk = (feasibilityData.completionRisk || 0) * 100;
