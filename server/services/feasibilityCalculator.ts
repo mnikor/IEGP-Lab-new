@@ -540,7 +540,7 @@ function calculateProjectedROI(
   let potentialRevenue = 1000000; // Base assumption for annual revenue impact
   
   // Adjust for strategic goal
-  potentialRevenue *= marketMultipliers[strategicGoal];
+  potentialRevenue *= marketMultipliers[primaryStrategicGoal];
   
   // Adjust for study phase
   potentialRevenue *= phaseMultipliers[studyPhase];
@@ -813,11 +813,13 @@ function calculateLoeData(
   // - Extension potential
   let postLoeValue = 0.15; // Base value (15% of pre-LOE)
   
-  if (concept.strategicGoal === 'real_world_evidence') {
+  const strategicGoals = concept.strategicGoals || [];
+  
+  if (strategicGoals.includes('real_world_evidence') || strategicGoals.includes('generate_real_world_evidence')) {
     postLoeValue += 0.1; // RWE studies have more enduring value
   }
   
-  if (concept.strategicGoal === 'defend_share') {
+  if (strategicGoals.includes('defend_market_share')) {
     postLoeValue += 0.05; // Studies designed to defend market share may have some enduring impact
   }
   
