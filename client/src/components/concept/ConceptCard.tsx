@@ -6,7 +6,7 @@ import { Star, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
 import PicoFramework from "@/components/shared/PicoFramework";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
 import FeasibilityChart from "@/components/shared/FeasibilityChart";
-import FeasibilityDetails from "@/components/shared/FeasibilityDetails";
+import FeasibilityDashboard from "@/components/shared/FeasibilityDashboard";
 import CurrentEvidence from "@/components/shared/CurrentEvidence";
 import LoeDetails from "@/components/shared/LoeDetails";
 import ReasonsToBelieve from "@/components/shared/ReasonsToBelieve";
@@ -171,7 +171,7 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
             
             {/* Detailed Information */}
             <div className="border rounded-md p-3 bg-blue-50/30">
-              <FeasibilityDetails feasibilityData={concept.feasibilityData} />
+              <FeasibilityDashboard feasibilityData={concept.feasibilityData} />
             </div>
           </div>
         </div>
