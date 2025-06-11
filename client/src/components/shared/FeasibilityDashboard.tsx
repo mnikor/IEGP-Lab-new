@@ -41,18 +41,7 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
     return defaultValue;
   };
 
-  // Debug the full feasibility data structure
-  console.log('Full feasibilityData object:', JSON.stringify(feasibilityData, null, 2));
-  console.log('Individual field checks:', {
-    projectedROI: feasibilityData?.projectedROI,
-    projectedROIType: typeof feasibilityData?.projectedROI,
-    recruitmentPeriodMonths: feasibilityData?.recruitmentPeriodMonths,
-    followUpPeriodMonths: feasibilityData?.followUpPeriodMonths,
-    timeline: feasibilityData?.timeline,
-    completionRisk: feasibilityData?.completionRisk,
-    siteCosts: feasibilityData?.siteCosts,
-    personnelCosts: feasibilityData?.personnelCosts
-  });
+  // Enhanced data parsing to handle JSON serialization string conversions
 
   if (!feasibilityData) {
     return null;
@@ -145,15 +134,7 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
   const followUpMonths = parseNumber(feasibilityData.followUpPeriodMonths, 0) || Math.max(3, Math.round(timelineTotal * 0.3));
   const analysisMonths = Math.max(2, timelineTotal - recruitmentMonths - followUpMonths);
   
-  // Debug logging
-  console.log('Timeline data conversion:', {
-    raw: {
-      recruitmentPeriodMonths: feasibilityData.recruitmentPeriodMonths,
-      followUpPeriodMonths: feasibilityData.followUpPeriodMonths,
-      timeline: feasibilityData.timeline
-    },
-    parsed: { recruitmentMonths, followUpMonths, analysisMonths, timelineTotal }
-  });
+  // Ensure all timeline values are properly parsed
   
   const timelineData = [
     { 
@@ -173,7 +154,7 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
     }
   ];
   
-  console.log('Timeline data for chart:', timelineData);
+
 
   const recruitmentProgress = parseNumber(feasibilityData.recruitmentRate, 0) * 100;
   const completionRisk = parseNumber(feasibilityData.completionRisk, 0) * 100;
