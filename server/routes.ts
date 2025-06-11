@@ -121,8 +121,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const enrichedConcepts = concepts.map((concept: Partial<StudyConcept>) => {
         // Debug each concept
         console.log("Processing concept:", concept.title);
+        console.log("Concept input data:", {
+          studyPhase: concept.studyPhase,
+          strategicGoals: concept.strategicGoals,
+          geography: concept.geography,
+          indication: concept.indication,
+          feasibilityData: concept.feasibilityData
+        });
         
         const feasibilityData = calculateFeasibility(concept, data);
+        
+        // Debug the calculated feasibility data
+        console.log("Calculated feasibility data:", {
+          estimatedCost: feasibilityData.estimatedCost,
+          siteCosts: feasibilityData.siteCosts,
+          personnelCosts: feasibilityData.personnelCosts,
+          materialCosts: feasibilityData.materialCosts,
+          monitoringCosts: feasibilityData.monitoringCosts,
+          dataCosts: feasibilityData.dataCosts,
+          regulatoryCosts: feasibilityData.regulatoryCosts,
+          timeline: feasibilityData.timeline,
+          numberOfSites: feasibilityData.numberOfSites,
+          numberOfCountries: feasibilityData.numberOfCountries
+        });
         
         // Add more debugging for LOE date
         console.log("After calculation - feasibilityData.estimatedFpiDate:", feasibilityData.estimatedFpiDate);

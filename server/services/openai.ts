@@ -300,7 +300,18 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
           "timeline": 24,
           "projectedROI": 2.5,
           "recruitmentRate": 0.7,
-          "completionRisk": 0.3
+          "completionRisk": 0.3,
+          "sampleSize": 120,
+          "numberOfSites": 15,
+          "numberOfCountries": 3,
+          "recruitmentPeriodMonths": 18,
+          "followUpPeriodMonths": 6,
+          "siteCosts": 300000,
+          "personnelCosts": 600000,
+          "materialCosts": 300000,
+          "monitoringCosts": 400000,
+          "dataCosts": 300000,
+          "regulatoryCosts": 100000
         },
         "evidenceSources": [
           {
