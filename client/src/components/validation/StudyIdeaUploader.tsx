@@ -55,6 +55,9 @@ const formSchema = z.object({
   anticipatedFpiDate: z.string().optional(),
   globalLoeDate: z.string().optional(),
   hasPatentExtensionPotential: z.boolean().optional().default(false),
+  
+  // AI model selection
+  aiModel: z.enum(["gpt-4o", "gpt-4-turbo", "o3-mini", "o3"]).default("gpt-4o"),
 });
 
 const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({ 
@@ -109,6 +112,7 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
       anticipatedFpiDate: "",
       globalLoeDate: "",
       hasPatentExtensionPotential: false,
+      aiModel: "gpt-4o",
     },
   });
   

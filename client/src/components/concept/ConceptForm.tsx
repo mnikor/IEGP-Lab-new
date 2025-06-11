@@ -66,6 +66,7 @@ const formSchema = z.object({
   globalLoeDate: z.string().optional(),
   hasPatentExtensionPotential: z.boolean().optional().default(false),
   numberOfConcepts: z.number().min(1, "Must generate at least 1 concept").max(10, "Maximum 10 concepts allowed").default(3),
+  aiModel: z.enum(["gpt-4o", "gpt-4-turbo", "o3-mini", "o3"]).default("gpt-4o"),
 });
 
 const ConceptForm: React.FC<ConceptFormProps> = ({ 
@@ -99,6 +100,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
       globalLoeDate: "",
       hasPatentExtensionPotential: false,
       numberOfConcepts: 3,
+      aiModel: "gpt-4o",
     },
   });
 
@@ -494,7 +496,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="studyPhasePref"
@@ -515,6 +517,32 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                             <SelectItem value="IV">Phase IV</SelectItem>
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="aiModel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>AI Model</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select AI model" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="gpt-4o">GPT-4o (Latest)</SelectItem>
+                            <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                            <SelectItem value="o3-mini">o3-mini (Reasoning)</SelectItem>
+                            <SelectItem value="o3">o3 (Advanced Reasoning)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          o3 models use advanced reasoning but don't support temperature control
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

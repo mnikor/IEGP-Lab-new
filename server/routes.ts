@@ -251,7 +251,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         indication: req.body.indication,
         strategicGoals: strategicGoals || [],
         studyIdeaText: req.body.studyIdeaText,
-        additionalContext: req.body.additionalContext
+        additionalContext: req.body.additionalContext,
+        aiModel: req.body.aiModel || "gpt-4o"
       });
 
       if (!validationResult.success) {
@@ -322,12 +323,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         enrichedText += "\n\nAdditional Context:\n" + data.additionalContext;
       }
       
-      // Step 4: Analyze the document against the evidence
+      // Step 4: Analyze the document against the evidence with selected model
       const validationResults = await analyzeWithOpenAI(searchResults, { 
         ...data,
         documentText: enrichedText,
         extractedPico
-      }, true);
+      }, true, data.aiModel || "gpt-4o");
       
       // Always override the current evidence field with the detailed multi-round search results
       // This ensures all search rounds are properly displayed
