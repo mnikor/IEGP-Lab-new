@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
 import PicoFramework from "@/components/shared/PicoFramework";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
-import FeasibilityChart from "@/components/shared/FeasibilityChart";
+
 import FeasibilityDashboard from "@/components/shared/FeasibilityDashboard";
 import CurrentEvidence from "@/components/shared/CurrentEvidence";
 import LoeDetails from "@/components/shared/LoeDetails";
@@ -167,9 +167,7 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
           {/* Always show both chart and detailed view */}
           <div className="flex flex-col space-y-4">
             {/* Summary Chart */}
-            <FeasibilityChart feasibilityData={concept.feasibilityData} />
-            
-            {/* Detailed Information */}
+            {/* Feasibility Dashboard */}
             <div className="border rounded-md p-3 bg-blue-50/30">
               <FeasibilityDashboard feasibilityData={concept.feasibilityData} />
             </div>
