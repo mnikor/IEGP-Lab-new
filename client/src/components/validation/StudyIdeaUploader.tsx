@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -351,6 +351,9 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
       }
       
       formData.append('hasPatentExtensionPotential', values.hasPatentExtensionPotential ? 'true' : 'false');
+      
+      // Append AI model selection
+      formData.append('aiModel', values.aiModel || 'gpt-4o');
 
       // Log formData for debugging
       console.log("Submitting form with data:");
@@ -596,7 +599,7 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="studyPhasePref"
@@ -620,6 +623,33 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
                             <SelectItem value="any">Any</SelectItem>
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="aiModel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>AI Model</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select AI model" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="gpt-4o">GPT-4o (Latest)</SelectItem>
+                            <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                            <SelectItem value="o3-mini">o3-mini (Reasoning)</SelectItem>
+                            <SelectItem value="o3">o3 (Advanced Reasoning)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          o3 models use advanced reasoning but don't support temperature control
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
