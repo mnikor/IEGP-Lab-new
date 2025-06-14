@@ -65,8 +65,9 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
   };
 
   const formatMultiplier = (value: number | undefined) => {
-    if (value === undefined || value === null) return '0x';
-    return `${value.toFixed(1)}x`;
+    if (value === undefined || value === null || value === 0) return '0x';
+    const numValue = parseNumber(value, 0);
+    return `${numValue.toFixed(1)}x`;
   };
 
   // Prepare cost breakdown data for pie chart with proper number parsing
@@ -81,19 +82,8 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
 
   // Risk vs ROI scatter plot data with reference points for context
   // Ensure numeric conversion since JSON serialization may convert to strings
-  const currentRisk = ((typeof feasibilityData.completionRisk === 'string' ? 
-    parseFloat(feasibilityData.completionRisk) : feasibilityData.completionRisk) || 0) * 100;
-  const currentROI = typeof feasibilityData.projectedROI === 'string' ? 
-    parseFloat(feasibilityData.projectedROI) : (feasibilityData.projectedROI || 0);
-  
-  console.log('ROI Debug:', {
-    projectedROI: feasibilityData.projectedROI,
-    projectedROIType: typeof feasibilityData.projectedROI,
-    currentROI,
-    completionRisk: feasibilityData.completionRisk,
-    completionRiskType: typeof feasibilityData.completionRisk,
-    currentRisk
-  });
+  const currentRisk = parseNumber(feasibilityData.completionRisk, 0) * 100;
+  const currentROI = parseNumber(feasibilityData.projectedROI, 0);
   
   const riskRoiData = [
     // Current study
@@ -304,20 +294,51 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
             <CardTitle className="text-lg font-medium">Timeline Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={timelineData} layout="horizontal" margin={{ top: 20, right: 30, left: 40, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" domain={[0, 'dataMax']} />
-                  <YAxis type="category" dataKey="phase" width={80} />
-                  <Tooltip formatter={(value) => [`${value} months`, 'Duration']} />
-                  <Bar dataKey="months">
-                    {timelineData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="space-y-4">
+              {/* Total timeline summary */}
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                <span className="font-medium">Total Study Duration</span>
+                <span className="text-lg font-bold text-blue-600">{timelineTotal} months</span>
+              </div>
+              
+              {/* Horizontal stacked timeline bar */}
+              <div className="space-y-3">
+                <div className="relative h-12 bg-gray-200 rounded-lg overflow-hidden">
+                  {timelineData.map((phase, index) => {
+                    const percentage = (phase.months / timelineTotal) * 100;
+                    const leftOffset = timelineData.slice(0, index).reduce((sum, p) => sum + (p.months / timelineTotal) * 100, 0);
+                    
+                    return (
+                      <div
+                        key={phase.phase}
+                        className="absolute top-0 h-full flex items-center justify-center text-white text-sm font-medium"
+                        style={{
+                          left: `${leftOffset}%`,
+                          width: `${percentage}%`,
+                          backgroundColor: phase.color
+                        }}
+                      >
+                        {percentage > 15 && `${phase.months}m`}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Legend */}
+                <div className="flex flex-wrap gap-4 justify-center">
+                  {timelineData.map((phase) => (
+                    <div key={phase.phase} className="flex items-center gap-2">
+                      <div 
+                        className="w-4 h-4 rounded" 
+                        style={{ backgroundColor: phase.color }}
+                      ></div>
+                      <span className="text-sm text-gray-600">
+                        {phase.phase}: {phase.months} months
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
