@@ -174,6 +174,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           timeToLoe: feasibilityData.timeToLoe,
           feasibilityData: {
             ...feasibilityData,
+            // Explicitly ensure ROI is included
+            projectedROI: feasibilityData.projectedROI,
+            completionRisk: feasibilityData.completionRisk,
+            recruitmentRate: feasibilityData.recruitmentRate,
             // Ensure the timeToLoe value is correctly set from data readout to LOE
             timeToLoe: feasibilityData.timeToLoe,
             // Make sure the globalLoeDate is preserved in the feasibilityData
