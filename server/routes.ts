@@ -134,6 +134,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Debug the calculated feasibility data
         console.log("Calculated feasibility data:", {
           estimatedCost: feasibilityData.estimatedCost,
+          projectedROI: feasibilityData.projectedROI,
+          completionRisk: feasibilityData.completionRisk,
+          recruitmentRate: feasibilityData.recruitmentRate,
           siteCosts: feasibilityData.siteCosts,
           personnelCosts: feasibilityData.personnelCosts,
           materialCosts: feasibilityData.materialCosts,

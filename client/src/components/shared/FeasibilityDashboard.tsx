@@ -42,6 +42,8 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
   };
 
   // Enhanced data parsing to handle JSON serialization string conversions
+  console.log('FeasibilityDashboard - Raw feasibilityData:', feasibilityData);
+  console.log('FeasibilityDashboard - projectedROI:', feasibilityData?.projectedROI, typeof feasibilityData?.projectedROI);
 
   if (!feasibilityData) {
     return null;
@@ -65,8 +67,11 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
   };
 
   const formatMultiplier = (value: number | undefined) => {
-    if (value === undefined || value === null || value === 0) return '0x';
+    console.log('formatMultiplier input:', value, typeof value);
+    if (value === undefined || value === null) return '0x';
     const numValue = parseNumber(value, 0);
+    console.log('formatMultiplier parsed:', numValue);
+    if (numValue === 0) return '0x';
     return `${numValue.toFixed(1)}x`;
   };
 
@@ -332,7 +337,7 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
                           backgroundColor: phase.color
                         }}
                       >
-                        {percentage > 15 && `${phase.months}m`}
+                        {percentage > 12 && `${phase.months}m`}
                       </div>
                     );
                   })}
