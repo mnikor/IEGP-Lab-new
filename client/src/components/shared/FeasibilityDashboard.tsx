@@ -86,35 +86,49 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
   const currentROI = parseNumber(feasibilityData.projectedROI, 0);
   
   const riskRoiData = [
-    // Current study
+    // Current study - make it prominent
     {
       risk: currentRisk,
       roi: currentROI,
       name: 'Current Study',
-      size: 120,
-      color: '#8884d8'
+      size: 150,
+      color: '#2563eb'
     },
-    // Reference benchmarks for context
+    // Industry benchmarks based on study phases and types
+    {
+      risk: 20,
+      roi: 1.8,
+      name: 'Phase II Oncology',
+      size: 80,
+      color: '#10b981'
+    },
+    {
+      risk: 35,
+      roi: 3.2,
+      name: 'Phase III Pivotal',
+      size: 80,
+      color: '#f59e0b'
+    },
+    {
+      risk: 45,
+      roi: 2.0,
+      name: 'High Risk/Moderate Return',
+      size: 70,
+      color: '#ef4444'
+    },
     {
       risk: 15,
-      roi: 1.5,
-      name: 'Conservative Benchmark',
-      size: 60,
-      color: '#82ca9d'
+      roi: 1.3,
+      name: 'Low Risk/Conservative',
+      size: 70,
+      color: '#8b5cf6'
     },
     {
-      risk: 30,
-      roi: 3.0,
-      name: 'Aggressive Benchmark',
-      size: 60,
-      color: '#ffc658'
-    },
-    {
-      risk: 50,
-      roi: 2.0,
-      name: 'High Risk Benchmark',
-      size: 60,
-      color: '#ff7c7c'
+      risk: 25,
+      roi: 4.5,
+      name: 'Breakthrough Therapy',
+      size: 90,
+      color: '#06b6d4'
     }
   ];
 
