@@ -363,18 +363,28 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-medium">Risk vs Return Analysis</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Compare your study against industry benchmarks
+          </p>
         </CardHeader>
         <CardContent>
-          <div className="h-64">
+          <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart>
-                <CartesianGrid strokeDasharray="3 3" />
+              <ScatterChart margin={{ top: 20, right: 30, bottom: 60, left: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis 
                   type="number" 
                   dataKey="risk" 
                   name="Completion Risk" 
                   unit="%" 
                   domain={[0, 100]}
+                  label={{ 
+                    value: 'Completion Risk (%)', 
+                    position: 'insideBottom', 
+                    offset: -10,
+                    style: { textAnchor: 'middle', fontSize: '12px', fontWeight: 500 }
+                  }}
+                  tick={{ fontSize: 11 }}
                 />
                 <YAxis 
                   type="number" 
@@ -382,12 +392,25 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
                   name="Projected ROI" 
                   unit="x"
                   domain={[0, 'dataMax + 1']}
+                  label={{ 
+                    value: 'Return on Investment (ROI)', 
+                    angle: -90, 
+                    position: 'insideLeft',
+                    style: { textAnchor: 'middle', fontSize: '12px', fontWeight: 500 }
+                  }}
+                  tick={{ fontSize: 11 }}
                 />
                 <Tooltip 
                   formatter={(value, name) => [
                     name === 'roi' ? `${value}x` : `${value}%`,
                     name === 'roi' ? 'Projected ROI' : 'Completion Risk'
                   ]}
+                  labelFormatter={(label, payload) => {
+                    if (payload && payload[0]) {
+                      return payload[0].payload.name;
+                    }
+                    return '';
+                  }}
                 />
                 {riskRoiData.map((entry, index) => (
                   <Scatter 
@@ -400,9 +423,40 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
               </ScatterChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            Lower risk and higher ROI indicate more favorable study characteristics
-          </p>
+          
+          {/* Legend and Explanation */}
+          <div className="mt-4 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm font-medium mb-2">How to Read This Chart:</h4>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li><span className="font-medium">Left side (low risk):</span> Easier to complete</li>
+                  <li><span className="font-medium">Right side (high risk):</span> More challenging</li>
+                  <li><span className="font-medium">Top (high ROI):</span> Better financial returns</li>
+                  <li><span className="font-medium">Bottom (low ROI):</span> Lower returns</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium mb-2">Ideal Position:</h4>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li><span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>Top-left: High return, low risk</li>
+                  <li><span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-2"></span>Bottom-right: Low return, high risk</li>
+                </ul>
+              </div>
+            </div>
+            
+            {/* Current Study Highlight */}
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-blue-600 rounded-full mr-2"></div>
+                <span className="text-sm font-medium text-blue-900">Your Study:</span>
+                <span className="text-sm text-blue-700 ml-2">
+                  {formatPercentage(feasibilityData.completionRisk)} completion risk, 
+                  {formatMultiplier(feasibilityData.projectedROI)} projected return
+                </span>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
