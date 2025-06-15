@@ -521,16 +521,26 @@ function calculateProjectedROI(
   // Market impact multipliers by strategic goal (5-year horizon)
   const marketMultipliers: { [key: string]: number } = {
     'expand_label': 2.0,      // New indication can expand market
-    'defend_share': 1.2,      // Defending existing market
+    'defend_market_share': 1.2,      // Defending existing market
     'accelerate_uptake': 1.8, // Faster adoption
-    'real_world_evidence': 1.5 // Real-world validation
+    'facilitate_market_access': 1.6, // Market access support
+    'real_world_evidence': 1.5, // Real-world validation
+    'generate_real_world_evidence': 1.5, // Real-world validation (alternative name)
+    'dosing_optimization': 1.4, // Dosing studies
+    'biomarker_validation': 1.3, // Biomarker studies
+    'safety_risk_management': 1.2, // Safety studies
+    'combination_extension': 1.7, // Combination studies
+    'demonstrate_poc': 1.8,   // Proof of concept studies
+    'other': 1.0             // Default for other goals
   };
   
   // Step 2: Determine potential market impact based on indication and phase
   // Phase impact on revenue potential
   const phaseMultipliers: { [key: string]: number } = {
     'I': 0.6,    // Early phase, high uncertainty
+    'Ib': 0.65,  // Phase Ib
     'II': 0.8,   // Mid phase, moderate uncertainty
+    'Ib/II': 0.75, // Combined phase Ib/II
     'III': 1.2,  // Late phase, regulatory potential
     'IV': 1.0,   // Post-market
     'any': 0.9   // Default
@@ -539,11 +549,11 @@ function calculateProjectedROI(
   // Step 3: Calculate base ROI components
   let potentialRevenue = 1000000; // Base assumption for annual revenue impact
   
-  // Adjust for strategic goal
-  potentialRevenue *= marketMultipliers[primaryStrategicGoal];
+  // Adjust for strategic goal with fallback
+  potentialRevenue *= marketMultipliers[primaryStrategicGoal] || marketMultipliers['other'];
   
-  // Adjust for study phase
-  potentialRevenue *= phaseMultipliers[studyPhase];
+  // Adjust for study phase with fallback
+  potentialRevenue *= phaseMultipliers[studyPhase] || phaseMultipliers['any'];
   
   // Step 4: Adjust for target population specificity
   if (concept.targetSubpopulation) {

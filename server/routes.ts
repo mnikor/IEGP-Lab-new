@@ -132,20 +132,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const feasibilityData = calculateFeasibility(concept, data);
         
         // Debug the calculated feasibility data
-        console.log("Calculated feasibility data:", {
+        console.log("Calculated feasibility data - ROI Debug:", {
           estimatedCost: feasibilityData.estimatedCost,
           projectedROI: feasibilityData.projectedROI,
+          projectedROIType: typeof feasibilityData.projectedROI,
           completionRisk: feasibilityData.completionRisk,
           recruitmentRate: feasibilityData.recruitmentRate,
-          siteCosts: feasibilityData.siteCosts,
-          personnelCosts: feasibilityData.personnelCosts,
-          materialCosts: feasibilityData.materialCosts,
-          monitoringCosts: feasibilityData.monitoringCosts,
-          dataCosts: feasibilityData.dataCosts,
-          regulatoryCosts: feasibilityData.regulatoryCosts,
           timeline: feasibilityData.timeline,
-          numberOfSites: feasibilityData.numberOfSites,
-          numberOfCountries: feasibilityData.numberOfCountries
+          strategicGoals: concept.strategicGoals,
+          studyPhase: concept.studyPhase
         });
         
         // Add more debugging for LOE date
