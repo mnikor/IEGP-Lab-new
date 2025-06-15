@@ -29,11 +29,13 @@ const formSchema = z.object({
     "defend_market_share", 
     "accelerate_uptake", 
     "facilitate_market_access", 
-    "real_world_evidence", 
-    "dosing_optimization", 
-    "biomarker_validation", 
-    "safety_risk_management", 
-    "combination_extension", 
+    "generate_real_world_evidence", 
+    "optimise_dosing", 
+    "validate_biomarker", 
+    "manage_safety_risk", 
+    "extend_lifecycle_combinations", 
+    "secure_initial_approval",
+    "demonstrate_poc",
     "other"
   ])).min(1, "Please select at least one strategic goal"),
   otherStrategicGoalText: z.string().optional(),
@@ -83,8 +85,9 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
       const updatedGoals = [...selectedStrategicGoals, goal];
       setSelectedStrategicGoals(updatedGoals);
       
-      // Update the form value too
-      form.setValue('strategicGoals', updatedGoals);
+      // Update the form value and trigger validation
+      form.setValue('strategicGoals', updatedGoals as any);
+      form.trigger('strategicGoals');
     }
   };
   
@@ -92,8 +95,9 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
     const updatedGoals = selectedStrategicGoals.filter(g => g !== goal);
     setSelectedStrategicGoals(updatedGoals);
     
-    // Update the form value too
-    form.setValue('strategicGoals', updatedGoals);
+    // Update the form value and trigger validation
+    form.setValue('strategicGoals', updatedGoals as any);
+    form.trigger('strategicGoals');
   };
   
   const form = useForm<z.infer<typeof formSchema>>({
