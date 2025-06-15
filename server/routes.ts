@@ -353,6 +353,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         extractedPico
       }, true, data.aiModel || "gpt-4o");
       
+      // Step 5: Calculate feasibility data for the validation results
+      // Create a temporary concept-like object for feasibility calculation
+      const tempConcept = {
+        drugName: data.drugName,
+        indication: data.indication,
+        strategicGoals: data.strategicGoals,
+        geography: req.body.geography ? (Array.isArray(req.body.geography) ? req.body.geography : [req.body.geography]) : ["US", "EU"],
+        studyPhase: data.studyPhasePref || "any",
+        targetSubpopulation: req.body.targetSubpopulation || null,
+        comparatorDrugs: req.body.comparatorDrugs ? (Array.isArray(req.body.comparatorDrugs) ? req.body.comparatorDrugs : [req.body.comparatorDrugs]) : ["Standard of Care"],
+        budgetCeilingEur: req.body.budgetCeilingEur ? parseInt(req.body.budgetCeilingEur) : undefined,
+        timelineCeilingMonths: req.body.timelineCeilingMonths ? parseInt(req.body.timelineCeilingMonths) : undefined,
+        globalLoeDate: req.body.globalLoeDate || null,
+        hasPatentExtensionPotential: req.body.hasPatentExtensionPotential === 'true'
+      };
+      
+      // Calculate feasibility data using the same method as concept generation
+      const feasibilityData = calculateFeasibility(tempConcept, data);
+      
+      // Add feasibility data to validation results
+      validationResults.feasibilityData = feasibilityData;
+      
       // Always override the current evidence field with the detailed multi-round search results
       // This ensures all search rounds are properly displayed
       console.log("Setting detailed evidence with search results length:", searchResults.content.length);
