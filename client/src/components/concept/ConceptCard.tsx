@@ -174,11 +174,33 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
           </div>
         </div>
 
-        {/* SWOT Analysis */}
-        <SwotAnalysis swotAnalysis={concept.swotAnalysis} className="mb-4" />
-
-        {/* Economics Card */}
+        {/* Study Design Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div className="p-3 border border-neutral-light rounded-md">
+            <h4 className="text-sm font-medium text-neutral-dark mb-1">Sample Size</h4>
+            <div className="flex items-baseline">
+              <span className="text-lg font-medium text-primary">
+                {concept.feasibilityData && concept.feasibilityData.sampleSize != null
+                  ? `${concept.feasibilityData.sampleSize} patients`
+                  : 'N/A'}
+              </span>
+            </div>
+          </div>
+          <div className="p-3 border border-neutral-light rounded-md">
+            <h4 className="text-sm font-medium text-neutral-dark mb-1">Sites Required</h4>
+            <div className="flex items-baseline">
+              <span className="text-lg font-medium text-primary">
+                {concept.feasibilityData && concept.feasibilityData.numberOfSites != null
+                  ? `${concept.feasibilityData.numberOfSites} sites`
+                  : 'N/A'}
+              </span>
+              {concept.feasibilityData && concept.feasibilityData.numberOfCountries != null && (
+                <span className="ml-1 text-xs text-neutral-medium">
+                  across {concept.feasibilityData.numberOfCountries} countries
+                </span>
+              )}
+            </div>
+          </div>
           <div className="p-3 border border-neutral-light rounded-md">
             <h4 className="text-sm font-medium text-neutral-dark mb-1">Estimated Cost</h4>
             <div className="flex items-baseline">
@@ -194,50 +216,10 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
               )}
             </div>
           </div>
-          <div className="p-3 border border-neutral-light rounded-md">
-            <h4 className="text-sm font-medium text-neutral-dark mb-1">Timeline</h4>
-            <div className="flex items-baseline">
-              <span className="text-lg font-medium text-primary">
-                {concept.feasibilityData && concept.feasibilityData.timeline != null
-                  ? `${concept.feasibilityData.timeline} months`
-                  : 'N/A'}
-              </span>
-              <span className="ml-1 text-xs text-neutral-medium">(from FPI: First Patient In)</span>
-            </div>
-          </div>
-          <div className="p-3 border border-neutral-light rounded-md">
-            <div className="flex items-center mb-1">
-              <h4 className="text-sm font-medium text-neutral-dark">Projected ROI</h4>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="ml-1 inline-flex text-neutral-medium cursor-help">
-                      <HelpCircle className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p className="font-semibold">Return On Investment</p>
-                    <p className="text-xs mt-1">A measure of the expected financial return relative to the cost:</p>
-                    <ul className="text-xs mt-1 list-disc pl-4">
-                      <li>1.0x = break-even (get back exactly what you invested)</li>
-                      <li>2.0x = double your investment</li>
-                      <li>3.0x+ = strong financial performance</li>
-                    </ul>
-                    <p className="text-xs mt-1">Based on 5-year projections starting from the primary endpoint readout date (not from study initiation).</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <div className="flex items-baseline">
-              <span className="text-lg font-medium text-primary">
-                {concept.feasibilityData && concept.feasibilityData.projectedROI != null 
-                  ? concept.feasibilityData.projectedROI.toFixed(1) + 'x'
-                  : '2.5x'}
-              </span>
-              <span className="ml-1 text-xs text-neutral-medium">(5-year model)</span>
-            </div>
-          </div>
         </div>
+
+        {/* SWOT Analysis */}
+        <SwotAnalysis swotAnalysis={concept.swotAnalysis} className="mb-4" />
 
         {/* LOE Details */}
         <div className="mb-4">
