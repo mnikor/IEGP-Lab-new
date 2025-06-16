@@ -2,7 +2,79 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { Idea, Review, LaneUpdate } from '@shared/tournament';
-import { evaluateSimplicity, calculateComplexityPenalty } from './simplicityAgent';
+
+/**
+ * Calculates complexity penalty based on observable characteristics of study design
+ * Higher penalty for overengineered studies to counteract the tournament's tendency toward complexity
+ */
+function calculateSynchronousComplexityPenalty(idea: Idea): number {
+  let complexityScore = 0;
+  let maxPossibleScore = 0;
+
+  // 1. Title complexity analysis (weight: 20%)
+  const titleWords = idea.title.split(' ').length;
+  const complexityKeywords = ['adaptive', 'biomarker', 'master', 'platform', 'seamless', 'precision', 'personalized', 'streamlined', 'harmonized', 'decentralized', 'pragmatic'];
+  const keywordMatches = complexityKeywords.filter(keyword => idea.title.toLowerCase().includes(keyword)).length;
+  
+  if (titleWords > 15) complexityScore += 3; // Very long titles indicate complexity
+  if (titleWords > 20) complexityScore += 2; // Extremely long titles
+  complexityScore += keywordMatches * 1.5; // Each buzzword adds complexity
+  maxPossibleScore += 7.5; // Max for title analysis
+
+  // 2. Geographic complexity (weight: 15%)
+  const geographyCount = idea.geography.length;
+  if (geographyCount > 3) complexityScore += 2;
+  if (geographyCount > 5) complexityScore += 2;
+  maxPossibleScore += 4; // Max for geography
+
+  // 3. Strategic goals complexity (weight: 15%)
+  const goalCount = idea.strategicGoals.length;
+  if (goalCount > 3) complexityScore += 2;
+  if (goalCount > 4) complexityScore += 2;
+  maxPossibleScore += 4; // Max for strategic goals
+
+  // 4. Comparator complexity (weight: 10%)
+  const comparatorCount = idea.comparatorDrugs?.length || 0;
+  if (comparatorCount > 1) complexityScore += 1;
+  if (comparatorCount > 2) complexityScore += 2;
+  maxPossibleScore += 3; // Max for comparators
+
+  // 5. Target subpopulation complexity (weight: 10%)
+  if (idea.targetSubpopulation && idea.targetSubpopulation.trim().length > 0) {
+    const subpopWords = idea.targetSubpopulation.split(' ').length;
+    if (subpopWords > 5) complexityScore += 2; // Complex subpopulation definitions
+    if (subpopWords > 10) complexityScore += 1;
+  }
+  maxPossibleScore += 3; // Max for subpopulation
+
+  // 6. Innovation justification complexity (weight: 15%)
+  if (idea.innovationJustification && idea.innovationJustification.trim().length > 0) {
+    const innovationWords = idea.innovationJustification.split(' ').length;
+    const innovationComplexityKeywords = ['multi-arm', 'multi-stage', 'interim', 'futility', 'enrichment', 'basket', 'umbrella'];
+    const innovationMatches = innovationComplexityKeywords.filter(keyword => 
+      idea.innovationJustification!.toLowerCase().includes(keyword)
+    ).length;
+    
+    if (innovationWords > 20) complexityScore += 2;
+    complexityScore += innovationMatches * 1;
+  }
+  maxPossibleScore += 4; // Max for innovation
+
+  // 7. Knowledge gap complexity (weight: 15%)
+  if (idea.knowledgeGapAddressed && idea.knowledgeGapAddressed.trim().length > 0) {
+    const gapWords = idea.knowledgeGapAddressed.split(' ').length;
+    if (gapWords > 15) complexityScore += 2;
+    if (gapWords > 25) complexityScore += 1;
+  }
+  maxPossibleScore += 3; // Max for knowledge gap
+
+  // Calculate the final complexity penalty (0 to 0.3 max penalty)
+  const complexityRatio = Math.min(1, complexityScore / maxPossibleScore);
+  const penalty = complexityRatio * 0.3; // Maximum 30% penalty for highly complex studies
+
+  // Apply progressive penalty curve - small complexity gets small penalty, extreme complexity gets larger penalty
+  return Math.pow(penalty, 0.8); // Slightly reduce the curve to be more forgiving of moderate complexity
+}
 
 /**
  * Calculates the overall score for an idea based on reviewer feedback and strategic goals
@@ -11,7 +83,7 @@ import { evaluateSimplicity, calculateComplexityPenalty } from './simplicityAgen
  * @param reviews Array of reviews for the idea
  * @returns The calculated overall score (0-1)
  */
-export async function calculateOverallScore(idea: Idea, reviews: Review[]): Promise<number> {
+export function calculateOverallScore(idea: Idea, reviews: Review[]): number {
   try {
     // Load strategic goal weights
     const weightsPath = path.join(process.cwd(), 'server', 'strategic_goal_weights.yaml');
@@ -84,6 +156,14 @@ export async function calculateOverallScore(idea: Idea, reviews: Review[]): Prom
     // Normalize the final score
     if (totalAxisWeight > 0) {
       finalScore /= totalAxisWeight;
+    }
+    
+    // Apply complexity penalty based on observable characteristics
+    const complexityPenalty = calculateSynchronousComplexityPenalty(idea);
+    finalScore = finalScore * (1 - complexityPenalty);
+    
+    if (complexityPenalty > 0.1) {
+      console.log(`Idea ${idea.ideaId} - Complexity penalty applied: ${complexityPenalty.toFixed(3)}, Final Score: ${finalScore.toFixed(3)}`);
     }
     
     // Return the score, ensuring it's within 0-1 range
