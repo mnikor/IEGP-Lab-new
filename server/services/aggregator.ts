@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { Idea, Review, LaneUpdate } from '@shared/tournament';
+import { evaluateSimplicity, calculateComplexityPenalty } from './simplicityAgent';
 
 /**
  * Calculates the overall score for an idea based on reviewer feedback and strategic goals
@@ -10,7 +11,7 @@ import { Idea, Review, LaneUpdate } from '@shared/tournament';
  * @param reviews Array of reviews for the idea
  * @returns The calculated overall score (0-1)
  */
-export function calculateOverallScore(idea: Idea, reviews: Review[]): number {
+export async function calculateOverallScore(idea: Idea, reviews: Review[]): Promise<number> {
   try {
     // Load strategic goal weights
     const weightsPath = path.join(process.cwd(), 'server', 'strategic_goal_weights.yaml');
