@@ -85,8 +85,16 @@ export async function generateSeedIdeas(
       // Calculate proper feasibility data with sample size for each concept
       // Convert tournament strategic goals format to concept format
       const requestData = {
-        ...tournamentData,
-        strategicGoals: concept.strategicGoals // Use the concept's strategic goals array
+        drugName: tournamentData.drugName,
+        indication: tournamentData.indication,
+        strategicGoals: concept.strategicGoals,
+        geography: concept.geography,
+        studyPhasePref: concept.studyPhase,
+        targetSubpopulation: concept.targetSubpopulation,
+        comparatorDrugs: concept.comparatorDrugs,
+        budgetCeilingEur: tournamentData.budgetCeilingEur || undefined,
+        timelineCeilingMonths: tournamentData.timelineCeilingMonths || undefined,
+        globalLoeDate: tournamentData.globalLoeDate || undefined
       };
       const calculatedFeasibilityData = calculateFeasibility(concept, requestData);
       
