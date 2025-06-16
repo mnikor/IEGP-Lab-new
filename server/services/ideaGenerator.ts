@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { InsertIdea, NewTournamentRequest } from "@shared/tournament";
 import { perplexityWebSearch } from "./perplexity";
+import { calculateFeasibility } from "./feasibilityCalculator";
 
 // Use the OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -76,10 +77,32 @@ export async function generateSeedIdeas(
       console.warn(`Only ${concepts.length} seed ideas generated, expected ${numIdeas}`);
     }
 
-    // Transform concepts into InsertIdea objects
+    // Transform concepts into InsertIdea objects with proper feasibility calculations
     const ideas: InsertIdea[] = concepts.map((concept: any, index: number) => {
       const laneId = index;
       const ideaId = `${String.fromCharCode(65 + laneId)}_v1`; // A_v1, B_v1, etc.
+      
+      // Calculate proper feasibility data with sample size for each concept
+      // Convert tournament strategic goals format to concept format
+      const requestData = {
+        ...tournamentData,
+        strategicGoals: concept.strategicGoals // Use the concept's strategic goals array
+      };
+      const calculatedFeasibilityData = calculateFeasibility(concept, requestData);
+      
+      // Merge AI-generated feasibility data with calculated values, prioritizing calculated values
+      const finalFeasibilityData = {
+        ...concept.feasibilityData,
+        ...calculatedFeasibilityData,
+        // Ensure sample size and justification are always from calculations
+        sampleSize: calculatedFeasibilityData.sampleSize,
+        sampleSizeJustification: calculatedFeasibilityData.sampleSizeJustification,
+        numberOfSites: calculatedFeasibilityData.numberOfSites,
+        numberOfCountries: calculatedFeasibilityData.numberOfCountries,
+        // Keep cost and timeline from calculations for consistency
+        estimatedCost: calculatedFeasibilityData.estimatedCost,
+        timeline: calculatedFeasibilityData.timeline
+      };
       
       return {
         ideaId,
@@ -102,7 +125,7 @@ export async function generateSeedIdeas(
         picoData: concept.picoData,
         mcdaScores: concept.mcdaScores,
         swotAnalysis: concept.swotAnalysis,
-        feasibilityData: concept.feasibilityData,
+        feasibilityData: finalFeasibilityData,
         evidenceSources: concept.evidenceSources,
         
         overallScore: 0, // Will be calculated after review

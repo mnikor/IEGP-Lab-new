@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { Idea, InsertIdea, Review } from "@shared/tournament";
+import { calculateFeasibility } from "./feasibilityCalculator";
 
 // Initialize OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
