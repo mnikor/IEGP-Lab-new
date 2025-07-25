@@ -20,6 +20,9 @@ A comprehensive clinical study concept generation and validation application fea
 - ✓ **Integrated Cost Modeling**: Applied therapeutic area cost multipliers for realistic Phase III biologics costs (€15-50M+ range)
 - ✓ **Data-Driven Analysis**: Enhanced all calculations to be based on study characteristics rather than hardcoded examples
 - ✓ **Research Strategy Integration**: Seamlessly integrated AI-driven research strategy functionality into ConceptForm workflow with Perplexity API execution and OpenAI synthesis
+- ✓ **Perplexity Deep Research Implementation**: Successfully integrated `sonar-deep-research` model with comprehensive analysis prompts for enhanced clinical evidence research
+- ✓ **Duplicate Search Prevention**: Fixed concept generation to properly reuse existing research strategy results via researchStrategyId parameter, eliminating redundant API calls
+- ✓ **Enhanced Research Quality**: Deep Research provides structured analysis with strategic importance, design implications, and actionable recommendations with proper citation formatting
 
 ## Project Architecture
 
@@ -34,7 +37,7 @@ A comprehensive clinical study concept generation and validation application fea
 - **Server**: Express.js with TypeScript
 - **Storage**: In-memory storage (MemStorage) with interface for future database migration
 - **AI Integration**: OpenAI SDK for concept generation and analysis
-- **External APIs**: Perplexity for literature search and market intelligence
+- **External APIs**: Perplexity Deep Research (`sonar-deep-research`) for comprehensive clinical evidence research and market intelligence
 
 ### Key Services
 - **IdeaGenerator**: Tournament-based study concept generation with anti-overengineering

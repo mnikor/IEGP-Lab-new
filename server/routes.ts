@@ -102,12 +102,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (researchResults && researchResults.length > 0) {
             // Synthesize research results into a comprehensive evidence base
             const synthesizedEvidence = researchResults
-              .map(result => `${result.synthesizedInsights}\n\nKey Findings: ${result.keyFindings.join(', ')}`)
+              .map(result => `${result.synthesizedInsights}\n\nKey Findings: ${Array.isArray(result.keyFindings) ? result.keyFindings.join(', ') : 'No key findings available'}`)
               .join('\n\n---\n\n');
             
             searchResults = {
               content: synthesizedEvidence,
-              citations: researchResults.flatMap(r => r.rawResults?.citations || [])
+              citations: researchResults.flatMap(r => (r.rawResults as any)?.citations || [])
             };
             console.log("Successfully integrated research strategy results");
           } else {
@@ -118,17 +118,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error retrieving research strategy results:", error);
           searchResults = await performNewSearch(data);
         }
-      } else {
-        searchResults = await performNewSearch(data);
       }
 
-      async function performNewSearch(data: any) {
+      const performNewSearch = async (data: any) => {
         console.log("Performing new Perplexity search");
         const isOncology = (data.indication || '').toLowerCase().includes('cancer') || 
                            (data.indication || '').toLowerCase().includes('oncol') ||
                            (data.indication || '').toLowerCase().includes('tumor');
         
-        const strategicGoalsFocus = data.strategicGoals.map(goal => goal.replace('_', ' ')).join(' and ');
+        const strategicGoalsFocus = data.strategicGoals.map((goal: string) => goal.replace('_', ' ')).join(' and ');
         const searchQuery = `${data.drugName} ${data.indication} ${strategicGoalsFocus} Phase ${data.studyPhasePref} clinical trials study design`;
         
         return await perplexityWebSearch(searchQuery, [
@@ -139,6 +137,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "ema.europa.eu",
           "nature.com"
         ]);
+      };
+
+      if (!data.researchStrategyId) {
+        searchResults = await performNewSearch(data);
       }
 
       // Step 2: Generate concepts using OpenAI with selected model

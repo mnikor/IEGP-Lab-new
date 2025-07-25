@@ -23,30 +23,34 @@ async function performSingleSearch(question: string, domains: string[] | null = 
     console.log(`Performing Perplexity ${useDeepResearch ? 'Deep Research' : 'search'} with query: "${question}"`);
     
     const payload = {
-      model: useDeepResearch ? "sonar-reasoning" : "sonar",
+      model: useDeepResearch ? "sonar-deep-research" : "sonar",
       messages: [
         {
           role: "system",
           content: useDeepResearch 
-            ? "You are a senior clinical research expert conducting comprehensive analysis. Provide exhaustive, evidence-based information from multiple reputable sources. Include detailed citations, analyze conflicting evidence, identify research gaps, and provide strategic insights. Structure your response with clear sections and actionable recommendations."
+            ? "You are a senior clinical research expert conducting comprehensive analysis. Provide exhaustive, evidence-based information from multiple reputable sources. Include detailed citations, analyze conflicting evidence, identify research gaps, and provide strategic insights. Structure your response with clear sections, bold headings, and actionable recommendations."
             : "You are a clinical research expert. Provide detailed, evidence-based information from reputable sources. Include citations for all claims and prioritize recent studies and high-quality evidence."
         },
         {
           role: "user",
           content: useDeepResearch 
-            ? `Conduct a comprehensive research analysis on: ${question}. Please provide:
-1. Current state of evidence
-2. Key findings from recent studies
-3. Regulatory landscape and precedents
-4. Market dynamics and competitive positioning
-5. Risk factors and mitigation strategies
-6. Strategic recommendations for clinical development
-7. Gaps in current research that need addressing`
+            ? `Conduct a comprehensive research analysis on: ${question}. 
+
+Please provide a detailed analysis including:
+1. **Current State of Evidence**: Latest clinical studies, trials, and research findings
+2. **Key Research Insights**: Recent breakthrough studies and their clinical implications  
+3. **Regulatory Landscape**: FDA/EMA guidance, approval precedents, and regulatory considerations
+4. **Market Dynamics**: Competitive landscape, market access factors, and commercial considerations
+5. **Risk Assessment**: Safety profiles, risk management strategies, and mitigation approaches
+6. **Strategic Recommendations**: Evidence-based recommendations for clinical development
+7. **Research Gaps**: Identified limitations and areas requiring further investigation
+
+Structure your response with bold headings and provide specific, actionable insights with proper citations.`
             : question
         }
       ],
       web_search_options: {
-        search_context_size: useDeepResearch ? "large" : "medium",
+        search_context_size: useDeepResearch ? "high" : "medium",
         include_citations: true,
         focus_web_sources: domains || []
       },
