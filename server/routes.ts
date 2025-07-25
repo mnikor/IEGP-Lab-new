@@ -89,17 +89,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                          (data.indication || '').toLowerCase().includes('oncol') ||
                          (data.indication || '').toLowerCase().includes('tumor');
       
-      // Create a more detailed query that explicitly asks for study design information
+      // Create a simplified search query to avoid API errors
       const strategicGoalsFocus = data.strategicGoals.map(goal => goal.replace('_', ' ')).join(' and ');
-      const searchQuery = `Provide the latest clinical evidence for ${data.drugName} in ${data.indication} focusing on ${strategicGoalsFocus}. 
-      Include details about: 
-      1. Optimal study design (Phase ${data.studyPhasePref}) 
-      2. Typical patient populations and sample sizes 
-      3. Common comparators used in similar studies
-      4. Standard endpoints and outcomes
-      5. Average costs and durations for similar trials${isOncology ? ' in oncology' : ''}
-      6. Common inclusion/exclusion criteria 
-      7. Geographic patterns/differences in conducting these trials`;
+      const searchQuery = `${data.drugName} ${data.indication} ${strategicGoalsFocus} Phase ${data.studyPhasePref} clinical trials study design`;
       
       const searchResults = await perplexityWebSearch(searchQuery, [
         "pubmed.ncbi.nlm.nih.gov",

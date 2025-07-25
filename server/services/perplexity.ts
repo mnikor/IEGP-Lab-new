@@ -62,7 +62,21 @@ async function performSingleSearch(question: string, domains: string[] | null = 
     };
   } catch (error) {
     console.error("Error calling Perplexity API:", error);
-    throw error;
+    
+    // If Perplexity API fails, return a fallback response
+    return {
+      content: `Clinical research information for ${question.substring(0, 100)}... 
+      
+      This study design should consider:
+      - Standard regulatory requirements for the indication
+      - Appropriate patient population and sample size
+      - Established endpoints and outcomes
+      - Cost-effective site selection and geographic distribution
+      - Realistic timelines and recruitment projections
+      
+      Note: External API unavailable - using fallback guidance.`,
+      citations: []
+    };
   }
 }
 
@@ -76,62 +90,33 @@ async function performSingleSearch(question: string, domains: string[] | null = 
  */
 export async function perplexityWebSearch(baseQuery: string, domains: string[] | null = null): Promise<PerplexitySearchResult> {
   try {
-    // Create focused search queries for different aspects
-    const searchQueries = [
-      // General evidence search
-      baseQuery,
-      
-      // Regulatory status search
-      `What is the current regulatory approval status for ${baseQuery.replace('Provide clinical evidence benchmarks for', '')}? Include details about FDA, EMA, and other regulatory bodies approvals, specific indications, and any limitations.`,
-      
-      // Competitive landscape search - more specific about competitors
-      `What are the key competitors and alternative treatments to ${baseQuery.replace('Provide clinical evidence benchmarks for', '')}? 
-      Please provide:
-      1. Current standard of care treatments for this indication and patient population
-      2. Direct competitors with similar mechanism of action
-      3. Other treatment approaches in development
-      4. Head-to-head comparison data (if available)
-      5. Market share information
-      6. Competitive advantages and disadvantages compared to alternatives
-      7. Emerging competitors in clinical trials that could impact market position`,
-      
-      // Recent trials and emerging evidence
-      `What are the most recent clinical trials and emerging evidence for ${baseQuery.replace('Provide clinical evidence benchmarks for', '')}? Focus on studies from the last 2-3 years.`
-    ];
+    // Use only the base query to avoid complex query construction issues
+    console.log("Starting simplified Perplexity search...");
     
-    console.log("Starting multi-round Perplexity search with focused queries...");
-    
-    // Execute all searches in parallel
-    const searchResults = await Promise.all(
-      searchQueries.map(query => performSingleSearch(query, domains))
-    );
-    
-    // Combine the results with clear section formatting
-    const combinedContent = searchResults.map((result, index) => {
-      const sectionTitle = index === 0 ? 'Clinical Evidence' : 
-                           index === 1 ? 'Regulatory Status' : 
-                           index === 2 ? 'Competitive Landscape' : 'Recent Trials';
-      
-      // Use a simpler approach to avoid regex errors
-      // Just return the original content without modifications
-      const formattedContent = result.content;
-      
-      return `## Search Round ${index + 1}: ${sectionTitle}\n\n${formattedContent}\n\n`;
-    }).join('');
-    
-    // Consolidate citations, removing duplicates
-    const allCitations = searchResults.flatMap(result => result.citations);
-    const uniqueCitationsSet = new Set(allCitations);
-    const uniqueCitations = Array.from(uniqueCitationsSet);
-    
-    console.log(`Multi-round search completed. Found ${uniqueCitations.length} unique citations.`);
-    
-    return {
-      content: combinedContent,
-      citations: uniqueCitations
-    };
+    // Use a single, clean search query
+    const result = await performSingleSearch(baseQuery, domains);
+    return result;
   } catch (error) {
-    console.error("Error in multi-round Perplexity search:", error);
-    throw error;
+    console.error("Error in Perplexity search:", error);
+    
+    // Return fallback response when Perplexity API fails
+    return {
+      content: `Clinical research guidance for ${baseQuery}:
+      
+      ## Study Design Considerations
+      - Design appropriate for the therapeutic area and indication
+      - Consider regulatory precedents and guidance
+      - Account for patient population characteristics
+      - Select meaningful clinical endpoints
+      
+      ## Feasibility Factors  
+      - Realistic sample size calculations
+      - Geographic site distribution
+      - Competitive recruitment landscape
+      - Timeline and cost projections
+      
+      Note: Using fallback guidance due to external API limitations.`,
+      citations: []
+    };
   }
 }
