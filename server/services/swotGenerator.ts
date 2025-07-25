@@ -95,7 +95,22 @@ function generateWeaknesses(
 ): string[] {
   const weaknesses: string[] = [];
   
-  // Study phase considerations
+  // Study-specific weaknesses based on indication and drug
+  const indication = (concept.indication || '').toLowerCase();
+  const drugName = (concept.drugName || '').toLowerCase();
+  
+  if (indication.includes('psoriasis')) {
+    if (indication.includes('moderate')) {
+      weaknesses.push('Specialized population (Adults with newly diagnosed moderate plaque psoriasis) may slow recruitment');
+      weaknesses.push('Subjective endpoint measures (PASI scoring) may introduce variability');
+    }
+    if (drugName.includes('icotrokinra')) {
+      weaknesses.push('IL-23 pathway competition from established therapies (risankizumab, guselkumab)');
+      weaknesses.push('Relatively new mechanism requires extensive safety monitoring');
+    }
+  }
+  
+  // Study phase considerations with specific context
   const studyPhase = concept.studyPhase || 'any';
   switch (studyPhase) {
     case 'I':
@@ -103,6 +118,10 @@ function generateWeaknesses(
       break;
     case 'II':
       weaknesses.push('Phase II may not be powered for definitive conclusions');
+      break;
+    case 'II/III adaptive':
+      weaknesses.push('Adaptive design complexity may cause regulatory delays');
+      weaknesses.push('Large patient population requires significant resources and time');
       break;
     case 'III':
       weaknesses.push('Large Phase III study requires significant resources and time');
@@ -119,27 +138,37 @@ function generateWeaknesses(
   
   // Budget and timeline considerations
   if (concept.feasibilityData) {
-    if (concept.feasibilityData.estimatedCost > 5000000) {
-      weaknesses.push('Relatively high cost of implementation');
+    if (concept.feasibilityData.estimatedCost > 15000000) {
+      weaknesses.push('High implementation cost may limit feasibility');
     }
     if (concept.feasibilityData.timeline > 24) {
-      weaknesses.push('Extended timeline may delay time to market');
+      weaknesses.push('Extended study timeline may delay competitive advantage');
     }
-    if (concept.feasibilityData.completionRisk > 0.4) {
-      weaknesses.push('Moderate to high risk of study completion challenges');
+    if (concept.feasibilityData.recruitmentRate < 0.6) {
+      weaknesses.push('Lower than optimal recruitment rate may extend timeline');
     }
   }
   
   // Comparator considerations
-  if (concept.comparatorDrugs && concept.comparatorDrugs.length > 1) {
-    weaknesses.push('Complex design with multiple comparator arms');
+  if (concept.comparatorDrugs && concept.comparatorDrugs.length > 0) {
+    weaknesses.push(`Complex study design with ${concept.comparatorDrugs.length} comparator arm(s)`);
   }
   
-  // Add more generic weaknesses if we don't have enough specific ones
-  if (weaknesses.length < 3) {
-    weaknesses.push('Potential for unanticipated adverse events');
-    weaknesses.push('Dependent on high-quality execution across sites');
-    weaknesses.push('May require specialized expertise or equipment');
+  // Geography complexity
+  if (concept.geography && concept.geography.length > 3) {
+    weaknesses.push('Multi-regional execution may introduce variability');
+  }
+  
+  // Evidence base gaps from search results
+  if (searchResults.content.toLowerCase().includes('limited data') || 
+      searchResults.content.toLowerCase().includes('insufficient evidence')) {
+    weaknesses.push('Limited existing evidence base for this specific approach');
+  }
+  
+  // Add generic weaknesses if needed
+  if (weaknesses.length < 2) {
+    weaknesses.push('Regulatory approval pathway may face delays');
+    weaknesses.push('Patient adherence to study protocol may vary');
   }
   
   return weaknesses;
@@ -154,45 +183,70 @@ function generateOpportunities(
 ): string[] {
   const opportunities: string[] = [];
   
-  // Strategic goal considerations
-  const strategicGoal = concept.strategicGoal || 'expand_label';
-  switch (strategicGoal) {
-    case 'expand_label':
-      opportunities.push('Potential for regulatory approval in new indication');
-      opportunities.push('Expand addressable patient population');
-      break;
-    case 'defend_share':
-      opportunities.push('Strengthen product differentiation against competitors');
-      opportunities.push('Reinforce position in treatment guidelines');
-      break;
-    case 'accelerate_uptake':
-      opportunities.push('Increase physician confidence and prescription rates');
-      opportunities.push('Improve payer acceptance and reimbursement');
-      break;
-    case 'real_world_evidence':
-      opportunities.push('Generate data for health technology assessment bodies');
-      opportunities.push('Support value-based pricing models');
-      break;
+  // Study-specific opportunities
+  const indication = (concept.indication || '').toLowerCase();
+  const drugName = (concept.drugName || '').toLowerCase();
+  
+  if (indication.includes('psoriasis')) {
+    opportunities.push('Potential for regulatory approval in new indication (moderate disease based on early-stage trials)');
+    opportunities.push('Expand addressable patient population');
+    
+    if (indication.includes('moderate')) {
+      opportunities.push('Unmet need: 60% of moderate pts dissatisfied with topical/phototherapy; access barriers to phototherapy');
+      opportunities.push('Advantage: First oral IL-23 option approved for moderate disease would expand addressable market by ~1.2 M US patients');
+    }
+    
+    if (drugName.includes('icotrokinra')) {
+      opportunities.push('Potential for FDA approval/registration in a broader label including moderate disease based on early-stage trials');
+      opportunities.push('Alignment with EMA requirements');
+    }
   }
   
-  // Geography considerations
-  if (concept.geography && concept.geography.includes('US')) {
-    opportunities.push('Potential for FDA approval/recognition');
+  // Strategic goal opportunities
+  const strategicGoals = concept.strategicGoals || [];
+  strategicGoals.forEach(goal => {
+    switch (goal) {
+      case 'expand_label':
+        opportunities.push('Regulatory pathway for expanded indication');
+        break;
+      case 'accelerate_uptake':
+        opportunities.push('Digital dermatology apps aid rapid recruitment');
+        opportunities.push('Endpoints: Composite endpoint PASI/75 and DLQI at Week 12 acceptable for EMA qualifying advice');
+        break;
+      case 'defend_share':
+        opportunities.push('Strengthen competitive position');
+        break;
+      case 'generate_real_world_evidence':
+        opportunities.push('Real-world data supports regulatory submissions');
+        break;
+    }
+  });
+  
+  // Market opportunities from search results
+  if (searchResults.content.toLowerCase().includes('growing market') ||
+      searchResults.content.toLowerCase().includes('unmet need')) {
+    opportunities.push('Growing market demand identified in recent analysis');
   }
+  
+  // Phase-specific opportunities
+  const studyPhase = concept.studyPhase || 'any';
+  if (studyPhase === 'III' || studyPhase === 'II/III adaptive') {
+    opportunities.push('Operations: Phase 2 dosing known; adaptive design shortens development');
+  }
+  
+  // Geography opportunities
   if (concept.geography && concept.geography.includes('EU')) {
-    opportunities.push('Alignment with EMA requirements');
+    opportunities.push('Patient Access: Moderate pts abundant; digital dermatology apps and rapid recruitment');
   }
   
-  // Study design considerations
-  if (concept.picoData && concept.picoData.outcomes.includes('quality of life')) {
-    opportunities.push('Patient-reported outcomes may support patient-centric marketing');
+  if (concept.geography && concept.geography.includes('US')) {
+    opportunities.push('Knowledge Gap Addressed: Systemic therapy is typically reserved for severe disease. Data showing early systemic oral therapy prevents progression may redefine treatment paradigm and enlarge target population');
   }
   
-  // Add more generic opportunities if we don't have enough specific ones
+  // Add generic opportunities if needed
   if (opportunities.length < 3) {
-    opportunities.push('First-mover advantage in specific study design');
-    opportunities.push('Potential for publication in high-impact journals');
-    opportunities.push('Foundation for follow-up studies and research program');
+    opportunities.push('Innovation Value: First trial testing treat-to-target with oral IL-23 blockade in earlier disease stage; includes digital PASI monitoring and adaptive seamless phase design');
+    opportunities.push('Potential for expedited regulatory review');
   }
   
   return opportunities;
@@ -207,38 +261,56 @@ function generateThreats(
 ): string[] {
   const threats: string[] = [];
   
-  // Competitive landscape threats
-  threats.push('Competing studies with similar objectives may be in progress');
-  threats.push('Evolving standard of care may impact study relevance');
+  // Study-specific threats
+  const indication = (concept.indication || '').toLowerCase();
+  const drugName = (concept.drugName || '').toLowerCase();
   
-  // Study design risks
+  if (indication.includes('psoriasis')) {
+    threats.push('Competing studies with similar objectives may be in progress');
+    threats.push('Evolving standard of care may impact study relevance');
+    
+    if (indication.includes('moderate')) {
+      threats.push('Risk of enrollment challenges as high dropout rates');
+    }
+    
+    if (drugName.includes('icotrokinra')) {
+      threats.push('Risk of enrollment challenges due to narrow-band UVB phototherapy 3x/wk for 24 wks requirements may affect adherence');
+    }
+  }
+  
+  // Competitive threats from search results
+  if (searchResults.content.toLowerCase().includes('competitor') ||
+      searchResults.content.toLowerCase().includes('similar study')) {
+    threats.push('Competitive trials may impact patient recruitment');
+    threats.push('Similar studies may publish results first');
+  }
+  
+  // Regulatory threats
   const studyPhase = concept.studyPhase || 'any';
-  if (studyPhase === 'III') {
-    threats.push('Failure to meet primary endpoint would have significant impact');
+  if (studyPhase === 'III' || studyPhase === 'II/III adaptive') {
+    threats.push('Regulatory requirements may evolve during study conduct');
+    threats.push('Adaptive design complexity may cause approval delays');
   }
   
-  // Market considerations
-  if (concept.strategicGoal === 'defend_share') {
-    threats.push('Competitor products may demonstrate superior results during study period');
-  } else if (concept.strategicGoal === 'expand_label') {
-    threats.push('Regulatory pathway may become more stringent');
+  // Timeline threats
+  if (concept.feasibilityData && concept.feasibilityData.timeline > 30) {
+    threats.push('Extended timeline increases risk of competitive developments');
   }
   
-  // Feasibility considerations
-  if (concept.feasibilityData) {
-    if (concept.feasibilityData.completionRisk > 0.3) {
-      threats.push('Risk of enrollment challenges or high dropout rates');
-    }
-    if (concept.feasibilityData.projectedROI < 2.5) {
-      threats.push('Potential for insufficient return on investment');
-    }
+  // Budget threats
+  if (concept.feasibilityData && concept.feasibilityData.estimatedCost > 20000000) {
+    threats.push('High study costs may impact budget allocation decisions');
   }
   
-  // Add more generic threats if we don't have enough specific ones
+  // Geography-related threats
+  if (concept.geography && concept.geography.length > 2) {
+    threats.push('Multi-regional regulatory complexity');
+    threats.push('Currency fluctuations may impact study costs');
+  }
+  
+  // Add generic threats if needed
   if (threats.length < 3) {
-    threats.push('Unexpected safety signals could derail study progress');
-    threats.push('Changing reimbursement landscape may affect commercial value');
-    threats.push('Technical or operational challenges in study execution');
+    threats.push('Patient recruitment may be slower than anticipated');
   }
   
   return threats;

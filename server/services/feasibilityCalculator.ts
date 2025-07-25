@@ -111,31 +111,44 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   // Base cost per patient varies by endpoint complexity and phase requirements
   let costPerPatient: number;
   
-  // Adjust base cost by endpoint type from sample size calculation
+  // Adjust base cost by endpoint type from sample size calculation - UPDATED FOR BIOLOGICS
   const calculatedEndpointType = sampleSizeCalculation.endpoint.type;
   
+  // Check if study involves biologics (higher costs) - improved detection
+  const isBiologicsStudy = (concept.drugName || '').toLowerCase().includes('mab') ||
+                           (concept.drugName || '').toLowerCase().includes('ximab') ||
+                           (concept.drugName || '').toLowerCase().includes('tinib') ||
+                           (concept.drugName || '').toLowerCase().includes('zumab') ||
+                           (concept.drugName || '').toLowerCase().includes('icotrokinra') ||
+                           (concept.indication || '').toLowerCase().includes('psoriasis') ||
+                           (concept.indication || '').toLowerCase().includes('rheumatoid') ||
+                           (concept.indication || '').toLowerCase().includes('crohn') ||
+                           (concept.indication || '').toLowerCase().includes('multiple sclerosis') ||
+                           (concept.indication || '').toLowerCase().includes('inflammatory') ||
+                           (concept.indication || '').toLowerCase().includes('immune');
+  
   if (calculatedEndpointType === 'survival') {
-    costPerPatient = isOncology ? 55000 : 35000; // Survival endpoints require extensive follow-up
+    costPerPatient = isOncology ? (isBiologicsStudy ? 85000 : 65000) : (isBiologicsStudy ? 65000 : 45000);
   } else if (calculatedEndpointType === 'response_rate') {
-    costPerPatient = isOncology ? 40000 : 25000; // Response rate studies need imaging/biomarkers
+    costPerPatient = isOncology ? (isBiologicsStudy ? 70000 : 50000) : (isBiologicsStudy ? 55000 : 35000);
   } else if (calculatedEndpointType === 'biomarker') {
-    costPerPatient = 30000; // Biomarker studies have high laboratory costs
+    costPerPatient = isBiologicsStudy ? 55000 : 40000;
   } else if (calculatedEndpointType === 'safety') {
-    costPerPatient = studyPhase === 'I' ? 35000 : 20000; // Phase I safety studies are intensive
+    costPerPatient = studyPhase === 'I' ? (isBiologicsStudy ? 65000 : 45000) : (isBiologicsStudy ? 45000 : 30000);
   } else {
-    costPerPatient = isOncology ? 35000 : 22000; // Continuous endpoints
+    costPerPatient = isOncology ? (isBiologicsStudy ? 65000 : 45000) : (isBiologicsStudy ? 50000 : 32000);
   }
   
-  // Adjust for study phase complexity
+  // Adjust for study phase complexity - INCREASED MULTIPLIERS FOR REALISTIC COSTS
   const phaseMultipliers = {
-    'I': 1.2,   // Phase I requires intensive monitoring
-    'II': 1.0,  // Base cost
-    'III': 1.3, // Phase III has complex logistics
-    'IV': 0.7,  // Post-market studies are less intensive
-    'any': 1.0
+    'I': 1.3,   // Phase I requires intensive monitoring
+    'II': 1.1,  // Phase II increased base cost  
+    'III': 1.6, // Phase III has much more complex logistics
+    'IV': 0.8,  // Post-market studies are less intensive
+    'any': 1.2
   };
   
-  costPerPatient *= phaseMultipliers[studyPhase as keyof typeof phaseMultipliers] || 1.0;
+  costPerPatient *= phaseMultipliers[studyPhase as keyof typeof phaseMultipliers] || 1.2;
   
   // Adjust for statistical power requirements (higher power = more rigorous = more expensive)
   const powerAdjustment = 0.8 + (sampleSizeCalculation.parameters.power * 0.4); // 0.8 to 1.2 multiplier
