@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
 import PicoFramework from "@/components/shared/PicoFramework";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
+import ConfidenceLevel from "@/components/shared/ConfidenceLevel";
 
 import FeasibilityDashboard from "@/components/shared/FeasibilityDashboard";
 import CurrentEvidence from "@/components/shared/CurrentEvidence";
@@ -37,7 +38,12 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
             Phase {concept.studyPhase === "any" ? "Any" : concept.studyPhase}
           </Badge>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-4">
+          <ConfidenceLevel 
+            feasibilityData={concept.feasibilityData}
+            mcdaScores={concept.mcdaScores}
+            className="flex-shrink-0"
+          />
           <div className="flex items-center">
             <Star className="h-5 w-5 text-yellow-400 fill-current" />
             <span className="ml-1 text-sm font-medium text-neutral-dark">
