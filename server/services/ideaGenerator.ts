@@ -112,6 +112,17 @@ export async function generateSeedIdeas(
         timeline: calculatedFeasibilityData.timeline
       };
       
+      // Fix PICO population field to reflect actual calculated sample size
+      const correctedPicoData = {
+        ...concept.picoData,
+        population: updatePicoPopulationWithSampleSize(
+          concept.picoData.population, 
+          calculatedFeasibilityData.sampleSize,
+          concept.indication,
+          concept.targetSubpopulation
+        )
+      };
+      
       return {
         ideaId,
         tournamentId,
@@ -130,7 +141,7 @@ export async function generateSeedIdeas(
         knowledgeGapAddressed: concept.knowledgeGapAddressed || null,
         innovationJustification: concept.innovationJustification || null,
         
-        picoData: concept.picoData,
+        picoData: correctedPicoData,
         mcdaScores: concept.mcdaScores,
         swotAnalysis: concept.swotAnalysis,
         feasibilityData: finalFeasibilityData,
@@ -146,6 +157,38 @@ export async function generateSeedIdeas(
     console.error("Error generating seed ideas:", error);
     throw error;
   }
+}
+
+/**
+ * Updates PICO population field to include actual calculated sample size
+ */
+function updatePicoPopulationWithSampleSize(
+  originalPopulation: string,
+  calculatedSampleSize: number,
+  indication: string,
+  targetSubpopulation?: string
+): string {
+  // Remove any existing patient numbers that might conflict
+  let cleanedPopulation = originalPopulation
+    .replace(/\b\d{3,4}\s+(?:patients?|subjects?|adults?|participants?)\b/gi, '')
+    .replace(/\bn\s*=\s*\d{3,4}\b/gi, '')
+    .replace(/\btotal\s+of\s+\d{3,4}\b/gi, '')
+    .replace(/\bapproximately\s+\d{3,4}\b/gi, '')
+    .trim();
+  
+  // Clean up any double spaces or formatting issues
+  cleanedPopulation = cleanedPopulation.replace(/\s+/g, ' ').trim();
+  
+  // Add the correct sample size at the beginning for clarity
+  const sampleSizeText = `n=${calculatedSampleSize} patients with ${indication}${targetSubpopulation ? ` (${targetSubpopulation})` : ''}`;
+  
+  // If the cleaned population is very short or generic, enhance it
+  if (cleanedPopulation.length < 30) {
+    return `${sampleSizeText}, meeting study inclusion criteria`;
+  }
+  
+  // Otherwise, prepend the sample size to the existing description
+  return `${sampleSizeText}. ${cleanedPopulation}`;
 }
 
 /**

@@ -367,6 +367,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add feasibility data to validation results
       validationResults.feasibilityData = feasibilityData;
       
+      // Fix PICO population field to reflect actual calculated sample size (same as concept generation)
+      if (validationResults.extractedPico && feasibilityData.sampleSize) {
+        validationResults.extractedPico = {
+          ...validationResults.extractedPico,
+          population: updatePicoPopulationWithSampleSize(
+            validationResults.extractedPico.population,
+            feasibilityData.sampleSize,
+            data.indication,
+            tempConcept.targetSubpopulation
+          )
+        };
+      }
+      
       // Always override the current evidence field with the detailed multi-round search results
       // This ensures all search rounds are properly displayed
       console.log("Setting detailed evidence with search results length:", searchResults.content.length);
@@ -522,4 +535,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+/**
+ * Updates PICO population field to include actual calculated sample size
+ * Helper function copied from ideaGenerator.ts to ensure consistency
+ */
+function updatePicoPopulationWithSampleSize(
+  originalPopulation: string,
+  calculatedSampleSize: number,
+  indication: string,
+  targetSubpopulation?: string | null
+): string {
+  // Remove any existing patient numbers that might conflict
+  let cleanedPopulation = originalPopulation
+    .replace(/\b\d{3,4}\s+(?:patients?|subjects?|adults?|participants?)\b/gi, '')
+    .replace(/\bn\s*=\s*\d{3,4}\b/gi, '')
+    .replace(/\btotal\s+of\s+\d{3,4}\b/gi, '')
+    .replace(/\bapproximately\s+\d{3,4}\b/gi, '')
+    .trim();
+  
+  // Clean up any double spaces or formatting issues
+  cleanedPopulation = cleanedPopulation.replace(/\s+/g, ' ').trim();
+  
+  // Add the correct sample size at the beginning for clarity
+  const sampleSizeText = `n=${calculatedSampleSize} patients with ${indication}${targetSubpopulation ? ` (${targetSubpopulation})` : ''}`;
+  
+  // If the cleaned population is very short or generic, enhance it
+  if (cleanedPopulation.length < 30) {
+    return `${sampleSizeText}, meeting study inclusion criteria`;
+  }
+  
+  // Otherwise, prepend the sample size to the existing description
+  return `${sampleSizeText}. ${cleanedPopulation}`;
 }
