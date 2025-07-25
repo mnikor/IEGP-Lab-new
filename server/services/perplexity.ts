@@ -22,7 +22,7 @@ async function performSingleSearch(question: string, domains: string[] | null = 
     console.log(`Performing Perplexity search with query: "${question}"`);
     
     const payload = {
-      model: "llama-3.1-sonar-small-128k-online",
+      model: "sonar",
       messages: [
         {
           role: "system",
