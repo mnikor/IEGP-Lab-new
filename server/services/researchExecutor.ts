@@ -59,7 +59,9 @@ export class ResearchExecutor {
     
     try {
       // Execute Perplexity search
+      console.log(`Starting Perplexity search for: "${search.query}"`);
       const perplexityResult = await perplexityWebSearch(search.query);
+      console.log(`Perplexity search completed for: "${search.query}"`);
       
       // Process and structure the results
       const synthesizedInsights = this.processSingleSearchResult(search, perplexityResult);
@@ -104,18 +106,31 @@ export class ResearchExecutor {
   }
 
   private processSingleSearchResult(search: SearchItem, perplexityResult: any): string {
-    if (!perplexityResult || perplexityResult.error) {
-      return `Search for "${search.query}" encountered an error: ${perplexityResult?.error || 'Unknown error'}`;
+    if (!perplexityResult) {
+      return `Search for "${search.query}" returned no results`;
     }
 
-    const content = perplexityResult.choices?.[0]?.message?.content || '';
+    // Handle direct API response format  
+    const content = perplexityResult.content || '';
+    const citations = perplexityResult.citations || [];
+    
     if (!content) {
-      return `No results found for "${search.query}"`;
+      return `No content found for "${search.query}"`;
     }
 
     // Extract key insights based on search type
     const typeContext = this.getSearchTypeContext(search.type);
-    return `${typeContext}\n\nKey Insights from "${search.query}":\n${content}`;
+    
+    // Format with citations if available
+    let result = `${typeContext}\n\n## Key Insights: ${search.query}\n\n${content}`;
+    
+    if (citations.length > 0) {
+      result += `\n\n### Sources:\n${citations.map((citation: string, index: number) => 
+        `[${index + 1}] ${citation}`
+      ).join('\n')}`;
+    }
+    
+    return result;
   }
 
   private getSearchTypeContext(type: string): string {
@@ -128,29 +143,31 @@ export class ResearchExecutor {
     return contexts[type as keyof typeof contexts] || "📊 RESEARCH INTELLIGENCE";
   }
 
-  private extractKeyFindings(perplexityResult: any): any[] {
-    const content = perplexityResult.choices?.[0]?.message?.content || '';
+  private extractKeyFindings(perplexityResult: any): string[] {
+    const content = perplexityResult.content || '';
     if (!content) return [];
 
-    // Extract bullet points and key statements
-    const findings = [];
-    const lines = content.split('\n');
-    
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('→')) {
-        findings.push({
-          finding: trimmed.replace(/^[•\-→]\s*/, ''),
-          type: 'bullet_point'
-        });
-      }
-    }
+    // Extract key points using simple text analysis
+    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    const keyFindings = sentences
+      .filter(sentence => 
+        sentence.includes('significant') || 
+        sentence.includes('important') || 
+        sentence.includes('key') ||
+        sentence.includes('critical') ||
+        sentence.includes('major') ||
+        sentence.includes('approved') ||
+        sentence.includes('demonstrated') ||
+        sentence.includes('efficacy')
+      )
+      .slice(0, 3)
+      .map(s => s.trim());
 
-    return findings.slice(0, 5); // Limit to top 5 findings
+    return keyFindings.length > 0 ? keyFindings : sentences.slice(0, 2).map(s => s.trim());
   }
 
   private extractSingleSearchImplications(search: SearchItem, perplexityResult: any): any {
-    const content = perplexityResult.choices?.[0]?.message?.content || '';
+    const content = perplexityResult.content || '';
     
     // Extract implications based on search type
     if (search.type === 'core' || search.type === 'therapeutic') {
@@ -166,7 +183,7 @@ export class ResearchExecutor {
   }
 
   private extractSingleSearchRecommendations(search: SearchItem, perplexityResult: any): any {
-    const content = perplexityResult.choices?.[0]?.message?.content || '';
+    const content = perplexityResult.content || '';
     
     if (search.type === 'strategic') {
       return {

@@ -52,31 +52,44 @@ async function performSingleSearch(question: string, domains: string[] | null = 
         headers: {
           "Authorization": `Bearer ${apiKey}`,
           "Content-Type": "application/json"
-        }
+        },
+        timeout: 30000 // 30 second timeout
       }
     );
 
-    return {
-      content: response.data.choices[0].message.content,
-      citations: response.data.citations || []
-    };
-  } catch (error) {
-    console.error("Error calling Perplexity API:", error);
+    console.log(`Perplexity API response received for query: "${question}"`);
     
-    // If Perplexity API fails, return a fallback response
+    if (!response.data || !response.data.choices || !response.data.choices[0]) {
+      throw new Error("Invalid response structure from Perplexity API");
+    }
+
+    const content = response.data.choices[0].message.content;
+    const citations = response.data.citations || [];
+    
+    if (!content) {
+      throw new Error("Empty content received from Perplexity API");
+    }
+
+    console.log(`Perplexity search successful. Content length: ${content.length}, Citations: ${citations.length}`);
+
     return {
-      content: `Clinical research information for ${question.substring(0, 100)}... 
-      
-      This study design should consider:
-      - Standard regulatory requirements for the indication
-      - Appropriate patient population and sample size
-      - Established endpoints and outcomes
-      - Cost-effective site selection and geographic distribution
-      - Realistic timelines and recruitment projections
-      
-      Note: External API unavailable - using fallback guidance.`,
-      citations: []
+      content,
+      citations
     };
+  } catch (error: any) {
+    console.error("Error calling Perplexity API:", error.response?.data || error.message);
+    
+    // Only use fallback for actual API failures, not for successful responses
+    if (error.response?.status === 401) {
+      throw new Error("Perplexity API authentication failed - please check API key");
+    } else if (error.response?.status === 429) {
+      throw new Error("Perplexity API rate limit exceeded - please try again later");
+    } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      throw new Error("Perplexity API request timed out - please try again");
+    }
+    
+    // For other errors, throw to be handled by the caller
+    throw new Error(`Perplexity API error: ${error.message}`);
   }
 }
 
