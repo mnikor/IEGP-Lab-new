@@ -338,86 +338,25 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
                         </div>
                         <p className="text-sm text-green-800">
                           Successfully completed {executionResults.successfulSearches} of {executionResults.totalSearches} research queries.
-                          The insights gathered will inform your concept generation.
+                          Research insights are now available in the sidebar when you generate concepts.
                         </p>
                       </div>
 
-                      {/* Research Synthesis Display */}
-                      {executionResults.synthesizedInsights && (
-                        <Card className="border-l-4 border-l-blue-500">
-                          <CardHeader>
-                            <CardTitle className="text-lg flex items-center space-x-2">
-                              <Lightbulb className="h-5 w-5 text-blue-600" />
-                              <span>Research Synthesis & Strategic Insights</span>
-                            </CardTitle>
-                            <CardDescription>
-                              AI-generated comprehensive analysis based on {executionResults.totalSearches} research queries
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="prose prose-sm max-w-none">
-                              <div 
-                                className="whitespace-pre-wrap text-sm leading-relaxed markdown-content"
-                                style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}
-                                dangerouslySetInnerHTML={{
-                                  __html: executionResults.synthesizedInsights
-                                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                    .replace(/^### (.*$)/gm, '<h3 class="font-semibold text-base mt-4 mb-2">$1</h3>')
-                                    .replace(/^## (.*$)/gm, '<h2 class="font-bold text-lg mt-4 mb-3">$1</h2>')
-                                    .replace(/^# (.*$)/gm, '<h1 class="font-bold text-xl mt-4 mb-3">$1</h1>')
-                                    .replace(/^\- (.*$)/gm, '<li class="ml-4">$1</li>')
-                                    .replace(/^• (.*$)/gm, '<li class="ml-4 list-disc">$1</li>')
-                                    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-                                    .replace(/\[(\d+)\]/g, '<span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">[$1]</span>')
-                                    .replace(/\n/g, '<br/>')
-                                }}
-                              />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
+                      {/* Compact Research Summary - No detailed display */}
+                      <Card className="border-l-4 border-l-blue-500">
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center space-x-2">
+                            <Lightbulb className="h-5 w-5 text-blue-600" />
+                            <span>Research Strategy Executed</span>
+                          </CardTitle>
+                          <CardDescription>
+                            {executionResults.totalSearches} research queries completed. 
+                            Detailed insights will appear in the research sidebar after concept generation.
+                          </CardDescription>
+                        </CardHeader>
+                      </Card>
 
-                      {/* Strategic Recommendations */}
-                      {executionResults.strategicRecommendations && (
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-base">Strategic Recommendations</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {Object.entries(executionResults.strategicRecommendations).map(([key, value]) => (
-                                <div key={key} className="p-3 bg-gray-50 rounded-lg">
-                                  <h5 className="font-medium text-sm capitalize mb-1">
-                                    {key.replace(/([A-Z])/g, ' $1').trim()}
-                                  </h5>
-                                  <p className="text-xs text-gray-700">{value as string}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
 
-                      {/* Design Implications */}
-                      {executionResults.designImplications && (
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-base">Study Design Implications</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {Object.entries(executionResults.designImplications).map(([key, value]) => (
-                                <div key={key} className="p-3 bg-blue-50 rounded-lg">
-                                  <h5 className="font-medium text-sm capitalize mb-1">
-                                    {key.replace(/([A-Z])/g, ' $1').trim()}
-                                  </h5>
-                                  <p className="text-xs text-blue-700">{value as string}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
                     </div>
                   )}
                 </div>
