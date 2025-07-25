@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { StudyConcept } from "@/lib/types";
 import ConceptCard from "./ConceptCard";
-import ResearchSidebar from "./ResearchSidebar";
-import { Download, FileDown } from "lucide-react";
+import SituationalAnalysisModal from "./SituationalAnalysisModal";
+import { Download, FileDown, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -32,7 +32,7 @@ interface ResultsSectionProps {
 const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts, researchStrategyId }) => {
   const { toast } = useToast();
   const [researchResults, setResearchResults] = useState<ResearchResult[]>([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showSituationalAnalysis, setShowSituationalAnalysis] = useState(false);
   const [loadingResearch, setLoadingResearch] = useState(false);
 
   // Fetch research results when researchStrategyId is provided
@@ -45,11 +45,6 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts, researchStrat
         const response = await apiRequest('GET', `/api/research-strategies/${researchStrategyId}/results`);
         const results = await response.json();
         setResearchResults(results);
-        
-        // Auto-open sidebar if we have research data
-        if (results && results.length > 0) {
-          setIsSidebarOpen(true);
-        }
       } catch (error) {
         console.error('Failed to fetch research results:', error);
       } finally {
@@ -127,38 +122,54 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts, researchStrat
     }
   };
 
+  // Extract drug name and indication from the first concept
+  const drugName = concepts.length > 0 ? concepts[0].drugName || 'Unknown Drug' : 'Unknown Drug';
+  const indication = concepts.length > 0 ? concepts[0].indication || 'Unknown Indication' : 'Unknown Indication';
+
   return (
     <>
-      <div className={`transition-all duration-300 ${isSidebarOpen ? 'mr-[420px]' : 'mr-0'}`}>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <h2 className="text-xl font-semibold text-neutral-dark">Generated Study Concepts</h2>
-            <div className="flex space-x-3">
-              <Button variant="outline" onClick={exportPDF}>
-                <FileDown className="mr-2 h-4 w-4" />
-                Export PDF
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <h2 className="text-xl font-semibold text-neutral-dark">Generated Study Concepts</h2>
+          <div className="flex space-x-3">
+            {/* Situational Analysis Button - only show if research data available */}
+            {researchResults.length > 0 && (
+              <Button 
+                variant="outline" 
+                onClick={() => setShowSituationalAnalysis(true)}
+                className="flex items-center space-x-2"
+              >
+                <Search className="h-4 w-4" />
+                <span>Situational Analysis</span>
               </Button>
-              <Button onClick={exportPPTX}>
-                <Download className="mr-2 h-4 w-4" />
-                {import.meta.env.MODE === 'production' ? 'Export Presentation' : 'Export PPTX'}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {concepts.map((concept, index) => (
-                <ConceptCard key={index} concept={concept} index={index + 1} />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            )}
+            <Button variant="outline" onClick={exportPDF}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Export PDF
+            </Button>
+            <Button onClick={exportPPTX}>
+              <Download className="mr-2 h-4 w-4" />
+              {import.meta.env.MODE === 'production' ? 'Export Presentation' : 'Export PPTX'}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {concepts.map((concept, index) => (
+              <ConceptCard key={index} concept={concept} index={index + 1} />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Research Sidebar */}
-      <ResearchSidebar
+      {/* Situational Analysis Modal */}
+      <SituationalAnalysisModal
+        isOpen={showSituationalAnalysis}
+        onClose={() => setShowSituationalAnalysis(false)}
+        drugName={drugName}
+        indication={indication}
         researchResults={researchResults}
-        isOpen={isSidebarOpen}
-        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        isLoading={loadingResearch}
       />
     </>
   );

@@ -262,7 +262,7 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
           <div className="text-xs text-neutral-medium">
             <p className="text-gray-600">
               {concept.evidenceSources.length} sources referenced. 
-              <span className="text-blue-600 ml-1 cursor-pointer">View research details in sidebar →</span>
+              <span className="text-blue-600 ml-1 cursor-pointer">View full analysis in Situational Analysis →</span>
             </p>
           </div>
         </div>
