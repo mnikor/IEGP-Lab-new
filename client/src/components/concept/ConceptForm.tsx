@@ -16,6 +16,8 @@ import { StudyConcept, EvidenceFile, GenerateConceptRequest, StrategicGoal, stra
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { STRATEGIC_GOALS } from "@shared/strategicGoals";
+import { ResearchStrategySection } from "@/components/concept/ResearchStrategySection";
+import type { ResearchStrategy } from "@shared/schema";
 
 interface ConceptFormProps {
   onGenerateSuccess: (concepts: StudyConcept[]) => void;
@@ -82,6 +84,8 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
   const [newComparatorDrug, setNewComparatorDrug] = useState<string>("");
   const [evidenceFiles, setEvidenceFiles] = useState<EvidenceFile[]>([]);
   const [regionalLoeDates, setRegionalLoeDates] = useState<{region: string; date: string}[]>([]);
+  const [researchStrategy, setResearchStrategy] = useState<ResearchStrategy | null>(null);
+  const [showResearchStrategy, setShowResearchStrategy] = useState<boolean>(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -747,17 +751,37 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                     />
                   </div>
                 </div>
-
-                <div className="border-t border-neutral-light pt-4 flex justify-end">
-                  <Button type="button" variant="outline" className="mr-3">
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isGenerating}>
-                    {isGenerating ? "Generating..." : "Generate Concepts"}
-                  </Button>
-                </div>
               </form>
             </Form>
+          </CardContent>
+        </Card>
+
+        {/* Research Strategy Section */}
+        <ResearchStrategySection
+          drugName={form.watch('drugName')}
+          indication={form.watch('indication')}
+          strategicGoals={selectedStrategicGoals}
+          studyPhase={form.watch('studyPhasePref')}
+          geography={selectedGeographies}
+          onStrategyGenerated={setResearchStrategy}
+        />
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="border-t border-neutral-light pt-4 flex justify-end">
+              <Button type="button" variant="outline" className="mr-3">
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                disabled={isGenerating}
+                onClick={() => {
+                  form.handleSubmit(onSubmit)();
+                }}
+              >
+                {isGenerating ? "Generating..." : "Generate Concepts"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
