@@ -249,12 +249,7 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
           />
         </div>
         
-        {/* Current Evidence */}
-        {concept.currentEvidence && (
-          <div className="mb-4">
-            <CurrentEvidence currentEvidence={concept.currentEvidence} />
-          </div>
-        )}
+        {/* Current Evidence - Removed to avoid duplication with Situational Analysis */}
 
         {/* Evidence Sources - Compact View */}
         <div>
