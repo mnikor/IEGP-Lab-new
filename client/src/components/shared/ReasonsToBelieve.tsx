@@ -30,21 +30,6 @@ interface ReasonsToBelievelProps {
 }
 
 const ReasonsToBelieve: React.FC<ReasonsToBelievelProps> = ({ reasonsToBelieve }) => {
-  const getConfidenceColor = (confidence: string) => {
-    const level = confidence?.toLowerCase();
-    if (level?.includes('high')) return 'bg-green-100 text-green-800';
-    if (level?.includes('medium')) return 'bg-yellow-100 text-yellow-800';
-    if (level?.includes('low')) return 'bg-red-100 text-red-800';
-    return 'bg-gray-100 text-gray-800';
-  };
-
-  const getConfidenceIcon = (confidence: string) => {
-    const level = confidence?.toLowerCase();
-    if (level?.includes('high')) return <CheckCircle className="h-4 w-4" />;
-    if (level?.includes('medium')) return <AlertCircle className="h-4 w-4" />;
-    if (level?.includes('low')) return <AlertCircle className="h-4 w-4" />;
-    return <Info className="h-4 w-4" />;
-  };
 
   if (!reasonsToBelieve || Object.keys(reasonsToBelieve).length === 0) {
     return null;
@@ -53,18 +38,10 @@ const ReasonsToBelieve: React.FC<ReasonsToBelievelProps> = ({ reasonsToBelieve }
   return (
     <Card className="border-l-4 border-l-green-500 bg-green-50/30">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold text-green-800 flex items-center">
-            <TrendingUp className="h-5 w-5 mr-2" />
-            Reasons to Believe
-          </CardTitle>
-          {reasonsToBelieve.overallConfidence && (
-            <Badge className={`${getConfidenceColor(reasonsToBelieve.overallConfidence)} flex items-center space-x-1`}>
-              {getConfidenceIcon(reasonsToBelieve.overallConfidence)}
-              <span>{reasonsToBelieve.overallConfidence.split(' ')[0]} Confidence</span>
-            </Badge>
-          )}
-        </div>
+        <CardTitle className="text-lg font-semibold text-green-800 flex items-center">
+          <TrendingUp className="h-5 w-5 mr-2" />
+          Reasons to Believe
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {reasonsToBelieve.scientificRationale && (
