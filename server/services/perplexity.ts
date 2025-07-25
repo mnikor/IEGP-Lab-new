@@ -23,7 +23,7 @@ async function performSingleSearch(question: string, domains: string[] | null = 
     console.log(`Performing Perplexity ${useDeepResearch ? 'Deep Research' : 'search'} with query: "${question}"`);
     
     const payload = {
-      model: useDeepResearch ? "sonar-deep-research" : "sonar",
+      model: "sonar",
       messages: [
         {
           role: "system",
@@ -49,11 +49,11 @@ Structure your response with bold headings and provide specific, actionable insi
             : question
         }
       ],
-      web_search_options: {
-        search_context_size: useDeepResearch ? "high" : "medium",
-        include_citations: true,
-        focus_web_sources: domains || []
-      },
+      return_citations: true,
+      return_images: false,
+      return_related_questions: false,
+      search_domain_filter: domains && domains.length > 0 ? domains : undefined,
+      search_recency_filter: "month",
       temperature: useDeepResearch ? 0.1 : 0.2,
       max_tokens: useDeepResearch ? 4000 : 2000,
       top_p: 0.9,
