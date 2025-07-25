@@ -152,13 +152,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }))
         };
         
+        // Update PICO population field to reflect calculated sample size
+        const correctedPicoData = {
+          ...concept.picoData,
+          population: updatePicoPopulationWithSampleSize(
+            concept.picoData?.population || "Study population",
+            feasibilityData.sampleSize,
+            concept.indication || data.indication,
+            concept.targetSubpopulation
+          )
+        };
+        
         // Make sure we explicitly include the globalLoeDate and timeToLoe in the resulting concept object
+        // CRITICAL: Remove concept.feasibilityData from spread to prevent AI hardcoded values from overriding calculations
+        const { feasibilityData: _, ...conceptWithoutFeasibilityData } = concept;
+        
         return {
-          ...concept,
+          ...conceptWithoutFeasibilityData,
           // Ensure the user-specified globalLoeDate is properly preserved at the top level
           globalLoeDate: data.globalLoeDate,
           // Also ensure the timeToLoe value is preserved at the top level
           timeToLoe: feasibilityData.timeToLoe,
+          // Use corrected PICO data with actual sample size
+          picoData: correctedPicoData,
+          // ALWAYS use calculated feasibility data, never AI-generated values
           feasibilityData: {
             ...feasibilityData,
             // Explicitly ensure ROI is included

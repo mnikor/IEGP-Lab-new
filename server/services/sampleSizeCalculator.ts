@@ -39,7 +39,7 @@ export function calculateSampleSize(concept: Partial<StudyConcept>, requestData:
   const strategicGoals = concept.strategicGoals || [];
   
   // Determine primary endpoint type based on phase and indication
-  const endpoint = determineEndpoint(studyPhase, isOncology, strategicGoals);
+  const endpoint = determineEndpoint(studyPhase, isOncology, strategicGoals, concept);
   
   // Set statistical parameters based on phase
   const parameters = getStatisticalParameters(studyPhase, isOncology);
@@ -121,7 +121,8 @@ function isOncologyIndication(indication: string): boolean {
 function determineEndpoint(
   studyPhase: string, 
   isOncology: boolean, 
-  strategicGoals: string[]
+  strategicGoals: string[],
+  concept?: Partial<StudyConcept>
 ): EndpointParameters {
   
   if (studyPhase === 'I') {
@@ -158,11 +159,59 @@ function determineEndpoint(
         hazardRatio: 0.67 // 33% reduction in hazard
       };
     } else {
+      // Add study-specific variability for Phase III non-oncology studies
+      const studyTitle = concept?.title || '';
+      const studyDesign = concept?.picoData?.intervention || '';
+      const targetSubpopulation = concept?.targetSubpopulation || '';
+      const comparatorDrugs = concept?.comparatorDrugs || [];
+      
+      // Vary effect size based on study characteristics
+      let effectSize = 0.3; // Base effect size
+      let standardDeviation = 1.0;
+      
+      // Combination therapy studies typically show larger effects
+      if (studyTitle.toLowerCase().includes('combination') || 
+          studyDesign.toLowerCase().includes('combination') ||
+          comparatorDrugs.length > 0) {
+        effectSize = 0.4; // Larger effect size for combination studies
+      }
+      
+      // Biologic-experienced populations are harder to treat (smaller effect)
+      if (studyTitle.toLowerCase().includes('experienced') || 
+          studyTitle.toLowerCase().includes('refractory') ||
+          targetSubpopulation.toLowerCase().includes('experienced')) {
+        effectSize = 0.25; // Smaller effect size for difficult populations
+        standardDeviation = 1.2; // Higher variability
+      }
+      
+      // Early intervention studies may show different responses
+      if (studyTitle.toLowerCase().includes('early') || 
+          studyTitle.toLowerCase().includes('mild') ||
+          targetSubpopulation.toLowerCase().includes('early')) {
+        effectSize = 0.35; // Moderate effect size for early intervention
+        standardDeviation = 0.9; // Lower variability in less severe patients
+      }
+      
+      // Head-to-head comparisons need to detect smaller differences
+      if (studyTitle.toLowerCase().includes('head-to-head') ||
+          studyTitle.toLowerCase().includes('versus') ||
+          studyTitle.toLowerCase().includes('vs.')) {
+        effectSize = 0.2; // Smaller effect size for active comparator studies
+      }
+      
+      // Studies targeting specific biomarkers or mechanisms
+      if (strategicGoals.includes('validate_biomarker') ||
+          studyTitle.toLowerCase().includes('biomarker') ||
+          targetSubpopulation.includes('positive')) {
+        effectSize = 0.45; // Larger effect in biomarker-selected populations
+        standardDeviation = 0.8; // Less variability in selected populations
+      }
+      
       return {
         type: 'continuous',
         baseline: 0,
-        target: 0.3,    // 0.3 effect size for phase III
-        standardDeviation: 1.0
+        target: effectSize,
+        standardDeviation: standardDeviation
       };
     }
   }
