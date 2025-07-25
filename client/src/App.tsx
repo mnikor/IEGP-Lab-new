@@ -10,6 +10,7 @@ import ValidateStudyIdea from "@/pages/validate-study-idea";
 import Reports from "@/pages/reports";
 import TournamentList from "@/pages/TournamentList";
 import TournamentView from "@/pages/TournamentView";
+import ResearchStrategyPage from "@/pages/ResearchStrategyPage";
 import { TournamentProvider } from "@/context/TournamentContext";
 
 function Router() {
@@ -47,6 +48,7 @@ function Router() {
             </TournamentProvider>
           )}
         </Route>
+        <Route path="/research-strategy" component={ResearchStrategyPage} />
 
         <Route component={NotFound} />
       </Switch>

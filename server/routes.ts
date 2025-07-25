@@ -18,6 +18,13 @@ import type { ConceptWithFeasibility } from "./services/feasibilityCalculator";
 import { scoreMcda } from "./services/mcdaScorer";
 import { generateSwot } from "./services/swotGenerator";
 import { generatePdfReport, generatePptxReport, generateValidationPdfReport } from "./services/reportBuilder";
+import { ResearchStrategyGenerator } from "./services/researchStrategyGenerator";
+import { ResearchExecutor } from "./services/researchExecutor";
+import { 
+  researchStrategyRequestSchema, 
+  amendStrategyRequestSchema, 
+  executeStrategyRequestSchema 
+} from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure multer for file uploads
@@ -544,6 +551,201 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating validation PDF:", error);
       res.status(500).json({ message: "Failed to generate validation PDF report" });
+    }
+  });
+
+  // Research Strategy API endpoints
+  const researchStrategyGenerator = new ResearchStrategyGenerator();
+  const researchExecutor = new ResearchExecutor();
+
+  // Generate AI-driven research strategy
+  app.post("/api/research-strategies/generate", async (req, res) => {
+    try {
+      const validationResult = researchStrategyRequestSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid request data",
+          errors: validationResult.error.errors
+        });
+      }
+
+      const data = validationResult.data;
+      const sessionId = data.sessionId || `session_${Date.now()}`;
+
+      // Generate AI strategy
+      const strategy = await researchStrategyGenerator.generateStrategy({
+        drugName: data.drugName,
+        indication: data.indication,
+        strategicGoals: data.strategicGoals,
+        studyPhase: data.studyPhase,
+        geography: data.geography
+      });
+
+      // Save to storage
+      const researchStrategy = await storage.createResearchStrategy({
+        sessionId,
+        drugName: data.drugName,
+        indication: data.indication,
+        strategicGoals: data.strategicGoals,
+        studyPhase: data.studyPhase,
+        geography: data.geography,
+        proposedSearches: strategy.searches,
+        aiRationale: strategy.rationale,
+        status: "proposed"
+      });
+
+      res.json(researchStrategy);
+    } catch (error) {
+      console.error("Error generating research strategy:", error);
+      res.status(500).json({ message: "Failed to generate research strategy" });
+    }
+  });
+
+  // Get research strategy by ID
+  app.get("/api/research-strategies/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const strategy = await storage.getResearchStrategy(id);
+      
+      if (!strategy) {
+        return res.status(404).json({ message: "Research strategy not found" });
+      }
+
+      res.json(strategy);
+    } catch (error) {
+      console.error("Error fetching research strategy:", error);
+      res.status(500).json({ message: "Failed to fetch research strategy" });
+    }
+  });
+
+  // Get research strategies by session
+  app.get("/api/research-strategies/session/:sessionId", async (req, res) => {
+    try {
+      const sessionId = req.params.sessionId;
+      const strategies = await storage.getResearchStrategiesBySession(sessionId);
+      res.json(strategies);
+    } catch (error) {
+      console.error("Error fetching research strategies:", error);
+      res.status(500).json({ message: "Failed to fetch research strategies" });
+    }
+  });
+
+  // Amend research strategy (user modifications)
+  app.post("/api/research-strategies/amend", async (req, res) => {
+    try {
+      const validationResult = amendStrategyRequestSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid amendment data",
+          errors: validationResult.error.errors
+        });
+      }
+
+      const { strategyId, modifiedSearches, userNotes } = validationResult.data;
+      
+      const existing = await storage.getResearchStrategy(strategyId);
+      if (!existing) {
+        return res.status(404).json({ message: "Research strategy not found" });
+      }
+
+      // Track amendment history
+      const amendmentHistory = existing.amendmentHistory || [];
+      amendmentHistory.push({
+        timestamp: new Date().toISOString(),
+        originalSearches: existing.proposedSearches,
+        modifiedSearches: modifiedSearches,
+        userNotes: userNotes
+      });
+
+      const updated = await storage.updateResearchStrategy(strategyId, {
+        userModifiedSearches: modifiedSearches,
+        userNotes,
+        amendmentHistory,
+        status: "amended"
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error amending research strategy:", error);
+      res.status(500).json({ message: "Failed to amend research strategy" });
+    }
+  });
+
+  // Execute research strategy
+  app.post("/api/research-strategies/execute", async (req, res) => {
+    try {
+      const validationResult = executeStrategyRequestSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid execution request",
+          errors: validationResult.error.errors
+        });
+      }
+
+      const { strategyId } = validationResult.data;
+      
+      const strategy = await storage.getResearchStrategy(strategyId);
+      if (!strategy) {
+        return res.status(404).json({ message: "Research strategy not found" });
+      }
+
+      // Use user-modified searches if available, otherwise use proposed searches
+      const searchesToExecute = strategy.userModifiedSearches || strategy.proposedSearches;
+
+      // Execute the research strategy
+      const executionResult = await researchExecutor.executeStrategy({
+        strategyId,
+        searches: searchesToExecute
+      });
+
+      // Save results to storage
+      const resultPromises = executionResult.results.map(result => 
+        storage.createResearchResult({
+          strategyId: result.strategyId,
+          searchQuery: result.searchQuery,
+          searchType: result.searchType,
+          priority: result.priority,
+          rawResults: result.rawResults,
+          synthesizedInsights: result.synthesizedInsights,
+          keyFindings: result.keyFindings,
+          designImplications: result.designImplications,
+          strategicRecommendations: result.strategicRecommendations
+        })
+      );
+
+      await Promise.all(resultPromises);
+
+      // Update strategy as executed
+      await storage.updateResearchStrategy(strategyId, {
+        status: "executed",
+        executedAt: new Date().toISOString()
+      });
+
+      res.json({
+        strategyId,
+        status: "executed",
+        synthesizedInsights: executionResult.synthesizedInsights,
+        designImplications: executionResult.designImplications,
+        strategicRecommendations: executionResult.strategicRecommendations,
+        totalSearches: executionResult.results.length,
+        successfulSearches: executionResult.results.filter(r => !r.rawResults.error).length
+      });
+
+    } catch (error) {
+      console.error("Error executing research strategy:", error);
+      res.status(500).json({ message: "Failed to execute research strategy" });
+    }
+  });
+
+  // Get research results for a strategy
+  app.get("/api/research-strategies/:id/results", async (req, res) => {
+    try {
+      const strategyId = parseInt(req.params.id);
+      const results = await storage.getResearchResultsByStrategy(strategyId);
+      res.json(results);
+    } catch (error) {
+      console.error("Error fetching research results:", error);
+      res.status(500).json({ message: "Failed to fetch research results" });
     }
   });
 

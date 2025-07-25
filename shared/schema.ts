@@ -188,6 +188,94 @@ export const validateSynopsisRequestSchema = z.object({
   hasPatentExtensionPotential: z.boolean().optional(),
 });
 
+// Research Strategy models
+export const researchStrategies = pgTable("research_strategies", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull(), // Links to concept generation session
+  drugName: text("drug_name").notNull(),
+  indication: text("indication").notNull(),
+  strategicGoals: text("strategic_goals").array().notNull(),
+  studyPhase: text("study_phase").notNull(),
+  geography: text("geography").array().notNull(),
+  
+  // AI-generated strategy
+  proposedSearches: json("proposed_searches").notNull(), // Array of SearchItem objects
+  aiRationale: text("ai_rationale").notNull(),
+  
+  // User amendments
+  userModifiedSearches: json("user_modified_searches"), // User's final version
+  userNotes: text("user_notes"),
+  amendmentHistory: json("amendment_history"), // Track changes made
+  
+  // Status tracking
+  status: text("status").notNull().default("proposed"), // proposed, amended, approved, executed
+  approvedAt: timestamp("approved_at"),
+  executedAt: timestamp("executed_at"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const researchResults = pgTable("research_results", {
+  id: serial("id").primaryKey(),
+  strategyId: serial("strategy_id").references(() => researchStrategies.id),
+  searchQuery: text("search_query").notNull(),
+  searchType: text("search_type").notNull(), // "core", "strategic", "therapeutic", "phase"
+  priority: integer("priority").notNull().default(5),
+  
+  // Search results
+  rawResults: json("raw_results").notNull(), // Raw Perplexity response
+  synthesizedInsights: text("synthesized_insights").notNull(),
+  keyFindings: json("key_findings").notNull(), // Array of structured findings
+  
+  // Impact on study design
+  designImplications: json("design_implications"), // Impact on sample size, timeline, etc.
+  strategicRecommendations: json("strategic_recommendations"), // Business recommendations
+  
+  executedAt: timestamp("executed_at").defaultNow().notNull(),
+});
+
+export const insertResearchStrategySchema = createInsertSchema(researchStrategies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertResearchResultSchema = createInsertSchema(researchResults).omit({
+  id: true,
+  executedAt: true,
+});
+
+// Search item validation schema
+export const searchItemSchema = z.object({
+  id: z.string(),
+  query: z.string(),
+  type: z.enum(["core", "strategic", "therapeutic", "phase"]),
+  priority: z.number().min(1).max(10).default(5),
+  rationale: z.string(),
+  enabled: z.boolean().default(true),
+  userModified: z.boolean().default(false),
+});
+
+export const researchStrategyRequestSchema = z.object({
+  drugName: z.string().min(1),
+  indication: z.string().min(1),
+  strategicGoals: z.array(z.string()).min(1),
+  studyPhase: z.string(),
+  geography: z.array(z.string()).min(1),
+  sessionId: z.string().optional(),
+});
+
+export const amendStrategyRequestSchema = z.object({
+  strategyId: z.number(),
+  modifiedSearches: z.array(searchItemSchema),
+  userNotes: z.string().optional(),
+});
+
+export const executeStrategyRequestSchema = z.object({
+  strategyId: z.number(),
+});
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -198,3 +286,11 @@ export type InsertSynopsisValidation = z.infer<typeof insertSynopsisValidationSc
 export type GenerateConceptRequest = z.infer<typeof generateConceptRequestSchema>;
 export type ValidateSynopsisRequest = z.infer<typeof validateSynopsisRequestSchema>;
 export type AIModel = z.infer<typeof aiModelSchema>;
+export type ResearchStrategy = typeof researchStrategies.$inferSelect;
+export type InsertResearchStrategy = z.infer<typeof insertResearchStrategySchema>;
+export type ResearchResult = typeof researchResults.$inferSelect;
+export type InsertResearchResult = z.infer<typeof insertResearchResultSchema>;
+export type SearchItem = z.infer<typeof searchItemSchema>;
+export type ResearchStrategyRequest = z.infer<typeof researchStrategyRequestSchema>;
+export type AmendStrategyRequest = z.infer<typeof amendStrategyRequestSchema>;
+export type ExecuteStrategyRequest = z.infer<typeof executeStrategyRequestSchema>;

@@ -1,4 +1,4 @@
-import { users, type User, type InsertUser, studyConcepts, synopsisValidations, type StudyConcept, type InsertStudyConcept, type SynopsisValidation, type InsertSynopsisValidation } from "@shared/schema";
+import { users, type User, type InsertUser, studyConcepts, synopsisValidations, type StudyConcept, type InsertStudyConcept, type SynopsisValidation, type InsertSynopsisValidation, type ResearchStrategy, type InsertResearchStrategy, type ResearchResult, type InsertResearchResult } from "@shared/schema";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -65,6 +65,19 @@ export interface IStorage {
   getTournamentRoundsByTournament(tournamentId: number): Promise<TournamentRound[]>;
   getTournamentRoundByTournamentAndRound(tournamentId: number, roundNumber: number): Promise<TournamentRound | undefined>;
   deleteTournamentRound(id: number): Promise<boolean>;
+  
+  // Research Strategy methods
+  createResearchStrategy(strategy: InsertResearchStrategy): Promise<ResearchStrategy>;
+  getResearchStrategy(id: number): Promise<ResearchStrategy | undefined>;
+  getResearchStrategiesBySession(sessionId: string): Promise<ResearchStrategy[]>;
+  updateResearchStrategy(id: number, strategy: Partial<InsertResearchStrategy>): Promise<ResearchStrategy | undefined>;
+  deleteResearchStrategy(id: number): Promise<boolean>;
+  
+  // Research Result methods
+  createResearchResult(result: InsertResearchResult): Promise<ResearchResult>;
+  getResearchResult(id: number): Promise<ResearchResult | undefined>;
+  getResearchResultsByStrategy(strategyId: number): Promise<ResearchResult[]>;
+  deleteResearchResult(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -75,6 +88,8 @@ export class MemStorage implements IStorage {
   private ideas: Map<string, Idea>;
   private reviews: Map<number, Review>;
   private tournamentRounds: Map<number, TournamentRound>;
+  private researchStrategies: Map<number, ResearchStrategy>;
+  private researchResults: Map<number, ResearchResult>;
   
   private userId: number;
   private conceptId: number;
@@ -82,6 +97,8 @@ export class MemStorage implements IStorage {
   private tournamentId: number;
   private reviewId: number;
   private tournamentRoundId: number;
+  private researchStrategyId: number;
+  private researchResultId: number;
 
   constructor() {
     this.users = new Map();
@@ -91,6 +108,8 @@ export class MemStorage implements IStorage {
     this.ideas = new Map();
     this.reviews = new Map();
     this.tournamentRounds = new Map();
+    this.researchStrategies = new Map();
+    this.researchResults = new Map();
     
     this.userId = 1;
     this.conceptId = 1;
@@ -98,6 +117,8 @@ export class MemStorage implements IStorage {
     this.tournamentId = 1;
     this.reviewId = 1;
     this.tournamentRoundId = 1;
+    this.researchStrategyId = 1;
+    this.researchResultId = 1;
     
     // Add some mock data for testing
     this.addMockData();
@@ -996,6 +1017,73 @@ export class MemStorage implements IStorage {
     // Add the sample concept and validation data
     this.createStudyConcept(sampleConcept);
     this.createSynopsisValidation(sampleValidation);
+  }
+  
+  // Research Strategy methods
+  async createResearchStrategy(strategy: InsertResearchStrategy): Promise<ResearchStrategy> {
+    const id = this.researchStrategyId++;
+    const now = new Date().toISOString();
+    const researchStrategy: ResearchStrategy = { 
+      ...strategy, 
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.researchStrategies.set(id, researchStrategy);
+    return researchStrategy;
+  }
+
+  async getResearchStrategy(id: number): Promise<ResearchStrategy | undefined> {
+    return this.researchStrategies.get(id);
+  }
+
+  async getResearchStrategiesBySession(sessionId: string): Promise<ResearchStrategy[]> {
+    return Array.from(this.researchStrategies.values())
+      .filter(strategy => strategy.sessionId === sessionId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async updateResearchStrategy(id: number, strategy: Partial<InsertResearchStrategy>): Promise<ResearchStrategy | undefined> {
+    const existing = this.researchStrategies.get(id);
+    if (!existing) return undefined;
+    
+    const updated: ResearchStrategy = {
+      ...existing,
+      ...strategy,
+      updatedAt: new Date().toISOString()
+    };
+    this.researchStrategies.set(id, updated);
+    return updated;
+  }
+
+  async deleteResearchStrategy(id: number): Promise<boolean> {
+    return this.researchStrategies.delete(id);
+  }
+
+  // Research Result methods
+  async createResearchResult(result: InsertResearchResult): Promise<ResearchResult> {
+    const id = this.researchResultId++;
+    const researchResult: ResearchResult = { 
+      ...result, 
+      id,
+      executedAt: new Date().toISOString()
+    };
+    this.researchResults.set(id, researchResult);
+    return researchResult;
+  }
+
+  async getResearchResult(id: number): Promise<ResearchResult | undefined> {
+    return this.researchResults.get(id);
+  }
+
+  async getResearchResultsByStrategy(strategyId: number): Promise<ResearchResult[]> {
+    return Array.from(this.researchResults.values())
+      .filter(result => result.strategyId === strategyId)
+      .sort((a, b) => result.priority - result.priority);
+  }
+
+  async deleteResearchResult(id: number): Promise<boolean> {
+    return this.researchResults.delete(id);
   }
 }
 
