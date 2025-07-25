@@ -58,10 +58,18 @@ export class ResearchExecutor {
     console.log(`Executing search: ${search.query}`);
     
     try {
-      // Execute Perplexity search
-      console.log(`Starting Perplexity search for: "${search.query}"`);
-      const perplexityResult = await perplexityWebSearch(search.query);
-      console.log(`Perplexity search completed for: "${search.query}"`);
+      // Execute Perplexity Deep Research for comprehensive results
+      console.log(`Starting Perplexity Deep Research for: "${search.query}"`);
+      const perplexityResult = await perplexityWebSearch(search.query, [
+        "pubmed.ncbi.nlm.nih.gov",
+        "clinicaltrials.gov",
+        "fda.gov",
+        "ema.europa.eu",
+        "nejm.org",
+        "thelancet.com",
+        "jamanetwork.com"
+      ], true); // Enable deep research mode
+      console.log(`Perplexity Deep Research completed for: "${search.query}"`);
       
       // Process and structure the results
       const synthesizedInsights = this.processSingleSearchResult(search, perplexityResult);

@@ -98,7 +98,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Use existing research strategy results to avoid duplicate searches
         console.log("Using existing research strategy results:", data.researchStrategyId);
         try {
-          const researchResults = await storage.getResearchResults(data.researchStrategyId);
+          const researchResults = await storage.getResearchResultsByStrategy(data.researchStrategyId);
           if (researchResults && researchResults.length > 0) {
             // Synthesize research results into a comprehensive evidence base
             const synthesizedEvidence = researchResults

@@ -10,36 +10,48 @@ interface PerplexitySearchResult {
  * 
  * @param question The search query to send to Perplexity
  * @param domains Optional array of domains to focus search on
+ * @param useDeepResearch Whether to use deep research mode for more comprehensive results
  * @returns The search response content and citations
  */
-async function performSingleSearch(question: string, domains: string[] | null = null): Promise<PerplexitySearchResult> {
+async function performSingleSearch(question: string, domains: string[] | null = null, useDeepResearch: boolean = false): Promise<PerplexitySearchResult> {
   try {
     const apiKey = process.env.PERPLEXITY_API_KEY;
     if (!apiKey) {
       throw new Error("PERPLEXITY_API_KEY environment variable not found");
     }
 
-    console.log(`Performing Perplexity search with query: "${question}"`);
+    console.log(`Performing Perplexity ${useDeepResearch ? 'Deep Research' : 'search'} with query: "${question}"`);
     
     const payload = {
-      model: "sonar",
+      model: useDeepResearch ? "sonar-reasoning" : "sonar",
       messages: [
         {
           role: "system",
-          content: "You are a clinical research expert. Provide detailed, evidence-based information from reputable sources. Include citations for all claims and prioritize recent studies and high-quality evidence."
+          content: useDeepResearch 
+            ? "You are a senior clinical research expert conducting comprehensive analysis. Provide exhaustive, evidence-based information from multiple reputable sources. Include detailed citations, analyze conflicting evidence, identify research gaps, and provide strategic insights. Structure your response with clear sections and actionable recommendations."
+            : "You are a clinical research expert. Provide detailed, evidence-based information from reputable sources. Include citations for all claims and prioritize recent studies and high-quality evidence."
         },
         {
           role: "user",
-          content: question
+          content: useDeepResearch 
+            ? `Conduct a comprehensive research analysis on: ${question}. Please provide:
+1. Current state of evidence
+2. Key findings from recent studies
+3. Regulatory landscape and precedents
+4. Market dynamics and competitive positioning
+5. Risk factors and mitigation strategies
+6. Strategic recommendations for clinical development
+7. Gaps in current research that need addressing`
+            : question
         }
       ],
       web_search_options: {
-        search_context_size: "medium",
+        search_context_size: useDeepResearch ? "large" : "medium",
         include_citations: true,
         focus_web_sources: domains || []
       },
-      temperature: 0.2,
-      max_tokens: 2000,
+      temperature: useDeepResearch ? 0.1 : 0.2,
+      max_tokens: useDeepResearch ? 4000 : 2000,
       top_p: 0.9,
       stream: false,
       frequency_penalty: 1
@@ -101,13 +113,13 @@ async function performSingleSearch(question: string, domains: string[] | null = 
  * @param domains Optional array of domains to focus search on
  * @returns The combined search results with consolidated citations
  */
-export async function perplexityWebSearch(baseQuery: string, domains: string[] | null = null): Promise<PerplexitySearchResult> {
+export async function perplexityWebSearch(baseQuery: string, domains: string[] | null = null, useDeepResearch: boolean = false): Promise<PerplexitySearchResult> {
   try {
     // Use only the base query to avoid complex query construction issues
-    console.log("Starting simplified Perplexity search...");
+    console.log(`Starting ${useDeepResearch ? 'Perplexity Deep Research' : 'simplified Perplexity search'}...`);
     
-    // Use a single, clean search query
-    const result = await performSingleSearch(baseQuery, domains);
+    // Use a single, clean search query with optional deep research
+    const result = await performSingleSearch(baseQuery, domains, useDeepResearch);
     return result;
   } catch (error) {
     console.error("Error in Perplexity search:", error);
@@ -132,4 +144,15 @@ export async function perplexityWebSearch(baseQuery: string, domains: string[] |
       citations: []
     };
   }
+}
+
+/**
+ * Specialized function for deep research analysis
+ * 
+ * @param question The research question
+ * @param domains Optional array of domains to focus search on
+ * @returns Promise containing comprehensive research results
+ */
+export async function perplexityDeepResearch(question: string, domains?: string[]): Promise<PerplexitySearchResult> {
+  return perplexityWebSearch(question, domains, true);
 }
