@@ -330,15 +330,84 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
                   </Button>
 
                   {executionResults && (
-                    <div className="p-4 bg-green-50 rounded-lg">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
-                        <h4 className="font-medium text-green-900">Research Complete</h4>
+                    <div className="space-y-4">
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          <h4 className="font-medium text-green-900">Research Complete</h4>
+                        </div>
+                        <p className="text-sm text-green-800">
+                          Successfully completed {executionResults.successfulSearches} of {executionResults.totalSearches} research queries.
+                          The insights gathered will inform your concept generation.
+                        </p>
                       </div>
-                      <p className="text-sm text-green-800">
-                        Successfully completed {executionResults.successfulSearches} of {executionResults.totalSearches} research queries.
-                        The insights gathered will inform your concept generation.
-                      </p>
+
+                      {/* Research Synthesis Display */}
+                      {executionResults.synthesizedInsights && (
+                        <Card className="border-l-4 border-l-blue-500">
+                          <CardHeader>
+                            <CardTitle className="text-lg flex items-center space-x-2">
+                              <Lightbulb className="h-5 w-5 text-blue-600" />
+                              <span>Research Synthesis & Strategic Insights</span>
+                            </CardTitle>
+                            <CardDescription>
+                              AI-generated comprehensive analysis based on {executionResults.totalSearches} research queries
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="prose prose-sm max-w-none">
+                              <div 
+                                className="whitespace-pre-wrap text-sm leading-relaxed"
+                                style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}
+                              >
+                                {executionResults.synthesizedInsights}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Strategic Recommendations */}
+                      {executionResults.strategicRecommendations && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base">Strategic Recommendations</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {Object.entries(executionResults.strategicRecommendations).map(([key, value]) => (
+                                <div key={key} className="p-3 bg-gray-50 rounded-lg">
+                                  <h5 className="font-medium text-sm capitalize mb-1">
+                                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                                  </h5>
+                                  <p className="text-xs text-gray-700">{value as string}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Design Implications */}
+                      {executionResults.designImplications && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base">Study Design Implications</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {Object.entries(executionResults.designImplications).map(([key, value]) => (
+                                <div key={key} className="p-3 bg-blue-50 rounded-lg">
+                                  <h5 className="font-medium text-sm capitalize mb-1">
+                                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                                  </h5>
+                                  <p className="text-xs text-blue-700">{value as string}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
                   )}
                 </div>
