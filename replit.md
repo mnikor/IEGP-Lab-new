@@ -19,6 +19,7 @@ A comprehensive clinical study concept generation and validation application fea
 - ✓ **Dynamic SWOT Analysis**: Replaced generic templates with intelligent, context-aware analysis using therapeutic area expertise and market intelligence
 - ✓ **Integrated Cost Modeling**: Applied therapeutic area cost multipliers for realistic Phase III biologics costs (€15-50M+ range)
 - ✓ **Data-Driven Analysis**: Enhanced all calculations to be based on study characteristics rather than hardcoded examples
+- ✓ **Research Strategy Integration**: Seamlessly integrated AI-driven research strategy functionality into ConceptForm workflow with Perplexity API execution and OpenAI synthesis
 
 ## Project Architecture
 
@@ -42,6 +43,8 @@ A comprehensive clinical study concept generation and validation application fea
 - **SimpliciticyAgent**: Complexity penalty algorithm to reduce overengineering
 - **SampleSizeCalculator**: Statistical power analysis with therapeutic area adjustments
 - **SwotGenerator**: Dynamic SWOT analysis using therapeutic area expertise and market intelligence
+- **ResearchStrategyGenerator**: AI-driven research strategy generation with targeted query creation
+- **ResearchExecutor**: Perplexity API integration for real-time research execution and OpenAI synthesis
 - **Aggregator**: Data synthesis and final concept optimization
 
 ### Database Schema

@@ -48,7 +48,7 @@ export class ResearchExecutor {
         strategicRecommendations
       };
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error executing research strategy:', error);
       throw new Error(`Research execution failed: ${error.message}`);
     }
@@ -80,7 +80,7 @@ export class ResearchExecutor {
       return {
         ...result,
         id: Date.now() + Math.random(), // Temporary ID
-        executedAt: new Date().toISOString()
+        executedAt: new Date()
       };
       
     } catch (error) {
@@ -93,12 +93,12 @@ export class ResearchExecutor {
         searchQuery: search.query,
         searchType: search.type,
         priority: search.priority,
-        rawResults: { error: error.message },
-        synthesizedInsights: `Search failed: ${error.message}`,
+        rawResults: { error: (error as any).message },
+        synthesizedInsights: `Search failed: ${(error as any).message}`,
         keyFindings: [],
         designImplications: null,
         strategicRecommendations: null,
-        executedAt: new Date().toISOString()
+        executedAt: new Date()
       };
     }
   }
@@ -125,7 +125,7 @@ export class ResearchExecutor {
       therapeutic: "🏥 THERAPEUTIC AREA INTELLIGENCE",
       phase: "⚗️ PHASE-SPECIFIC INTELLIGENCE"
     };
-    return contexts[type] || "📊 RESEARCH INTELLIGENCE";
+    return contexts[type as keyof typeof contexts] || "📊 RESEARCH INTELLIGENCE";
   }
 
   private extractKeyFindings(perplexityResult: any): any[] {
@@ -180,19 +180,95 @@ export class ResearchExecutor {
   }
 
   private async synthesizeResults(results: ResearchResult[]): Promise<string> {
-    const successfulResults = results.filter(r => !r.rawResults.error);
+    const successfulResults = results.filter(r => !(r.rawResults as any)?.error);
+    
+    console.log(`Synthesizing ${successfulResults.length} successful results out of ${results.length} total searches`);
     
     if (successfulResults.length === 0) {
+      console.error("No successful research results to synthesize");
       return "❌ No successful research results to synthesize. Please check search queries and try again.";
     }
 
-    // Combine insights by priority and type
-    const coreInsights = successfulResults.filter(r => r.searchType === 'core');
-    const strategicInsights = successfulResults.filter(r => r.searchType === 'strategic');
-    const therapeuticInsights = successfulResults.filter(r => r.searchType === 'therapeutic');
-    const phaseInsights = successfulResults.filter(r => r.searchType === 'phase');
+    // Use OpenAI to create a comprehensive synthesis
+    try {
+      const openai = new (await import('openai')).default({ apiKey: process.env.OPENAI_API_KEY });
+      
+      // Prepare content for synthesis
+      const contentForSynthesis = successfulResults.map(result => ({
+        query: result.searchQuery,
+        type: result.searchType,
+        priority: result.priority,
+        insights: result.synthesizedInsights,
+        findings: result.keyFindings
+      }));
 
-    let synthesis = "# RESEARCH SYNTHESIS\n\n";
+      const synthesisResponse = await openai.chat.completions.create({
+        // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a clinical research strategist synthesizing multiple research findings into actionable insights for study design. Create a comprehensive, well-structured synthesis that provides clear recommendations for study design decisions.
+
+Your synthesis should:
+1. Organize findings by strategic importance
+2. Highlight key design implications 
+3. Identify specific actionable recommendations
+4. Note any conflicts or gaps in the research
+5. Provide concrete guidance for next steps
+
+Structure your response as a detailed research synthesis with clear headings and bullet points.`
+          },
+          {
+            role: "user",
+            content: `Please synthesize the following research findings into a comprehensive research synthesis:
+
+${JSON.stringify(contentForSynthesis, null, 2)}
+
+Create a detailed synthesis that will inform study design decisions and strategic planning.`
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 3000
+      });
+
+      const aiSynthesis = synthesisResponse.choices[0].message.content || "";
+      
+      // Add summary statistics
+      const synthesisWithStats = `# RESEARCH SYNTHESIS
+*Based on ${successfulResults.length} successful research queries across ${[...new Set(successfulResults.map(r => r.searchType))].length} intelligence areas*
+
+${aiSynthesis}
+
+---
+## Research Execution Summary
+- **Total Searches Executed**: ${results.length}
+- **Successful Searches**: ${successfulResults.length}
+- **Failed Searches**: ${results.length - successfulResults.length}
+- **Intelligence Areas Covered**: ${[...new Set(successfulResults.map(r => r.searchType))].join(', ')}
+- **High Priority Findings**: ${successfulResults.filter(r => r.priority >= 8).length}`;
+
+      return synthesisWithStats;
+      
+    } catch (error) {
+      console.error('Error creating AI synthesis, falling back to basic synthesis:', error);
+      
+      // Fallback to basic synthesis if AI fails
+      return this.createBasicSynthesis(successfulResults);
+    }
+  }
+
+  private createBasicSynthesis(results: ResearchResult[]): string {
+    // Combine insights by priority and type
+    const coreInsights = results.filter(r => r.searchType === 'core');
+    const strategicInsights = results.filter(r => r.searchType === 'strategic');
+    const therapeuticInsights = results.filter(r => r.searchType === 'therapeutic');
+    const phaseInsights = results.filter(r => r.searchType === 'phase');
+
+    let synthesis = `# RESEARCH SYNTHESIS
+*Based on ${results.length} successful research queries*
+
+`;
     
     if (coreInsights.length > 0) {
       synthesis += "## 📋 FOUNDATIONAL INTELLIGENCE\n";

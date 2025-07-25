@@ -1079,7 +1079,7 @@ export class MemStorage implements IStorage {
   async getResearchResultsByStrategy(strategyId: number): Promise<ResearchResult[]> {
     return Array.from(this.researchResults.values())
       .filter(result => result.strategyId === strategyId)
-      .sort((a, b) => result.priority - result.priority);
+      .sort((a, b) => b.priority - a.priority);
   }
 
   async deleteResearchResult(id: number): Promise<boolean> {
