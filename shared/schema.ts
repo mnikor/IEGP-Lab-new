@@ -223,7 +223,7 @@ export const researchResults = pgTable("research_results", {
   id: serial("id").primaryKey(),
   strategyId: serial("strategy_id").references(() => researchStrategies.id),
   searchQuery: text("search_query").notNull(),
-  searchType: text("search_type").notNull(), // "core", "strategic", "therapeutic", "phase"
+  searchType: text("search_type").notNull(), // "core", "competitive", "regulatory", "strategic", "therapeutic"
   priority: integer("priority").notNull().default(5),
   
   // Search results
@@ -253,7 +253,7 @@ export const insertResearchResultSchema = createInsertSchema(researchResults).om
 export const searchItemSchema = z.object({
   id: z.string(),
   query: z.string(),
-  type: z.enum(["core", "strategic", "therapeutic", "phase"]),
+  type: z.enum(["core", "competitive", "regulatory", "strategic", "therapeutic"]),
   priority: z.number().min(1).max(10).default(5),
   rationale: z.string(),
   enabled: z.boolean().default(true),

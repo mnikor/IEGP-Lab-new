@@ -54,21 +54,92 @@ export class ResearchExecutor {
     }
   }
 
+  /**
+   * Enhance search query based on search type for more targeted results
+   */
+  private enhanceQueryForSearchType(search: SearchItem): string {
+    const baseQuery = search.query;
+    
+    switch (search.type) {
+      case 'competitive':
+        // Add specific terms for finding ongoing trials and competitive intelligence
+        return `${baseQuery} ongoing active recruiting trials NCT numbers ClinicalTrials.gov 2024 2025 pipeline status`;
+      
+      case 'regulatory':
+        // Focus on regulatory guidance and precedents
+        return `${baseQuery} FDA guidance draft guidance regulatory precedents approval pathway`;
+      
+      case 'strategic':
+        // Business and market intelligence focus
+        return `${baseQuery} market access payer evidence health economics outcomes`;
+      
+      case 'therapeutic':
+        // Clinical and medical focus
+        return `${baseQuery} clinical evidence medical guidelines treatment patterns`;
+      
+      case 'core':
+      default:
+        // Keep core searches broad but add recent filter
+        return `${baseQuery} recent studies 2024 evidence`;
+    }
+  }
+
+  /**
+   * Get targeted domains based on search type
+   */
+  private getSearchDomains(searchType: string): string[] {
+    const baseDomains = [
+      "pubmed.ncbi.nlm.nih.gov",
+      "clinicaltrials.gov",
+      "fda.gov",
+      "ema.europa.eu"
+    ];
+
+    switch (searchType) {
+      case 'competitive':
+        return [
+          "clinicaltrials.gov",
+          "globaldata.com",
+          "biopharmadive.com",
+          "fiercepharma.com",
+          "pubmed.ncbi.nlm.nih.gov"
+        ];
+      
+      case 'regulatory':
+        return [
+          "fda.gov",
+          "ema.europa.eu",
+          "federalregister.gov",
+          "pubmed.ncbi.nlm.nih.gov"
+        ];
+      
+      case 'strategic':
+        return [
+          "ajmc.com",
+          "valueinhealthjournal.com",
+          "healthaffairs.org",
+          "pubmed.ncbi.nlm.nih.gov"
+        ];
+      
+      default:
+        return baseDomains.concat([
+          "nejm.org",
+          "thelancet.com",
+          "jamanetwork.com"
+        ]);
+    }
+  }
+
   private async executeSearch(strategyId: number, search: SearchItem): Promise<ResearchResult> {
     console.log(`Executing search: ${search.query}`);
     
     try {
-      // Execute Perplexity Deep Research for comprehensive results
-      console.log(`Starting Perplexity Deep Research for: "${search.query}"`);
-      const perplexityResult = await perplexityWebSearch(search.query, [
-        "pubmed.ncbi.nlm.nih.gov",
-        "clinicaltrials.gov",
-        "fda.gov",
-        "ema.europa.eu",
-        "nejm.org",
-        "thelancet.com",
-        "jamanetwork.com"
-      ], true); // Enable deep research mode
+      // Execute Perplexity Deep Research with enhanced query for ongoing studies
+      const enhancedQuery = this.enhanceQueryForSearchType(search);
+      console.log(`Starting Perplexity Deep Research for: "${enhancedQuery}"`);
+      
+      const targetDomains = this.getSearchDomains(search.type);
+      const perplexityResult = await perplexityWebSearch(enhancedQuery, targetDomains, true); // Enable deep research mode
       console.log(`Perplexity Deep Research completed for: "${search.query}"`);
       
       // Process and structure the results

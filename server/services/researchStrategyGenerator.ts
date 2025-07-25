@@ -40,7 +40,7 @@ RESPONSE FORMAT: Return valid JSON with this exact structure:
     {
       "id": "unique_id",
       "query": "specific search query",
-      "type": "core|strategic|therapeutic|phase",
+      "type": "core|competitive|regulatory|strategic|therapeutic",
       "priority": 1-10,
       "rationale": "why this search is important"
     }
@@ -80,18 +80,32 @@ STUDY CONTEXT:
 - Study Phase: ${studyPhase}
 - Geography: ${geography.join(', ')}
 
-TASK: Generate 6-10 targeted research queries that will provide actionable intelligence for this study design. Focus on searches that will directly impact:
-- Study design decisions (sample size, endpoints, comparators)
-- Regulatory strategy and approval pathway
-- Competitive positioning and differentiation
-- Market access and commercial viability
-- Risk mitigation and feasibility assessment
+TASK: Generate 8-12 comprehensive research queries that will provide actionable intelligence for this study design. MUST INCLUDE specific searches for:
+
+CRITICAL ONGOING TRIALS SEARCHES:
+- Current ongoing clinical trials for ${drugName} in ${indication} (use ClinicalTrials.gov, NCT numbers)
+- Recent 2024-2025 trial initiations and pipeline updates for ${drugName}
+- Competitive trials in ${indication} with similar mechanisms of action
+- New formulations, dosing regimens, or combination studies for ${drugName}
+
+COMPREHENSIVE COMPETITIVE INTELLIGENCE:
+- Direct competitors currently in clinical development for ${indication}
+- Recent approvals and pipeline drugs targeting same pathways
+- Competitive positioning and differentiation opportunities
+- Market share and treatment landscape analysis
+
+REGULATORY AND STRATEGIC INTELLIGENCE:
+- FDA guidance and regulatory precedents for ${indication}
+- Biomarker strategies and companion diagnostics requirements
+- Health economics and payer access considerations
+- Safety monitoring and risk management requirements
 
 SEARCH TYPES:
 - "core": Essential baseline information (regulatory precedents, unmet needs)
-- "strategic": Strategic objective-specific intelligence (market access, biomarkers, etc.)
+- "competitive": Ongoing trials, competitive products, pipeline analysis
+- "regulatory": Approval pathways, FDA guidance, regulatory precedents
+- "strategic": Market access, biomarkers, commercial considerations
 - "therapeutic": Disease/therapeutic area specific considerations
-- "phase": Study phase-specific requirements and considerations
 
 PRIORITY LEVELS:
 - 9-10: Critical for study success, immediate impact on design
@@ -134,20 +148,56 @@ Generate specific, actionable queries that a research analyst could execute imme
     };
   }
 
-  private validateSearchType(type: string): 'core' | 'strategic' | 'therapeutic' | 'phase' {
-    const validTypes = ['core', 'strategic', 'therapeutic', 'phase'];
+  private validateSearchType(type: string): 'core' | 'competitive' | 'regulatory' | 'strategic' | 'therapeutic' {
+    const validTypes = ['core', 'competitive', 'regulatory', 'strategic', 'therapeutic'];
     return validTypes.includes(type) ? type as any : 'core';
   }
 
   private generateFallbackStrategy(context: StrategyContext): GeneratedStrategy {
-    const { indication, strategicGoals, studyPhase } = context;
+    const { drugName, indication, strategicGoals, studyPhase } = context;
     
     const searches: SearchItem[] = [
       {
         id: uuidv4(),
+        query: `${drugName} ongoing clinical trials ${indication} ClinicalTrials.gov NCT 2024 2025`,
+        type: 'competitive',
+        priority: 10,
+        rationale: 'Critical - identify current ongoing trials to avoid duplication',
+        enabled: true,
+        userModified: false
+      },
+      {
+        id: uuidv4(),
+        query: `${drugName} new formulations dosing regimens combination therapy ${indication}`,
+        type: 'competitive',
+        priority: 9,
+        rationale: 'Essential - find new formulations and combinations in development',
+        enabled: true,
+        userModified: false
+      },
+      {
+        id: uuidv4(),
+        query: `competitive trials ${indication} similar mechanism of action ${drugName} pipeline`,
+        type: 'competitive',
+        priority: 9,
+        rationale: 'Competitive landscape analysis to inform positioning',
+        enabled: true,
+        userModified: false
+      },
+      {
+        id: uuidv4(),
+        query: `FDA guidance ${indication} regulatory precedents approval pathway`,
+        type: 'regulatory',
+        priority: 8,
+        rationale: 'Regulatory requirements for study design',
+        enabled: true,
+        userModified: false
+      },
+      {
+        id: uuidv4(),
         query: `Recent clinical trials ${indication} ${studyPhase} phase regulatory approvals`,
         type: 'core',
-        priority: 9,
+        priority: 8,
         rationale: 'Essential regulatory precedents for study design',
         enabled: true,
         userModified: false
@@ -156,7 +206,7 @@ Generate specific, actionable queries that a research analyst could execute imme
         id: uuidv4(),
         query: `Unmet medical needs ${indication} treatment gaps current therapies`,
         type: 'core',
-        priority: 8,
+        priority: 7,
         rationale: 'Identify clinical gaps this study could address',
         enabled: true,
         userModified: false
@@ -165,7 +215,7 @@ Generate specific, actionable queries that a research analyst could execute imme
         id: uuidv4(),
         query: `Clinical trial design considerations ${indication} endpoints sample size`,
         type: 'therapeutic',
-        priority: 8,
+        priority: 7,
         rationale: 'Therapeutic area-specific design requirements',
         enabled: true,
         userModified: false
