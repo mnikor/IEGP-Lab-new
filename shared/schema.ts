@@ -141,6 +141,9 @@ export const generateConceptRequestSchema = z.object({
   })).optional(),
   hasPatentExtensionPotential: z.boolean().optional(),
   numberOfConcepts: z.number().min(1).max(10).default(3),
+  
+  // Research strategy integration
+  researchStrategyId: z.number().optional(),
 });
 
 export const validateSynopsisRequestSchema = z.object({

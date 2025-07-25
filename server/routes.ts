@@ -91,23 +91,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log the incoming request data to debug anticipatedFpiDate
       console.log("Received request with anticipatedFpiDate:", data.anticipatedFpiDate);
       
-      // Step 1: Perform web search using Perplexity API to gather evidence
-      const isOncology = (data.indication || '').toLowerCase().includes('cancer') || 
-                         (data.indication || '').toLowerCase().includes('oncol') ||
-                         (data.indication || '').toLowerCase().includes('tumor');
+      // Step 1: Use existing research strategy results or perform new search
+      let searchResults;
       
-      // Create a simplified search query to avoid API errors
-      const strategicGoalsFocus = data.strategicGoals.map(goal => goal.replace('_', ' ')).join(' and ');
-      const searchQuery = `${data.drugName} ${data.indication} ${strategicGoalsFocus} Phase ${data.studyPhasePref} clinical trials study design`;
-      
-      const searchResults = await perplexityWebSearch(searchQuery, [
-        "pubmed.ncbi.nlm.nih.gov",
-        "clinicaltrials.gov", 
-        "nejm.org",
-        "accessdata.fda.gov",
-        "ema.europa.eu",
-        "nature.com"
-      ]);
+      if (data.researchStrategyId) {
+        // Use existing research strategy results to avoid duplicate searches
+        console.log("Using existing research strategy results:", data.researchStrategyId);
+        try {
+          const researchResults = await storage.getResearchResults(data.researchStrategyId);
+          if (researchResults && researchResults.length > 0) {
+            // Synthesize research results into a comprehensive evidence base
+            const synthesizedEvidence = researchResults
+              .map(result => `${result.synthesizedInsights}\n\nKey Findings: ${result.keyFindings.join(', ')}`)
+              .join('\n\n---\n\n');
+            
+            searchResults = {
+              content: synthesizedEvidence,
+              citations: researchResults.flatMap(r => r.rawResults?.citations || [])
+            };
+            console.log("Successfully integrated research strategy results");
+          } else {
+            console.log("No research results found, falling back to new search");
+            searchResults = await performNewSearch(data);
+          }
+        } catch (error) {
+          console.error("Error retrieving research strategy results:", error);
+          searchResults = await performNewSearch(data);
+        }
+      } else {
+        searchResults = await performNewSearch(data);
+      }
+
+      async function performNewSearch(data: any) {
+        console.log("Performing new Perplexity search");
+        const isOncology = (data.indication || '').toLowerCase().includes('cancer') || 
+                           (data.indication || '').toLowerCase().includes('oncol') ||
+                           (data.indication || '').toLowerCase().includes('tumor');
+        
+        const strategicGoalsFocus = data.strategicGoals.map(goal => goal.replace('_', ' ')).join(' and ');
+        const searchQuery = `${data.drugName} ${data.indication} ${strategicGoalsFocus} Phase ${data.studyPhasePref} clinical trials study design`;
+        
+        return await perplexityWebSearch(searchQuery, [
+          "pubmed.ncbi.nlm.nih.gov",
+          "clinicaltrials.gov", 
+          "nejm.org",
+          "accessdata.fda.gov",
+          "ema.europa.eu",
+          "nature.com"
+        ]);
+      }
 
       // Step 2: Generate concepts using OpenAI with selected model
       const concepts = await analyzeWithOpenAI(searchResults, data, false, data.aiModel || "gpt-4o");

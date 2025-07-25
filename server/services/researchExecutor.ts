@@ -121,13 +121,15 @@ export class ResearchExecutor {
     // Extract key insights based on search type
     const typeContext = this.getSearchTypeContext(search.type);
     
-    // Format with citations if available
-    let result = `${typeContext}\n\n## Key Insights: ${search.query}\n\n${content}`;
+    // Enhanced formatting with better markdown structure
+    let result = `${typeContext}\n\n## **Key Insights: ${search.query}**\n\n${content}`;
     
+    // Format citations with better structure
     if (citations.length > 0) {
-      result += `\n\n### Sources:\n${citations.map((citation: string, index: number) => 
-        `[${index + 1}] ${citation}`
-      ).join('\n')}`;
+      result += `\n\n### **📚 Sources & References:**\n`;
+      citations.forEach((citation: string, index: number) => {
+        result += `**[${index + 1}]** ${citation}\n`;
+      });
     }
     
     return result;
@@ -225,24 +227,30 @@ export class ResearchExecutor {
         messages: [
           {
             role: "system",
-            content: `You are a clinical research strategist synthesizing multiple research findings into actionable insights for study design. Create a comprehensive, well-structured synthesis that provides clear recommendations for study design decisions.
+            content: `You are a clinical research strategist synthesizing multiple research findings into actionable insights for study design. Create a comprehensive, well-structured synthesis with enhanced markdown formatting.
+
+FORMATTING REQUIREMENTS:
+- Use **bold** for all main headings and subheadings 
+- Use bullet points with • for lists
+- Include specific citations and references from the research
+- Structure with clear visual hierarchy using markdown
 
 Your synthesis should:
-1. Organize findings by strategic importance
-2. Highlight key design implications 
-3. Identify specific actionable recommendations
-4. Note any conflicts or gaps in the research
-5. Provide concrete guidance for next steps
+1. **Strategic Importance** - Organize findings by priority and impact
+2. **Key Design Implications** - Specific study design recommendations with citations
+3. **Actionable Recommendations** - Concrete next steps with supporting evidence
+4. **Conflicts or Gaps** - Note any inconsistencies in the research
+5. **Guidance for Next Steps** - Clear action items with citations
 
-Structure your response as a detailed research synthesis with clear headings and bullet points.`
+Make all section headers and key points bold for better readability.`
           },
           {
             role: "user",
-            content: `Please synthesize the following research findings into a comprehensive research synthesis:
+            content: `Please synthesize the following research findings into a comprehensive research synthesis with enhanced markdown formatting. Include specific citations and evidence from the research data:
 
 ${JSON.stringify(contentForSynthesis, null, 2)}
 
-Create a detailed synthesis that will inform study design decisions and strategic planning.`
+Create a detailed synthesis with bold headings and specific citations that will inform study design decisions and strategic planning.`
           }
         ],
         temperature: 0.3,

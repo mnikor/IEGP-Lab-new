@@ -357,11 +357,21 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
                           <CardContent>
                             <div className="prose prose-sm max-w-none">
                               <div 
-                                className="whitespace-pre-wrap text-sm leading-relaxed"
+                                className="whitespace-pre-wrap text-sm leading-relaxed markdown-content"
                                 style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}
-                              >
-                                {executionResults.synthesizedInsights}
-                              </div>
+                                dangerouslySetInnerHTML={{
+                                  __html: executionResults.synthesizedInsights
+                                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                    .replace(/^### (.*$)/gm, '<h3 class="font-semibold text-base mt-4 mb-2">$1</h3>')
+                                    .replace(/^## (.*$)/gm, '<h2 class="font-bold text-lg mt-4 mb-3">$1</h2>')
+                                    .replace(/^# (.*$)/gm, '<h1 class="font-bold text-xl mt-4 mb-3">$1</h1>')
+                                    .replace(/^\- (.*$)/gm, '<li class="ml-4">$1</li>')
+                                    .replace(/^• (.*$)/gm, '<li class="ml-4 list-disc">$1</li>')
+                                    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+                                    .replace(/\[(\d+)\]/g, '<span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">[$1]</span>')
+                                    .replace(/\n/g, '<br/>')
+                                }}
+                              />
                             </div>
                           </CardContent>
                         </Card>

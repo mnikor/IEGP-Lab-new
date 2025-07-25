@@ -266,6 +266,8 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
         globalLoeDate: formattedGlobalLoeDate, // Ensure we send the exact date the user provided
         regionalLoeDates: values.globalLoeDate ? processedRegionalLoeDates : undefined,
         anticipatedFpiDate: formattedFpiDate,
+        // Include research strategy data if available
+        researchStrategyId: researchStrategy?.id
       };
       
       // More detailed logging for the request
