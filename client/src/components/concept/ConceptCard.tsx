@@ -256,13 +256,14 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
           </div>
         )}
 
-        {/* Evidence Sources */}
+        {/* Evidence Sources - Compact View */}
         <div>
           <h4 className="text-sm font-medium text-neutral-dark mb-2">Evidence Sources</h4>
-          <div className="text-xs text-neutral-medium space-y-1">
-            {concept.evidenceSources.map((source, i) => (
-              <p key={i}>{i + 1}. {source.citation}</p>
-            ))}
+          <div className="text-xs text-neutral-medium">
+            <p className="text-gray-600">
+              {concept.evidenceSources.length} sources referenced. 
+              <span className="text-blue-600 ml-1 cursor-pointer">View research details in sidebar →</span>
+            </p>
           </div>
         </div>
       </CardContent>

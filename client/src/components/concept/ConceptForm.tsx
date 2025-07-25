@@ -20,7 +20,7 @@ import { ResearchStrategySection } from "@/components/concept/ResearchStrategySe
 import type { ResearchStrategy } from "@shared/schema";
 
 interface ConceptFormProps {
-  onGenerateSuccess: (concepts: StudyConcept[]) => void;
+  onGenerateSuccess: (concepts: StudyConcept[], researchStrategyId?: number) => void;
   isGenerating: boolean;
   setIsGenerating: (isGenerating: boolean) => void;
 }
@@ -287,7 +287,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
         description: `Successfully generated ${conceptsData.length} study concepts.`,
       });
 
-      onGenerateSuccess(conceptsData);
+      onGenerateSuccess(conceptsData, researchStrategy?.id);
     } catch (error) {
       console.error("Failed to generate concepts:", error);
       toast({

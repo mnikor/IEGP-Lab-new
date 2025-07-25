@@ -7,10 +7,12 @@ import { StudyConcept } from "@/lib/types";
 const GenerateConcept: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("generate");
   const [generatedConcepts, setGeneratedConcepts] = useState<StudyConcept[] | null>(null);
+  const [researchStrategyId, setResearchStrategyId] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
-  const handleConceptGeneration = (concepts: StudyConcept[]) => {
+  const handleConceptGeneration = (concepts: StudyConcept[], strategyId?: number) => {
     setGeneratedConcepts(concepts);
+    setResearchStrategyId(strategyId || null);
     setActiveTab("results");
   };
 
@@ -43,7 +45,10 @@ const GenerateConcept: React.FC = () => {
           
           <TabsContent value="results" forceMount className={activeTab !== "results" ? "hidden" : ""}>
             {generatedConcepts && (
-              <ResultsSection concepts={generatedConcepts} />
+              <ResultsSection 
+                concepts={generatedConcepts} 
+                researchStrategyId={researchStrategyId}
+              />
             )}
           </TabsContent>
         </Tabs>

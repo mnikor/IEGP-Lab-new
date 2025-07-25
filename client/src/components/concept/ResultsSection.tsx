@@ -1,18 +1,64 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { StudyConcept } from "@/lib/types";
 import ConceptCard from "./ConceptCard";
+import ResearchSidebar from "./ResearchSidebar";
 import { Download, FileDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
-interface ResultsSectionProps {
-  concepts: StudyConcept[];
+interface ResearchResult {
+  id: number;
+  searchQuery: string;
+  searchType: string;
+  priority: number;
+  synthesizedInsights: string;
+  keyFindings: string[];
+  designImplications: string[];
+  strategicRecommendations: string[];
+  rawResults: {
+    content: string;
+    citations: string[];
+    error?: string;
+  };
 }
 
-const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts }) => {
+interface ResultsSectionProps {
+  concepts: StudyConcept[];
+  researchStrategyId?: number | null;
+}
+
+const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts, researchStrategyId }) => {
   const { toast } = useToast();
+  const [researchResults, setResearchResults] = useState<ResearchResult[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [loadingResearch, setLoadingResearch] = useState(false);
+
+  // Fetch research results when researchStrategyId is provided
+  useEffect(() => {
+    const fetchResearchResults = async () => {
+      if (!researchStrategyId) return;
+      
+      setLoadingResearch(true);
+      try {
+        const response = await apiRequest('GET', `/api/research-strategies/${researchStrategyId}/results`);
+        const results = await response.json();
+        setResearchResults(results);
+        
+        // Auto-open sidebar if we have research data
+        if (results && results.length > 0) {
+          setIsSidebarOpen(true);
+        }
+      } catch (error) {
+        console.error('Failed to fetch research results:', error);
+      } finally {
+        setLoadingResearch(false);
+      }
+    };
+
+    fetchResearchResults();
+  }, [researchStrategyId]);
 
   const exportPDF = async () => {
     try {
@@ -82,28 +128,39 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts }) => {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <h2 className="text-xl font-semibold text-neutral-dark">Generated Study Concepts</h2>
-        <div className="flex space-x-3">
-          <Button variant="outline" onClick={exportPDF}>
-            <FileDown className="mr-2 h-4 w-4" />
-            Export PDF
-          </Button>
-          <Button onClick={exportPPTX}>
-            <Download className="mr-2 h-4 w-4" />
-            {import.meta.env.MODE === 'production' ? 'Export Presentation' : 'Export PPTX'}
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          {concepts.map((concept, index) => (
-            <ConceptCard key={index} concept={concept} index={index + 1} />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <>
+      <div className={`transition-all duration-300 ${isSidebarOpen ? 'mr-[420px]' : 'mr-0'}`}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <h2 className="text-xl font-semibold text-neutral-dark">Generated Study Concepts</h2>
+            <div className="flex space-x-3">
+              <Button variant="outline" onClick={exportPDF}>
+                <FileDown className="mr-2 h-4 w-4" />
+                Export PDF
+              </Button>
+              <Button onClick={exportPPTX}>
+                <Download className="mr-2 h-4 w-4" />
+                {import.meta.env.MODE === 'production' ? 'Export Presentation' : 'Export PPTX'}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {concepts.map((concept, index) => (
+                <ConceptCard key={index} concept={concept} index={index + 1} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Research Sidebar */}
+      <ResearchSidebar
+        researchResults={researchResults}
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+      />
+    </>
   );
 };
 
