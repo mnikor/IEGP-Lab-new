@@ -1,5 +1,12 @@
 import { StudyConcept } from "@shared/schema";
-import { SwotAnalysis } from "@shared/schema";
+import { analyzeTherapeuticArea } from "./therapeuticAreaEngine";
+
+export interface SwotAnalysis {
+  strengths: string[];
+  weaknesses: string[];
+  opportunities: string[];
+  threats: string[];
+}
 
 /**
  * Generates a SWOT analysis for a study concept
@@ -12,12 +19,15 @@ export function generateSwot(
   concept: Partial<StudyConcept>,
   searchResults: { content: string; citations: string[] }
 ): SwotAnalysis {
+  // Analyze therapeutic area context for generalized SWOT
+  const therapeuticContext = analyzeTherapeuticArea(concept);
+  
   // Generate dynamic SWOT analysis based on concept details and evidence
   return {
-    strengths: generateStrengths(concept, searchResults),
-    weaknesses: generateWeaknesses(concept, searchResults),
-    opportunities: generateOpportunities(concept, searchResults),
-    threats: generateThreats(concept, searchResults)
+    strengths: generateStrengths(concept, searchResults, therapeuticContext),
+    weaknesses: generateWeaknesses(concept, searchResults, therapeuticContext),
+    opportunities: generateOpportunities(concept, searchResults, therapeuticContext),
+    threats: generateThreats(concept, searchResults, therapeuticContext)
   };
 }
 
@@ -26,38 +36,47 @@ export function generateSwot(
  */
 function generateStrengths(
   concept: Partial<StudyConcept>,
-  searchResults: { content: string; citations: string[] }
+  searchResults: { content: string; citations: string[] },
+  therapeuticContext: any
 ): string[] {
   const strengths: string[] = [];
   
-  // Analyze strategic goal for strengths
-  const strategicGoal = concept.strategicGoal || 'expand_label';
-  switch (strategicGoal) {
-    case 'expand_label':
-      strengths.push(`Potential for expanded indication to ${concept.indication}`);
-      break;
-    case 'defend_share':
-      strengths.push('Reinforces competitive position in current market');
-      break;
-    case 'accelerate_uptake':
-      strengths.push('Could increase adoption rate and market penetration');
-      break;
-    case 'real_world_evidence':
-      strengths.push('Provides real-world data to support clinical findings');
-      break;
-  }
+  // Analyze strategic goals for strengths
+  const strategicGoals = concept.strategicGoals || [];
+  strategicGoals.forEach(goal => {
+    switch (goal) {
+      case 'expand_label':
+        strengths.push(`Potential for expanded indication to ${concept.indication}`);
+        break;
+      case 'defend_share':
+        strengths.push('Reinforces competitive position in current market');
+        break;
+      case 'accelerate_uptake':
+        strengths.push('Could increase adoption rate and market penetration');
+        break;
+      case 'generate_real_world_evidence':
+        strengths.push('Provides real-world data to support clinical findings');
+        break;
+    }
+  });
+  
+  // Add therapeutic area-specific strengths
+  therapeuticContext.marketOpportunities.forEach(opportunity => {
+    strengths.push(opportunity);
+  });
   
   // Add strengths based on evidence
-  if (concept.evidenceSources && concept.evidenceSources.length > 3) {
+  if (Array.isArray(concept.evidenceSources) && concept.evidenceSources.length > 3) {
     strengths.push('Strong supporting evidence base from multiple sources');
   }
   
   // Add strengths based on PICO
-  if (concept.picoData) {
-    if (concept.picoData.population.length > 30) {
+  if (concept.picoData && typeof concept.picoData === 'object') {
+    const picoData = concept.picoData as any;
+    if (picoData.population && picoData.population.length > 30) {
       strengths.push('Well-defined target population');
     }
-    if (concept.picoData.outcomes.includes('survival') || concept.picoData.outcomes.includes('mortality')) {
+    if (picoData.outcomes && (picoData.outcomes.includes('survival') || picoData.outcomes.includes('mortality'))) {
       strengths.push('Focus on clinically meaningful endpoints');
     }
   }
@@ -68,11 +87,12 @@ function generateStrengths(
   }
   
   // Add feasibility strengths
-  if (concept.feasibilityData) {
-    if (concept.feasibilityData.projectedROI >= 3.0) {
-      strengths.push(`High projected ROI (${concept.feasibilityData.projectedROI.toFixed(1)}x)`);
+  if (concept.feasibilityData && typeof concept.feasibilityData === 'object') {
+    const feasibilityData = concept.feasibilityData as any;
+    if (feasibilityData.projectedROI && feasibilityData.projectedROI >= 3.0) {
+      strengths.push(`High projected ROI (${feasibilityData.projectedROI.toFixed(1)}x)`);
     }
-    if (concept.feasibilityData.recruitmentRate >= 0.7) {
+    if (feasibilityData.recruitmentRate && feasibilityData.recruitmentRate >= 0.7) {
       strengths.push('Favorable patient recruitment potential');
     }
   }
@@ -91,23 +111,47 @@ function generateStrengths(
  */
 function generateWeaknesses(
   concept: Partial<StudyConcept>,
-  searchResults: { content: string; citations: string[] }
+  searchResults: { content: string; citations: string[] },
+  therapeuticContext: any
 ): string[] {
   const weaknesses: string[] = [];
   
-  // Study-specific weaknesses based on indication and drug
+  // Dynamic weakness analysis based on study characteristics
   const indication = (concept.indication || '').toLowerCase();
   const drugName = (concept.drugName || '').toLowerCase();
+  const title = (concept.title || '').toLowerCase();
   
-  if (indication.includes('psoriasis')) {
-    if (indication.includes('moderate')) {
-      weaknesses.push('Specialized population (Adults with newly diagnosed moderate plaque psoriasis) may slow recruitment');
-      weaknesses.push('Subjective endpoint measures (PASI scoring) may introduce variability');
-    }
-    if (drugName.includes('icotrokinra')) {
-      weaknesses.push('IL-23 pathway competition from established therapies (risankizumab, guselkumab)');
-      weaknesses.push('Relatively new mechanism requires extensive safety monitoring');
-    }
+  // Population complexity analysis
+  if (concept.targetSubpopulation || indication.includes('rare') || indication.includes('orphan')) {
+    weaknesses.push('Specialized patient population may present recruitment challenges');
+  }
+  
+  // Endpoint complexity analysis
+  const hasSubjectiveEndpoints = indication.includes('pain') || indication.includes('quality') || 
+                                indication.includes('depression') || indication.includes('cognitive') ||
+                                title.includes('pasi') || title.includes('patient reported');
+  if (hasSubjectiveEndpoints) {
+    weaknesses.push('Subjective endpoint measures may introduce measurement variability');
+  }
+  
+  // Drug mechanism complexity
+  const isNovelMechanism = drugName.includes('novel') || title.includes('first-in-class') ||
+                          title.includes('innovative') || searchResults.content.includes('new mechanism');
+  if (isNovelMechanism) {
+    weaknesses.push('Novel mechanism of action requires extensive safety monitoring and regulatory scrutiny');
+  }
+  
+  // Add therapeutic area-specific challenges as weaknesses
+  therapeuticContext.typicalChallenges.forEach(challenge => {
+    weaknesses.push(challenge);
+  });
+  
+  // Competitive landscape pressure
+  const hasEstablishedCompetitors = searchResults.content.includes('established') || 
+                                   searchResults.content.includes('standard of care') ||
+                                   searchResults.content.includes('competitor');
+  if (hasEstablishedCompetitors) {
+    weaknesses.push('Established therapeutic options create competitive pressure for differentiation');
   }
   
   // Study phase considerations with specific context
@@ -179,27 +223,52 @@ function generateWeaknesses(
  */
 function generateOpportunities(
   concept: Partial<StudyConcept>,
-  searchResults: { content: string; citations: string[] }
+  searchResults: { content: string; citations: string[] },
+  therapeuticContext: any
 ): string[] {
   const opportunities: string[] = [];
   
-  // Study-specific opportunities
+  // Dynamic opportunity analysis based on multiple data sources
   const indication = (concept.indication || '').toLowerCase();
   const drugName = (concept.drugName || '').toLowerCase();
+  const title = (concept.title || '').toLowerCase();
   
-  if (indication.includes('psoriasis')) {
-    opportunities.push('Potential for regulatory approval in new indication (moderate disease based on early-stage trials)');
-    opportunities.push('Expand addressable patient population');
-    
-    if (indication.includes('moderate')) {
-      opportunities.push('Unmet need: 60% of moderate pts dissatisfied with topical/phototherapy; access barriers to phototherapy');
-      opportunities.push('Advantage: First oral IL-23 option approved for moderate disease would expand addressable market by ~1.2 M US patients');
-    }
-    
-    if (drugName.includes('icotrokinra')) {
-      opportunities.push('Potential for FDA approval/registration in a broader label including moderate disease based on early-stage trials');
-      opportunities.push('Alignment with EMA requirements');
-    }
+  // Market opportunity analysis from search results
+  const hasUnmetNeed = searchResults.content.includes('unmet need') || 
+                      searchResults.content.includes('limited options') ||
+                      searchResults.content.includes('insufficient treatment');
+  if (hasUnmetNeed) {
+    opportunities.push('Addresses identified unmet medical need in current treatment landscape');
+  }
+  
+  // Regulatory pathway opportunities
+  const hasRegulatoryAdvantage = searchResults.content.includes('fast track') ||
+                                searchResults.content.includes('breakthrough') ||
+                                searchResults.content.includes('priority review') ||
+                                indication.includes('rare') || indication.includes('orphan');
+  if (hasRegulatoryAdvantage) {
+    opportunities.push('Potential for expedited regulatory pathway and faster market access');
+  }
+  
+  // Innovation and differentiation opportunities
+  const isFirstInClass = title.includes('first') || title.includes('novel') ||
+                        searchResults.content.includes('first-in-class') ||
+                        searchResults.content.includes('innovative approach');
+  if (isFirstInClass) {
+    opportunities.push('First-mover advantage with innovative therapeutic approach');
+  }
+  
+  // Add therapeutic area-specific market opportunities
+  therapeuticContext.marketOpportunities.forEach(opportunity => {
+    opportunities.push(opportunity);
+  });
+  
+  // Market expansion opportunities
+  const hasMarketGrowth = searchResults.content.includes('growing market') ||
+                         searchResults.content.includes('increasing prevalence') ||
+                         searchResults.content.includes('aging population');
+  if (hasMarketGrowth) {
+    opportunities.push('Growing market demand supports commercial potential');
   }
   
   // Strategic goal opportunities
@@ -257,25 +326,52 @@ function generateOpportunities(
  */
 function generateThreats(
   concept: Partial<StudyConcept>,
-  searchResults: { content: string; citations: string[] }
+  searchResults: { content: string; citations: string[] },
+  therapeuticContext: any
 ): string[] {
   const threats: string[] = [];
   
-  // Study-specific threats
+  // Dynamic threat analysis based on study context and market intelligence
   const indication = (concept.indication || '').toLowerCase();
   const drugName = (concept.drugName || '').toLowerCase();
+  const title = (concept.title || '').toLowerCase();
   
-  if (indication.includes('psoriasis')) {
-    threats.push('Competing studies with similar objectives may be in progress');
-    threats.push('Evolving standard of care may impact study relevance');
-    
-    if (indication.includes('moderate')) {
-      threats.push('Risk of enrollment challenges as high dropout rates');
-    }
-    
-    if (drugName.includes('icotrokinra')) {
-      threats.push('Risk of enrollment challenges due to narrow-band UVB phototherapy 3x/wk for 24 wks requirements may affect adherence');
-    }
+  // Competitive threat analysis
+  const hasActiveCompetition = searchResults.content.includes('competitor') ||
+                              searchResults.content.includes('similar study') ||
+                              searchResults.content.includes('pipeline') ||
+                              searchResults.content.includes('development');
+  if (hasActiveCompetition) {
+    threats.push('Competitive studies in development may impact market positioning and recruitment');
+  }
+  
+  // Regulatory and market evolution threats
+  const hasEvolvingLandscape = searchResults.content.includes('evolving') ||
+                              searchResults.content.includes('changing') ||
+                              searchResults.content.includes('new guidelines') ||
+                              searchResults.content.includes('updated recommendations');
+  if (hasEvolvingLandscape) {
+    threats.push('Evolving treatment guidelines and regulatory requirements may impact study relevance');
+  }
+  
+  // Operational execution threats
+  const hasComplexProtocol = title.includes('adaptive') || title.includes('complex') ||
+                            concept.comparatorDrugs && concept.comparatorDrugs.length > 1;
+  if (hasComplexProtocol) {
+    threats.push('Complex study design increases operational execution risks and potential delays');
+  }
+  
+  // Add therapeutic area-specific competitive threats
+  therapeuticContext.competitiveThreats.forEach(threat => {
+    threats.push(threat);
+  });
+  
+  // Safety and efficacy risks
+  const hasSafetySignals = searchResults.content.includes('safety') ||
+                          searchResults.content.includes('adverse') ||
+                          searchResults.content.includes('tolerability');
+  if (hasSafetySignals) {
+    threats.push('Potential safety signals could impact study continuation and regulatory approval');
   }
   
   // Competitive threats from search results

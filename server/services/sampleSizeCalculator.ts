@@ -389,12 +389,13 @@ function getDefaultSampleSize(studyPhase: string, isOncology: boolean): number {
   const defaults = {
     'I': isOncology ? 30 : 40,
     'II': isOncology ? 120 : 150,
+    'II/III adaptive': isOncology ? 350 : 450,
     'III': isOncology ? 600 : 800,
     'IV': isOncology ? 1000 : 1200,
     'any': isOncology ? 300 : 400
   };
   
-  return defaults[studyPhase as keyof typeof defaults] || 200;
+  return defaults[studyPhase as keyof typeof defaults] || defaults['any'];
 }
 
 function adjustForStudyCharacteristics(

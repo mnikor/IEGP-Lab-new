@@ -1,6 +1,7 @@
 import { StudyConcept, GenerateConceptRequest } from "@shared/schema";
 import { FeasibilityData, RegionalLoeData } from "@/lib/types";
 import { calculateSampleSize } from "./sampleSizeCalculator";
+import { analyzeTherapeuticArea, adjustSampleSizeForTherapeuticArea, getTherapeuticAreaCostMultiplier } from "./therapeuticAreaEngine";
 
 // TypeScript interface for the extended request type including anticipatedFpiDate
 interface ExtendedGenerateConceptRequest extends GenerateConceptRequest {
@@ -11,6 +12,67 @@ interface ExtendedGenerateConceptRequest extends GenerateConceptRequest {
 export type ConceptWithFeasibility = Partial<StudyConcept> & {
   feasibilityData?: FeasibilityData;
 };
+
+/**
+ * Detects if a study involves biologics or high-cost therapies based on multiple indicators
+ */
+function detectBiologicsOrHighCostTherapy(concept: ConceptWithFeasibility): boolean {
+  const drugName = (concept.drugName || '').toLowerCase();
+  const indication = (concept.indication || '').toLowerCase();
+  const title = (concept.title || '').toLowerCase();
+  const description = (concept.picoData?.population || concept.title || '').toLowerCase();
+  
+  // Biologic drug naming patterns
+  const biologicPatterns = [
+    'mab', 'ximab', 'zumab', 'tuzumab', 'lizumab', 'cizumab', 'omab',
+    'tinib', 'nib', 'ceptor', 'kinra', 'inib', 'prot', 'ase',
+    'pegyl', 'interferon', 'interleukin', 'rituximab', 'adalimumab',
+    'infliximab', 'etanercept', 'certolizumab', 'golimumab',
+    'ustekinumab', 'secukinumab', 'ixekizumab', 'brodalumab',
+    'risankizumab', 'guselkumab', 'tildrakizumab'
+  ];
+  
+  // High-cost indication patterns
+  const highCostIndications = [
+    'cancer', 'oncology', 'tumor', 'carcinoma', 'sarcoma', 'lymphoma', 'leukemia',
+    'multiple sclerosis', 'rheumatoid arthritis', 'psoriasis', 'crohn', 'colitis',
+    'inflammatory bowel', 'ankylosing spondylitis', 'lupus', 'vasculitis',
+    'transplant', 'rejection', 'graft', 'immunosuppression',
+    'rare disease', 'orphan', 'genetic disorder', 'metabolic disorder'
+  ];
+  
+  // Therapeutic area patterns indicating high costs
+  const highCostTherapeuticAreas = [
+    'immunology', 'immune', 'autoimmune', 'inflammatory',
+    'hematology', 'heme', 'onco', 'neuro', 'cardio',
+    'gene therapy', 'cell therapy', 'regenerative',
+    'precision medicine', 'personalized', 'targeted therapy'
+  ];
+  
+  // Check drug name patterns
+  const hasBiologicDrug = biologicPatterns.some(pattern => 
+    drugName.includes(pattern) || title.includes(pattern));
+  
+  // Check indication patterns
+  const hasHighCostIndication = highCostIndications.some(pattern => 
+    indication.includes(pattern) || title.includes(pattern) || description.includes(pattern));
+  
+  // Check therapeutic area patterns
+  const hasHighCostTherapeuticArea = highCostTherapeuticAreas.some(pattern => 
+    indication.includes(pattern) || title.includes(pattern) || description.includes(pattern));
+  
+  // Advanced detection: look for cost indicators in study phase and design
+  const studyPhase = concept.studyPhase || '';
+  const hasComplexPhase = studyPhase.includes('III') || studyPhase.includes('adaptive');
+  
+  // Strategic goals indicating high-cost studies
+  const strategicGoals = concept.strategicGoals || [];
+  const hasHighCostGoals = strategicGoals.some(goal => 
+    ['expand_label', 'defend_share', 'accelerate_uptake'].includes(goal));
+  
+  return hasBiologicDrug || hasHighCostIndication || hasHighCostTherapeuticArea || 
+         (hasComplexPhase && hasHighCostGoals);
+}
 
 /**
  * Calculates feasibility metrics for a study concept
@@ -49,11 +111,16 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   const hasTargetSubpopulation = !!concept.targetSubpopulation;
   const comparatorCount = concept.comparatorDrugs?.length || 0;
   
-  // Step 2: Calculate patient numbers using statistical power analysis
+  // Step 2: Calculate patient numbers using statistical power analysis with therapeutic area intelligence
+  const therapeuticContext = analyzeTherapeuticArea(concept);
   const sampleSizeCalculation = calculateSampleSize(concept, requestData);
   
-  let patientCount = sampleSizeCalculation.sampleSize;
-  let sampleSizeJustification = sampleSizeCalculation.justification;
+  let patientCount = adjustSampleSizeForTherapeuticArea(
+    sampleSizeCalculation.sampleSize, 
+    therapeuticContext, 
+    concept.studyPhase || 'any'
+  );
+  let sampleSizeJustification = `${sampleSizeCalculation.justification} Adjusted for ${therapeuticContext.area} therapeutic area complexity and recruitment characteristics.`;
   
   // Ensure minimum realistic patient count
   patientCount = Math.max(patientCount, 20); // Minimum 20 patients for any study
@@ -114,18 +181,9 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   // Adjust base cost by endpoint type from sample size calculation - UPDATED FOR BIOLOGICS
   const calculatedEndpointType = sampleSizeCalculation.endpoint.type;
   
-  // Check if study involves biologics (higher costs) - improved detection
-  const isBiologicsStudy = (concept.drugName || '').toLowerCase().includes('mab') ||
-                           (concept.drugName || '').toLowerCase().includes('ximab') ||
-                           (concept.drugName || '').toLowerCase().includes('tinib') ||
-                           (concept.drugName || '').toLowerCase().includes('zumab') ||
-                           (concept.drugName || '').toLowerCase().includes('icotrokinra') ||
-                           (concept.indication || '').toLowerCase().includes('psoriasis') ||
-                           (concept.indication || '').toLowerCase().includes('rheumatoid') ||
-                           (concept.indication || '').toLowerCase().includes('crohn') ||
-                           (concept.indication || '').toLowerCase().includes('multiple sclerosis') ||
-                           (concept.indication || '').toLowerCase().includes('inflammatory') ||
-                           (concept.indication || '').toLowerCase().includes('immune');
+  // Enhanced biologics and high-cost therapy detection system with therapeutic area context
+  const isBiologicsStudy = detectBiologicsOrHighCostTherapy(concept);
+  const therapeuticAreaCostMultiplier = getTherapeuticAreaCostMultiplier(therapeuticContext, studyPhase);
   
   if (calculatedEndpointType === 'survival') {
     costPerPatient = isOncology ? (isBiologicsStudy ? 85000 : 65000) : (isBiologicsStudy ? 65000 : 45000);
@@ -149,6 +207,9 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   };
   
   costPerPatient *= phaseMultipliers[studyPhase as keyof typeof phaseMultipliers] || 1.2;
+  
+  // Apply therapeutic area cost multiplier for comprehensive cost modeling
+  costPerPatient *= therapeuticAreaCostMultiplier;
   
   // Adjust for statistical power requirements (higher power = more rigorous = more expensive)
   const powerAdjustment = 0.8 + (sampleSizeCalculation.parameters.power * 0.4); // 0.8 to 1.2 multiplier
