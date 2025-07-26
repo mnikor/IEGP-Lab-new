@@ -4,10 +4,12 @@ import { useParams } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowLeft, BookOpen, Search, Calendar, TrendingUp } from "lucide-react";
 import { Link } from "wouter";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
 import ReasonsToBelieve from "@/components/shared/ReasonsToBelieve";
+import LoeDetails from "@/components/shared/LoeDetails";
+import FeasibilityDashboard from "@/components/shared/FeasibilityDashboard";
 import type { StudyConcept, SavedStudyProposal } from "@shared/schema";
 
 const ConceptDetailPage: React.FC = () => {
@@ -95,12 +97,28 @@ const ConceptDetailPage: React.FC = () => {
             </Badge>
           </div>
           <div className="flex items-center space-x-4">
-            {concept.mcdaScores && (
+            {/* Situational Analysis Button - if research data available */}
+            {relatedProposal?.researchResults && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  // For now, scroll to research insights section
+                  const researchSection = document.getElementById('research-insights');
+                  if (researchSection) {
+                    researchSection.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="flex items-center space-x-2"
+              >
+                <Search className="h-4 w-4" />
+                <span>Situational Analysis</span>
+              </Button>
+            )}
+            {concept.mcdaScores && (concept.mcdaScores as any).overall != null && (
               <div className="flex items-center">
                 <span className="ml-1 text-sm font-medium text-neutral-dark">
-                  {concept.mcdaScores.overall != null 
-                    ? concept.mcdaScores.overall.toFixed(1) + '/5'
-                    : 'N/A'}
+                  {(concept.mcdaScores as any).overall.toFixed(1) + '/5'}
                 </span>
               </div>
             )}
@@ -185,8 +203,8 @@ const ConceptDetailPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-neutral-medium">Scientific Validity</span>
                     <span className="text-sm font-medium text-primary">
-                      {concept.mcdaScores.scientificValidity != null 
-                        ? concept.mcdaScores.scientificValidity.toFixed(1) + '/5'
+                      {(concept.mcdaScores as any).scientificValidity != null 
+                        ? (concept.mcdaScores as any).scientificValidity.toFixed(1) + '/5'
                         : 'N/A'}
                     </span>
                   </div>
@@ -195,8 +213,8 @@ const ConceptDetailPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-neutral-medium">Clinical Impact</span>
                     <span className="text-sm font-medium text-primary">
-                      {concept.mcdaScores.clinicalImpact != null 
-                        ? concept.mcdaScores.clinicalImpact.toFixed(1) + '/5'
+                      {(concept.mcdaScores as any).clinicalImpact != null 
+                        ? (concept.mcdaScores as any).clinicalImpact.toFixed(1) + '/5'
                         : 'N/A'}
                     </span>
                   </div>
@@ -205,8 +223,8 @@ const ConceptDetailPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-neutral-medium">Commercial Value</span>
                     <span className="text-sm font-medium text-primary">
-                      {concept.mcdaScores.commercialValue != null 
-                        ? concept.mcdaScores.commercialValue.toFixed(1) + '/5'
+                      {(concept.mcdaScores as any).commercialValue != null 
+                        ? (concept.mcdaScores as any).commercialValue.toFixed(1) + '/5'
                         : 'N/A'}
                     </span>
                   </div>
@@ -215,8 +233,8 @@ const ConceptDetailPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-neutral-medium">Feasibility</span>
                     <span className="text-sm font-medium text-primary">
-                      {concept.mcdaScores.feasibility != null 
-                        ? concept.mcdaScores.feasibility.toFixed(1) + '/5'
+                      {(concept.mcdaScores as any).feasibility != null 
+                        ? (concept.mcdaScores as any).feasibility.toFixed(1) + '/5'
                         : 'N/A'}
                     </span>
                   </div>
@@ -232,11 +250,37 @@ const ConceptDetailPage: React.FC = () => {
             </div>
           )}
 
+          {/* LOE Details - Timeline information */}
+          <div className="mb-4">
+            <LoeDetails 
+              globalLoeDate={(concept as any).globalLoeDate || feasibilityData?.globalLoeDate}
+              regionalLoeData={feasibilityData?.regionalLoeData}
+              timeToLoe={(concept as any).timeToLoe || feasibilityData?.timeToLoe}
+              postLoeValue={feasibilityData?.postLoeValue}
+              estimatedFpiDate={feasibilityData?.estimatedFpiDate}
+            />
+          </div>
+
+          {/* Feasibility Dashboard - Comprehensive analysis */}
+          {feasibilityData && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-medium text-neutral-dark flex items-center">
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Feasibility Analysis
+                </h4>
+              </div>
+              <div className="border rounded-md p-3 bg-blue-50/30">
+                <FeasibilityDashboard feasibilityData={feasibilityData} />
+              </div>
+            </div>
+          )}
+
           {/* Study Overview Details */}
           <div className="mb-4">
             <div className="bg-gray-50 border border-gray-100 rounded-md p-3">
               <h4 className="text-sm font-semibold text-gray-800 mb-2">Study Rationale</h4>
-              <p className="text-sm text-gray-700 leading-relaxed">{concept.rationale}</p>
+              <p className="text-sm text-gray-700 leading-relaxed">{(concept as any).rationale || 'No rationale provided'}</p>
             </div>
           </div>
 
@@ -308,12 +352,12 @@ const ConceptDetailPage: React.FC = () => {
             </div>
           )}
 
-          {/* Research Insights */}
+          {/* Research Insights - Situational Analysis */}
           {relatedProposal?.researchResults && (
-            <div className="mt-4 bg-green-50 border border-green-100 rounded-md p-4">
+            <div id="research-insights" className="mt-4 bg-green-50 border border-green-100 rounded-md p-4">
               <h4 className="text-sm font-semibold text-green-800 mb-3 flex items-center">
                 <BookOpen className="mr-2 h-4 w-4" />
-                Research Insights
+                Situational Analysis - Research Insights
               </h4>
               <div className="prose prose-sm max-w-none">
                 {typeof relatedProposal.researchResults === 'string' ? (
