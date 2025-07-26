@@ -75,28 +75,28 @@ export class ResearchExecutor {
     
     switch (search.type) {
       case 'competitive':
-        // Broad search for trials from all sources - NO site restrictions
-        return `${baseQuery} clinical trials ongoing recruiting active 2024 2025 NCT`;
+        // Broad competitive intelligence - avoid restrictive AND operators
+        return `${baseQuery} OR competing therapies OR pipeline drugs OR clinical trials 2024 2025`;
       
       case 'regulatory':
-        // Regulatory guidance from multiple sources - NO site restrictions  
-        return `${baseQuery} regulatory guidance approval pathway clinical development FDA EMA`;
+        // Regulatory guidance from multiple sources
+        return `${baseQuery} OR regulatory guidance OR approval requirements OR clinical development`;
       
       case 'strategic':
-        // Business and market intelligence focus
-        return `${baseQuery} market access reimbursement health technology assessment payer evidence`;
+        // Business and market intelligence
+        return `${baseQuery} OR market dynamics OR competitive positioning OR commercial strategy`;
       
       case 'therapeutic':
-        // Clinical evidence and guidelines focus
-        return `${baseQuery} clinical evidence treatment guidelines recent studies 2024 2025`;
+        // Clinical evidence and treatment approaches
+        return `${baseQuery} OR clinical evidence OR treatment approaches OR therapeutic strategies 2024`;
       
       case 'guidelines':
-        // Treatment guidelines from medical societies
-        return `${baseQuery} treatment guidelines clinical practice guidelines consensus recommendations`;
+        // Treatment guidelines - focus on indication, not specific drugs
+        return `${baseQuery} OR standard of care OR treatment recommendations OR clinical guidelines`;
       
       case 'core':
       default:
-        return `${baseQuery} recent studies clinical evidence 2024 2025`;
+        return `${baseQuery} OR clinical development OR study design OR research strategy`;
     }
   }
 

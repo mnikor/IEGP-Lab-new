@@ -30,32 +30,40 @@ export class ResearchStrategyGenerator {
       - Study Phase: ${studyPhase}
       - Geography: ${geography.join(', ')}
       
-      Generate 8-12 specific, actionable research queries that will provide the most valuable insights for this study concept. Each query should be highly specific and targeted to find real, current information.
+      CRITICAL: Use flexible search terms that avoid restrictive AND operators. Create searches that cast a wide net to capture relevant information.
       
-      Focus on:
-      1. Competitive landscape and ongoing trials (with specific NCT numbers)
-      2. Regulatory pathways and requirements
-      3. Market access and reimbursement considerations
-      4. Clinical evidence gaps and opportunities
-      5. Treatment guidelines and standard of care
+      Search Strategy Rules:
+      1. NEVER use restrictive AND combinations that might miss relevant information
+      2. For guidelines: Focus on INDICATION ONLY, not specific drugs (new drugs won't be in guidelines)
+      3. For competitive landscape: Include broader therapeutic classes and mechanisms, not just specific drugs
+      4. For regulatory: Focus on indication pathways and approval requirements
+      5. Use OR-style thinking: "Find information about X OR related therapies OR similar approaches"
       
-      For each search, provide:
-      - A specific, targeted query
-      - Search type (core, competitive, regulatory, strategic, therapeutic, guidelines)
-      - Priority (1-10)
-      - Rationale for why this search is important
+      Generate 8-12 research queries using these patterns:
       
-      Return as JSON array with this structure:
+      GOOD Examples:
+      - "${indication} treatment guidelines NCCN ESMO 2024" (NOT "${drugName} AND ${indication} AND guidelines")
+      - "${indication} clinical trials recruiting active 2024" (NOT "${drugName} AND ${indication} AND trials")
+      - "targeted therapy ${indication} regulatory approval pathway" (NOT "${drugName} AND regulatory AND approval")
+      
+      Focus areas:
+      1. Current treatment guidelines and standard of care (indication-focused)
+      2. Competitive therapeutic landscape (broad class coverage)
+      3. Regulatory pathways for the indication
+      4. Market access considerations
+      5. Clinical evidence gaps and unmet needs
+      
+      Return as JSON with this structure:
       {
         "searches": [
           {
-            "query": "specific search query",
-            "type": "competitive",
+            "query": "broad flexible search query",
+            "type": "guidelines",
             "priority": 9,
-            "rationale": "why this search is critical"
+            "rationale": "why this broad search is valuable"
           }
         ],
-        "rationale": "overall strategy explanation"
+        "rationale": "strategy explanation emphasizing comprehensive coverage"
       }`;
 
       const response = await openai.chat.completions.create({
@@ -161,12 +169,53 @@ export class ResearchStrategyGenerator {
 
   private createFallbackSearches(drugName: string, indication: string, strategicGoals: string[], studyPhase: string, geography: string[]): SearchItem[] {
     const searches: SearchItem[] = [
+      // Guidelines search - indication only, no drug name
       {
         id: uuidv4(),
-        query: `Clinical trial design ${indication} study considerations regulatory requirements`,
-        type: 'core',
+        query: `${indication} treatment guidelines NCCN ESMO clinical practice recommendations 2024`,
+        type: 'guidelines',
+        priority: 10,
+        rationale: 'Current standard of care and treatment guidelines for the indication',
+        enabled: true,
+        userModified: false
+      },
+      // Competitive landscape - broad therapeutic approach
+      {
+        id: uuidv4(),
+        query: `${indication} clinical trials recruiting active targeted therapy immunotherapy 2024`,
+        type: 'competitive',
         priority: 9,
-        rationale: 'Foundational clinical study design intelligence',
+        rationale: 'Ongoing competitive trials across all therapeutic approaches',
+        enabled: true,
+        userModified: false
+      },
+      // Regulatory pathway - indication focused
+      {
+        id: uuidv4(),
+        query: `${indication} regulatory approval pathway FDA EMA clinical development guidance`,
+        type: 'regulatory',
+        priority: 8,
+        rationale: 'Regulatory requirements and approval pathways for the indication',
+        enabled: true,
+        userModified: false
+      },
+      // Market access considerations
+      {
+        id: uuidv4(),
+        query: `${indication} market access reimbursement payer evidence requirements health economics`,
+        type: 'strategic',
+        priority: 7,
+        rationale: 'Market access landscape and payer requirements',
+        enabled: true,
+        userModified: false
+      },
+      // Drug-specific competitive intelligence (only when relevant)
+      {
+        id: uuidv4(),
+        query: `${drugName} clinical development pipeline competitive positioning mechanism of action`,
+        type: 'competitive',
+        priority: 8,
+        rationale: 'Specific competitive intelligence for the drug candidate',
         enabled: true,
         userModified: false
       }
@@ -194,64 +243,64 @@ export class ResearchStrategyGenerator {
   private getStrategicGoalSearch(goal: string, indication: string): SearchItem {
     const goalSearchMap: Record<string, { query: string, priority: number, rationale: string }> = {
       expand_label: {
-        query: `${indication} expanded indications label expansion clinical evidence regulatory pathway`,
+        query: `${indication} label expansion clinical evidence regulatory pathway FDA EMA`,
         priority: 10,
-        rationale: 'Critical regulatory and clinical data for label expansion strategy'
+        rationale: 'Regulatory pathway and evidence requirements for label expansion'
       },
       defend_market_share: {
-        query: `Competitive landscape ${indication} market share analysis emerging therapies`,
+        query: `${indication} competitive landscape emerging therapies market analysis`,
         priority: 8,
-        rationale: 'Competitive intelligence for market defense'
+        rationale: 'Competitive threat assessment and market dynamics'
       },
       accelerate_uptake: {
-        query: `${indication} physician adoption treatment patterns real world evidence uptake barriers`,
+        query: `${indication} physician adoption barriers treatment patterns real world evidence`,
         priority: 7,
-        rationale: 'Market access and adoption intelligence'
+        rationale: 'Understanding adoption challenges and acceleration opportunities'
       },
       facilitate_market_access: {
-        query: `${indication} payer landscape reimbursement health technology assessment`,
+        query: `${indication} payer reimbursement health technology assessment coverage decisions`,
         priority: 8,
-        rationale: 'Payer and market access strategy intelligence'
+        rationale: 'Payer landscape and market access requirements'
       },
       generate_real_world_evidence: {
-        query: `${indication} real world evidence post-market surveillance patient outcomes`,
+        query: `${indication} real world evidence post market surveillance patient outcomes registries`,
         priority: 7,
-        rationale: 'Real world evidence generation strategy'
+        rationale: 'Real world evidence generation strategies and data sources'
       },
       optimise_dosing: {
-        query: `${indication} optimal dosing regimens pharmacokinetics dose response`,
+        query: `${indication} dosing optimization pharmacokinetics dose response clinical studies`,
         priority: 8,
-        rationale: 'Dosing optimization clinical evidence'
+        rationale: 'Dosing strategy optimization and PK/PD considerations'
       },
       validate_biomarker: {
-        query: `${indication} biomarker validation predictive biomarkers patient selection`,
+        query: `${indication} biomarker validation predictive markers patient selection companion diagnostics`,
         priority: 8,
-        rationale: 'Biomarker validation and personalized medicine'
+        rationale: 'Biomarker strategy and personalized medicine approaches'
       },
       manage_safety_risk: {
-        query: `${indication} safety profile risk management adverse events post-market`,
+        query: `${indication} safety management adverse events risk mitigation REMS programs`,
         priority: 9,
-        rationale: 'Safety management and risk mitigation strategy'
+        rationale: 'Safety profile management and risk mitigation strategies'
       },
       extend_lifecycle_combinations: {
-        query: `${indication} combination therapy drug interactions synergistic effects`,
+        query: `${indication} combination therapy synergistic effects drug interactions clinical development`,
         priority: 8,
-        rationale: 'Lifecycle extension through combination strategies'
+        rationale: 'Combination strategies for lifecycle extension'
       },
       secure_initial_approval: {
-        query: `${indication} approval requirements regulatory guidance clinical endpoints`,
+        query: `${indication} regulatory approval requirements clinical endpoints FDA breakthrough therapy`,
         priority: 10,
-        rationale: 'Initial approval pathway and requirements'
+        rationale: 'Initial approval pathway and regulatory requirements'
       },
       demonstrate_poc: {
-        query: `${indication} proof of concept early efficacy signals biomarkers`,
+        query: `${indication} proof of concept biomarkers early efficacy signals phase II`,
         priority: 9,
-        rationale: 'Proof of concept demonstration strategy'
+        rationale: 'Proof of concept demonstration and early efficacy indicators'
       },
       gain_approval: {
-        query: `FDA EMA regulatory guidance ${indication} approval pathways breakthrough designation`,
+        query: `${indication} regulatory guidance approval pathways FDA EMA breakthrough designation`,
         priority: 9,
-        rationale: 'Critical regulatory strategy and pathway optimization'
+        rationale: 'Regulatory strategy and accelerated approval pathways'
       }
     };
 
