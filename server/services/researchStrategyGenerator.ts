@@ -30,21 +30,27 @@ export class ResearchStrategyGenerator {
       - Study Phase: ${studyPhase}
       - Geography: ${geography.join(', ')}
       
-      CRITICAL: Use flexible search terms that avoid restrictive AND operators. Create searches that cast a wide net to capture relevant information.
+      CRITICAL: Create intelligent, universal search strategies that work for ANY drug and disease combination. Use flexible search terms that avoid restrictive AND operators.
       
-      Search Strategy Rules:
+      Universal Search Strategy Rules:
       1. NEVER use restrictive AND combinations that might miss relevant information
-      2. For guidelines: Focus on INDICATION ONLY, not specific drugs (new drugs won't be in guidelines)
-      3. For competitive landscape: Include broader therapeutic classes and mechanisms, not just specific drugs
-      4. For regulatory: Focus on indication pathways and approval requirements
-      5. Use OR-style thinking: "Find information about X OR related therapies OR similar approaches"
+      2. For guidelines: Focus on INDICATION ONLY - new drugs won't be in guidelines yet
+      3. For competitive landscape: Use therapeutic MECHANISMS and CLASSES, not specific drug names
+      4. For regulatory: Focus on indication-specific pathways and requirements
+      5. Adapt search complexity based on disease area (oncology vs rare disease vs chronic conditions)
+      6. Use disease-agnostic terminology that works across therapeutic areas
       
-      Generate 8-12 research queries using these patterns:
+      Disease-Agnostic Patterns:
+      - Guidelines: "{indication} treatment guidelines clinical practice recommendations standard care"
+      - Competitive: "{therapeutic_class} {indication} pipeline clinical trials development"  
+      - Regulatory: "{indication} regulatory pathway approval requirements clinical endpoints"
+      - Market: "{indication} market access coverage reimbursement payer evidence"
       
-      GOOD Examples:
-      - "${indication} treatment guidelines NCCN ESMO 2024" (NOT "${drugName} AND ${indication} AND guidelines")
-      - "${indication} clinical trials recruiting active 2024" (NOT "${drugName} AND ${indication} AND trials")
-      - "targeted therapy ${indication} regulatory approval pathway" (NOT "${drugName} AND regulatory AND approval")
+      Therapeutic Area Intelligence:
+      - Oncology: Include "targeted therapy immunotherapy combination treatment"
+      - Rare diseases: Include "orphan designation regulatory pathway patient advocacy"
+      - Chronic conditions: Include "real world evidence patient outcomes quality life"
+      - Infectious diseases: Include "antimicrobial resistance treatment guidelines WHO CDC"
       
       Focus areas:
       1. Current treatment guidelines and standard of care (indication-focused)
@@ -158,6 +164,105 @@ export class ResearchStrategyGenerator {
     return 'general medicine';
   }
 
+  /**
+   * Get therapeutic area-specific search terms
+   */
+  private getTherapeuticAreaTerms(therapeuticArea: string): { competitive: string, regulatory: string, market: string, clinical: string } {
+    const termMap: Record<string, { competitive: string, regulatory: string, market: string, clinical: string }> = {
+      oncology: {
+        competitive: 'targeted therapy immunotherapy combination treatment precision medicine',
+        regulatory: 'breakthrough therapy accelerated approval tumor response biomarkers',
+        market: 'specialty pharmacy oncology networks value-based care',
+        clinical: 'progression free survival overall survival quality of life'
+      },
+      cardiology: {
+        competitive: 'device therapy intervention preventive treatment cardiovascular outcomes',
+        regulatory: 'cardiovascular outcomes trials safety endpoints MACE events',
+        market: 'cardiology practices hospital systems preventive care coverage',
+        clinical: 'cardiovascular events mortality risk reduction'
+      },
+      neurology: {
+        competitive: 'neuroprotective therapy disease modifying treatment symptomatic relief',
+        regulatory: 'biomarker endpoints cognitive assessment neuroimaging FDA guidance',
+        market: 'neurology specialists care coordination long-term management',
+        clinical: 'disease progression cognitive function quality of life'
+      },
+      endocrinology: {
+        competitive: 'glycemic control insulin therapy GLP-1 agonists continuous monitoring',
+        regulatory: 'glycemic endpoints cardiovascular safety diabetes guidance',
+        market: 'endocrinology practices diabetes educators managed care',
+        clinical: 'glycemic control diabetic complications patient adherence'
+      },
+      immunology: {
+        competitive: 'immunosuppressive therapy biologic treatment JAK inhibitors targeted therapy',
+        regulatory: 'immunogenicity safety monitoring autoimmune endpoints',
+        market: 'rheumatology practices specialty pharmacies prior authorization',
+        clinical: 'disease activity patient reported outcomes safety profile'
+      },
+      'infectious disease': {
+        competitive: 'antimicrobial therapy resistance patterns combination treatment prophylaxis',
+        regulatory: 'antimicrobial resistance WHO guidelines CDC recommendations',
+        market: 'infectious disease specialists hospital formularies stewardship programs',
+        clinical: 'clinical cure microbiological response resistance emergence'
+      },
+      'rare disease': {
+        competitive: 'orphan designation rare disease therapy patient advocacy treatment access',
+        regulatory: 'orphan drug designation accelerated approval patient registries',
+        market: 'rare disease coverage patient assistance ultra-orphan pricing',
+        clinical: 'natural history patient registries clinical meaningfulness'
+      },
+      respiratory: {
+        competitive: 'bronchodilator therapy inhaled treatment respiratory function targeted therapy',
+        regulatory: 'pulmonary function endpoints respiratory safety FDA guidance',
+        market: 'pulmonology practices respiratory therapists managed care',
+        clinical: 'respiratory function quality of life exacerbation rates'
+      },
+      gastroenterology: {
+        competitive: 'inflammatory bowel disease hepatology treatment endoscopic intervention',
+        regulatory: 'hepatic safety GI endpoints liver function monitoring',
+        market: 'gastroenterology practices hepatology centers specialty coverage',
+        clinical: 'disease remission liver function patient outcomes'
+      }
+    };
+
+    return termMap[therapeuticArea] || {
+      competitive: 'therapeutic intervention treatment options clinical development',
+      regulatory: 'clinical endpoints safety efficacy regulatory guidance',
+      market: 'specialist practices coverage decisions reimbursement',
+      clinical: 'patient outcomes clinical effectiveness safety profile'
+    };
+  }
+
+  /**
+   * Get relevant guidelines organizations based on therapeutic area and geography
+   */
+  private getGuidelinesOrganizations(therapeuticArea: string, geography: string[]): string {
+    const orgMap: Record<string, string[]> = {
+      oncology: ['NCCN', 'ESMO', 'ASCO', 'EMA oncology', 'FDA oncology'],
+      cardiology: ['AHA', 'ACC', 'ESC', 'ACP cardiology'],
+      neurology: ['AAN', 'EAN', 'WFN', 'ACP neurology'],
+      endocrinology: ['ADA', 'EASD', 'IDF', 'Endocrine Society'],
+      immunology: ['ACR', 'EULAR', 'BSR', 'APLAR'],
+      'infectious disease': ['IDSA', 'ESCMID', 'WHO', 'CDC'],
+      respiratory: ['ATS', 'ERS', 'GOLD', 'GINA'],
+      gastroenterology: ['AGA', 'EASL', 'AASLD', 'WGO'],
+      'rare disease': ['FDA orphan', 'EMA orphan', 'rare disease societies'],
+      'general medicine': ['WHO', 'professional societies', 'clinical guidelines']
+    };
+
+    const orgs = orgMap[therapeuticArea] || orgMap['general medicine'];
+    
+    // Filter based on geography if relevant
+    if (geography.includes('US')) {
+      return orgs.filter(org => !org.includes('ES') || org.includes('NCCN') || org.includes('FDA')).join(' ');
+    }
+    if (geography.includes('EU')) {
+      return orgs.filter(org => !org.includes('AA') || org.includes('ESMO') || org.includes('EMA')).join(' ');
+    }
+    
+    return orgs.join(' ');
+  }
+
   private validateSearchType(type: any): 'core' | 'competitive' | 'regulatory' | 'strategic' | 'therapeutic' | 'guidelines' {
     const validTypes = ['core', 'competitive', 'regulatory', 'strategic', 'therapeutic', 'guidelines'];
     return validTypes.includes(type) ? type as any : 'core';
@@ -168,54 +273,68 @@ export class ResearchStrategyGenerator {
   }
 
   private createFallbackSearches(drugName: string, indication: string, strategicGoals: string[], studyPhase: string, geography: string[]): SearchItem[] {
+    const therapeuticArea = this.inferTherapeuticArea(indication);
+    const therapeuticTerms = this.getTherapeuticAreaTerms(therapeuticArea);
+    const guidelinesOrgs = this.getGuidelinesOrganizations(therapeuticArea, geography);
+    
     const searches: SearchItem[] = [
-      // Guidelines search - indication only, no drug name
+      // Universal guidelines search - indication only, adaptive organizations
       {
         id: uuidv4(),
-        query: `${indication} treatment guidelines NCCN ESMO clinical practice recommendations 2024`,
+        query: `${indication} treatment guidelines ${guidelinesOrgs} clinical practice recommendations standard care 2024`,
         type: 'guidelines',
         priority: 10,
-        rationale: 'Current standard of care and treatment guidelines for the indication',
+        rationale: `Current treatment guidelines and standard of care for ${indication} from relevant medical societies`,
         enabled: true,
         userModified: false
       },
-      // Competitive landscape - broad therapeutic approach
+      // Therapeutic area-adaptive competitive landscape
       {
         id: uuidv4(),
-        query: `${indication} clinical trials recruiting active targeted therapy immunotherapy 2024`,
+        query: `${indication} clinical trials recruiting active ${therapeuticTerms.competitive} pipeline development 2024`,
         type: 'competitive',
         priority: 9,
-        rationale: 'Ongoing competitive trials across all therapeutic approaches',
+        rationale: `Ongoing competitive trials across ${therapeuticArea} therapeutic approaches`,
         enabled: true,
         userModified: false
       },
-      // Regulatory pathway - indication focused
+      // Universal regulatory pathway
       {
         id: uuidv4(),
-        query: `${indication} regulatory approval pathway FDA EMA clinical development guidance`,
+        query: `${indication} regulatory approval pathway FDA EMA clinical endpoints ${therapeuticTerms.regulatory}`,
         type: 'regulatory',
         priority: 8,
-        rationale: 'Regulatory requirements and approval pathways for the indication',
+        rationale: `Regulatory requirements and approval pathways for ${indication}`,
         enabled: true,
         userModified: false
       },
-      // Market access considerations
+      // Market access with therapeutic area considerations
       {
         id: uuidv4(),
-        query: `${indication} market access reimbursement payer evidence requirements health economics`,
+        query: `${indication} market access reimbursement coverage decisions health economics ${therapeuticTerms.market}`,
         type: 'strategic',
         priority: 7,
-        rationale: 'Market access landscape and payer requirements',
+        rationale: `Market access landscape and payer requirements for ${therapeuticArea}`,
         enabled: true,
         userModified: false
       },
-      // Drug-specific competitive intelligence (only when relevant)
+      // Drug mechanism and class-based competitive intelligence
       {
         id: uuidv4(),
-        query: `${drugName} clinical development pipeline competitive positioning mechanism of action`,
+        query: `${drugName} mechanism of action competitive landscape ${therapeuticTerms.competitive} clinical development`,
         type: 'competitive',
         priority: 8,
-        rationale: 'Specific competitive intelligence for the drug candidate',
+        rationale: `Competitive positioning based on mechanism of action and therapeutic class`,
+        enabled: true,
+        userModified: false
+      },
+      // Unmet medical needs and opportunities
+      {
+        id: uuidv4(),
+        query: `${indication} unmet medical needs treatment gaps patient outcomes ${therapeuticTerms.clinical}`,
+        type: 'therapeutic',
+        priority: 7,
+        rationale: `Clinical evidence gaps and unmet needs in ${indication}`,
         enabled: true,
         userModified: false
       }

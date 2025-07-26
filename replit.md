@@ -33,6 +33,11 @@ A comprehensive clinical study concept generation and validation application fea
 - ✓ **Fixed Table Formatting**: Completely rebuilt table detection and formatting system for proper display of clinical trial data with NCT highlighting
 - ✓ **Cumulative Research Functionality**: "Add More Research" now preserves previous results and appends new findings for comprehensive analysis
 - ✓ **Improved Data Persistence**: Research results accumulate across multiple research sessions rather than being replaced
+- ✓ **Universal Search Strategy Overhaul**: Removed restrictive AND operators, implemented intelligent therapeutic area-adaptive search patterns
+- ✓ **Disease-Agnostic Intelligence**: System now works universally for any drug/disease combination with therapeutic area-specific terminology
+- ✓ **Adaptive Guidelines Integration**: Guidelines searches focus on indication-only with relevant medical societies (NCCN, ESMO, AHA, etc.)
+- ✓ **Flexible Competitive Landscape**: Captures all therapeutic classes and mechanisms, not limited to specific drugs or classes
+- ✓ **Enhanced NCT Verification**: Real-time validation via ClinicalTrials.gov API prevents hallucinated trial numbers
 
 ## Project Architecture
 

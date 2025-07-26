@@ -73,30 +73,32 @@ export class ResearchExecutor {
   private enhanceQueryForSearchType(search: SearchItem): string {
     const baseQuery = search.query;
     
+    // Use minimal enhancement to preserve the carefully crafted base queries
+    // The strategy generator now creates comprehensive, flexible queries
     switch (search.type) {
       case 'competitive':
-        // Broad competitive intelligence - avoid restrictive AND operators
-        return `${baseQuery} OR competing therapies OR pipeline drugs OR clinical trials 2024 2025`;
+        // Minimal enhancement for competitive intelligence
+        return `${baseQuery}`;
       
       case 'regulatory':
-        // Regulatory guidance from multiple sources
-        return `${baseQuery} OR regulatory guidance OR approval requirements OR clinical development`;
+        // Minimal enhancement for regulatory guidance
+        return `${baseQuery}`;
       
       case 'strategic':
-        // Business and market intelligence
-        return `${baseQuery} OR market dynamics OR competitive positioning OR commercial strategy`;
+        // Minimal enhancement for business intelligence
+        return `${baseQuery}`;
       
       case 'therapeutic':
-        // Clinical evidence and treatment approaches
-        return `${baseQuery} OR clinical evidence OR treatment approaches OR therapeutic strategies 2024`;
+        // Minimal enhancement for clinical evidence
+        return `${baseQuery}`;
       
       case 'guidelines':
-        // Treatment guidelines - focus on indication, not specific drugs
-        return `${baseQuery} OR standard of care OR treatment recommendations OR clinical guidelines`;
+        // Minimal enhancement for treatment guidelines
+        return `${baseQuery}`;
       
       case 'core':
       default:
-        return `${baseQuery} OR clinical development OR study design OR research strategy`;
+        return `${baseQuery}`;
     }
   }
 
@@ -245,7 +247,7 @@ export class ResearchExecutor {
     if (!content) return [];
 
     // Extract key points using simple text analysis
-    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    const sentences = content.split(/[.!?]+/).filter((s: string) => s.trim().length > 20);
     const keyFindings = sentences
       .filter((sentence: string) => 
         sentence.includes('significant') || 
