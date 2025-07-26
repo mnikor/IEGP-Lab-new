@@ -238,6 +238,23 @@ export const researchResults = pgTable("research_results", {
   executedAt: timestamp("executed_at").defaultNow().notNull(),
 });
 
+// Saved Study Proposals table
+export const savedStudyProposals = pgTable("saved_study_proposals", {
+  id: serial("id").primaryKey(),
+  drugName: text("drug_name").notNull(),
+  indication: text("indication").notNull(),
+  strategicGoals: text("strategic_goals").array().notNull(),
+  geography: text("geography").array().notNull(),
+  researchStrategyId: integer("research_strategy_id"),
+  generatedConcepts: json("generated_concepts").notNull(), // Array of study concepts
+  researchResults: json("research_results"), // Formatted research strategy results
+  userInputs: json("user_inputs").notNull(), // Complete form inputs for regeneration
+  title: text("title").notNull(), // Auto-generated descriptive title
+  conceptCount: integer("concept_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertResearchStrategySchema = createInsertSchema(researchStrategies).omit({
   id: true,
   createdAt: true,
@@ -247,6 +264,12 @@ export const insertResearchStrategySchema = createInsertSchema(researchStrategie
 export const insertResearchResultSchema = createInsertSchema(researchResults).omit({
   id: true,
   executedAt: true,
+});
+
+export const insertSavedStudyProposalSchema = createInsertSchema(savedStudyProposals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 // Search item validation schema
@@ -299,3 +322,5 @@ export type SearchItem = z.infer<typeof searchItemSchema>;
 export type ResearchStrategyRequest = z.infer<typeof researchStrategyRequestSchema>;
 export type AmendStrategyRequest = z.infer<typeof amendStrategyRequestSchema>;
 export type ExecuteStrategyRequest = z.infer<typeof executeStrategyRequestSchema>;
+export type SavedStudyProposal = typeof savedStudyProposals.$inferSelect;
+export type InsertSavedStudyProposal = z.infer<typeof insertSavedStudyProposalSchema>;

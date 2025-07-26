@@ -239,6 +239,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         enrichedConcepts.map((concept: Partial<StudyConcept>) => storage.createStudyConcept(concept))
       );
 
+      // Step 5: Automatically save as a study proposal for persistence
+      if (savedConcepts.length > 0) {
+        try {
+          const proposalData = {
+            title: `${data.drugName} in ${data.indication} Study Proposal`,
+            drugName: data.drugName,
+            indication: data.indication,
+            studyPhase: data.studyPhasePref || 'Phase III',
+            strategicGoals: data.strategicGoals,
+            geography: data.geography || ['US', 'EU'],
+            researchStrategyId: data.researchStrategyId || null,
+            conceptIds: savedConcepts.map(c => c.id),
+            generatedConcepts: savedConcepts,
+            requestParameters: {
+              studyPhasePref: data.studyPhasePref,
+              targetSubpopulation: data.targetSubpopulation,
+              comparatorDrugs: data.comparatorDrugs,
+              budgetCeilingEur: data.budgetCeilingEur,
+              timelineCeilingMonths: data.timelineCeilingMonths,
+              globalLoeDate: data.globalLoeDate,
+              hasPatentExtensionPotential: data.hasPatentExtensionPotential,
+              anticipatedFpiDate: data.anticipatedFpiDate,
+              aiModel: data.aiModel
+            }
+          };
+
+          await storage.createSavedStudyProposal(proposalData);
+          console.log("Successfully saved study proposal for persistence");
+        } catch (error) {
+          console.error("Error saving study proposal:", error);
+          // Don't fail the entire request if proposal saving fails
+        }
+      }
+
       res.json(savedConcepts);
     } catch (error) {
       console.error("Error generating study concepts:", error);
@@ -782,6 +816,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching research results:", error);
       res.status(500).json({ message: "Failed to fetch research results" });
+    }
+  });
+
+  // Saved Study Proposal management routes
+  app.get("/api/saved-proposals", async (req, res) => {
+    try {
+      const proposals = await storage.getAllSavedStudyProposals();
+      res.json(proposals);
+    } catch (error) {
+      console.error("Error fetching saved proposals:", error);
+      res.status(500).json({ message: "Failed to fetch saved proposals" });
+    }
+  });
+
+  app.get("/api/saved-proposals/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const proposal = await storage.getSavedStudyProposal(id);
+      
+      if (!proposal) {
+        return res.status(404).json({ message: "Proposal not found" });
+      }
+      
+      res.json(proposal);
+    } catch (error) {
+      console.error("Error fetching proposal:", error);
+      res.status(500).json({ message: "Failed to fetch proposal" });
+    }
+  });
+
+  app.delete("/api/saved-proposals/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteSavedStudyProposal(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Proposal not found" });
+      }
+      
+      res.json({ message: "Proposal deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting proposal:", error);
+      res.status(500).json({ message: "Failed to delete proposal" });
     }
   });
 
