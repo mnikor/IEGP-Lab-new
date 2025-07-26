@@ -852,7 +852,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/saved-proposals", async (req, res) => {
     try {
       const proposals = await storage.getAllSavedStudyProposals();
-      res.json(proposals);
+      
+      // Backfill research results for existing proposals that don't have them
+      const updatedProposals = await Promise.all(
+        proposals.map(async (proposal) => {
+          // If proposal has a researchStrategyId but no researchResults, fetch and update  
+          if (proposal.researchStrategyId && (!proposal.researchResults || proposal.researchResults === null || proposal.researchResults === '')) {
+            console.log(`Backfilling research results for proposal ${proposal.id} with strategy ${proposal.researchStrategyId}`);
+            try {
+              const results = await storage.getResearchResultsByStrategy(proposal.researchStrategyId);
+              console.log(`Found ${results.length} research results for strategy ${proposal.researchStrategyId}`);
+              
+              if (results.length > 0) {
+                // Format research results for display
+                const formattedResults = results.map(result => ({
+                  query: result.searchQuery,
+                  type: result.searchType,
+                  insights: result.synthesizedInsights,
+                  keyFindings: result.keyFindings
+                })).map(result => 
+                  `<h4>${result.type.toUpperCase()}: ${result.query}</h4>
+                   <div>${result.insights}</div>
+                   ${result.keyFindings ? `<ul>${result.keyFindings.map((finding: any) => `<li>${finding}</li>`).join('')}</ul>` : ''}`
+                ).join('<hr>');
+
+                console.log(`Formatted results length: ${formattedResults.length} characters`);
+
+                // Update the proposal with research results
+                const updatedProposal = await storage.updateSavedStudyProposal(proposal.id, {
+                  researchResults: formattedResults
+                });
+                
+                console.log(`Updated proposal result:`, updatedProposal ? 'success' : 'failed');
+                return updatedProposal || proposal;
+              }
+            } catch (error) {
+              console.error(`Error backfilling research results for proposal ${proposal.id}:`, error);
+            }
+          }
+          return proposal;
+        })
+      );
+      
+      res.json(updatedProposals);
     } catch (error) {
       console.error("Error fetching saved proposals:", error);
       res.status(500).json({ message: "Failed to fetch saved proposals" });
