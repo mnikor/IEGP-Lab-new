@@ -30,6 +30,9 @@ A comprehensive clinical study concept generation and validation application fea
 - ✓ **Improved Table Formatting**: Enhanced competitive analysis table display with professional styling and highlighted NCT numbers for better readability
 - ✓ **Immediate Research Results Access**: Added "View Results" button to show research findings immediately when complete, with option to add additional targeted searches
 - ✓ **Enhanced Research UX**: Users can now review research insights before concept generation and run supplementary research if gaps are identified
+- ✓ **Fixed Table Formatting**: Completely rebuilt table detection and formatting system for proper display of clinical trial data with NCT highlighting
+- ✓ **Cumulative Research Functionality**: "Add More Research" now preserves previous results and appends new findings for comprehensive analysis
+- ✓ **Improved Data Persistence**: Research results accumulate across multiple research sessions rather than being replaced
 
 ## Project Architecture
 

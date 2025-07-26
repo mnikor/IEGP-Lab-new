@@ -138,7 +138,8 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
 
       const results = await response.json();
       setExecutionResults(results);
-      setResearchResults(results.researchResults || []);
+      // Append new results to existing ones instead of replacing
+      setResearchResults(prev => [...prev, ...(results.researchResults || [])]);
       
       toast({
         title: "Research Executed",
@@ -354,7 +355,7 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
                           </Button>
                         </div>
                         <p className="text-sm text-green-800 mb-2">
-                          Successfully completed {executionResults.successfulSearches} of {executionResults.totalSearches} research queries with {researchResults.reduce((acc, r) => acc + (r.rawResults?.citations?.length || 0), 0)} sources.
+                          Successfully completed {executionResults.successfulSearches} of {executionResults.totalSearches} research queries. Total research dataset: {researchResults.length} searches with {researchResults.reduce((acc, r) => acc + (r.rawResults?.citations?.length || 0), 0)} sources.
                         </p>
                         <p className="text-xs text-green-600">
                           Research insights are now available and will enhance concept generation.
@@ -370,11 +371,12 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
                           variant="outline" 
                           size="sm" 
                           onClick={() => {
-                            // Reset to allow generating new research strategy
+                            // Keep existing results and allow additional research
                             setCurrentStrategy(null);
                             setExecutionResults(null);
                             setEditingSearches([]);
                             setUserNotes('');
+                            // Note: researchResults are preserved for cumulative research
                           }}
                         >
                           <Plus className="h-4 w-4 mr-2" />
