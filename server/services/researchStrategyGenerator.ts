@@ -54,10 +54,11 @@ export class ResearchStrategyGenerator {
       
       Focus areas:
       1. Current treatment guidelines and standard of care (indication-focused)
-      2. Competitive therapeutic landscape (broad class coverage)
-      3. Regulatory pathways for the indication
-      4. Market access considerations
-      5. Clinical evidence gaps and unmet needs
+      2. Drug-specific competitive intelligence and development status
+      3. Competitive therapeutic landscape (broad class coverage)
+      4. Regulatory pathways for both indication and drug
+      5. Market access considerations
+      6. Clinical evidence gaps and drug-specific efficacy data
       
       Return as JSON with this structure:
       {
@@ -318,13 +319,43 @@ export class ResearchStrategyGenerator {
         enabled: true,
         userModified: false
       },
-      // Drug mechanism and class-based competitive intelligence
+      // Drug-specific clinical trials and development status
       {
         id: uuidv4(),
-        query: `${drugName} mechanism of action competitive landscape ${therapeuticTerms.competitive} clinical development`,
+        query: `${drugName} clinical trials ${indication} pipeline development status phase studies`,
+        type: 'competitive',
+        priority: 9,
+        rationale: `Current development status and clinical trials for ${drugName} in ${indication}`,
+        enabled: true,
+        userModified: false
+      },
+      // Drug mechanism and competitive positioning
+      {
+        id: uuidv4(),
+        query: `${drugName} mechanism of action target pathway ${therapeuticTerms.competitive} competitive analysis`,
         type: 'competitive',
         priority: 8,
-        rationale: `Competitive positioning based on mechanism of action and therapeutic class`,
+        rationale: `Mechanism-based competitive positioning and differentiation for ${drugName}`,
+        enabled: true,
+        userModified: false
+      },
+      // Drug-specific regulatory and safety profile
+      {
+        id: uuidv4(),
+        query: `${drugName} regulatory status FDA EMA approval timeline safety profile adverse events`,
+        type: 'regulatory',
+        priority: 8,
+        rationale: `Regulatory pathway and safety considerations specific to ${drugName}`,
+        enabled: true,
+        userModified: false
+      },
+      // Drug efficacy and clinical evidence
+      {
+        id: uuidv4(),
+        query: `${drugName} efficacy clinical evidence ${indication} patient outcomes response rates`,
+        type: 'therapeutic',
+        priority: 8,
+        rationale: `Clinical evidence and efficacy data for ${drugName} in ${indication}`,
         enabled: true,
         userModified: false
       },
