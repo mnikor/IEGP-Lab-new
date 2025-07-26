@@ -41,10 +41,16 @@ const ConceptDetailPage: React.FC = () => {
   });
 
   // Find proposal that contains this concept
-  const relatedProposal = savedProposals?.find(proposal => 
-    Array.isArray(proposal.generatedConcepts) && 
-    proposal.generatedConcepts.some((c: any) => c.id === concept?.id)
-  );
+  const relatedProposal = savedProposals?.find(proposal => {
+    if (!Array.isArray(proposal.generatedConcepts) || !concept?.id) return false;
+    
+    // Ensure both IDs are compared as the same type (number)
+    const conceptId = typeof concept.id === 'string' ? parseInt(concept.id) : concept.id;
+    return proposal.generatedConcepts.some((c: any) => {
+      const savedConceptId = typeof c.id === 'string' ? parseInt(c.id) : c.id;
+      return savedConceptId === conceptId;
+    });
+  });
 
   if (isLoading) {
     return (
