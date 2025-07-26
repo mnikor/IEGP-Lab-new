@@ -161,7 +161,7 @@ export class ResearchExecutor {
       console.log(`Perplexity Deep Research completed for: "${search.query}"`);
       
       // Process and structure the results
-      const synthesizedInsights = this.processSingleSearchResult(search, perplexityResult);
+      const synthesizedInsights = await this.processSingleSearchResult(search, perplexityResult);
       const keyFindings = this.extractKeyFindings(perplexityResult);
       
       const result: Omit<ResearchResult, 'id' | 'executedAt'> = {
@@ -202,7 +202,7 @@ export class ResearchExecutor {
     }
   }
 
-  private processSingleSearchResult(search: SearchItem, perplexityResult: any): string {
+  private async processSingleSearchResult(search: SearchItem, perplexityResult: any): Promise<string> {
     if (!perplexityResult) {
       return `Search for "${search.query}" returned no results`;
     }
@@ -215,21 +215,75 @@ export class ResearchExecutor {
       return `No content found for "${search.query}"`;
     }
 
-    // Extract key insights based on search type
-    const typeContext = this.getSearchTypeContext(search.type);
-    
-    // Enhanced formatting with better markdown structure
-    let result = `${typeContext}\n\n## **Key Insights: ${search.query}**\n\n${content}`;
-    
-    // Format citations with better structure
-    if (citations.length > 0) {
-      result += `\n\n### **📚 Sources & References:**\n`;
-      citations.forEach((citation: string, index: number) => {
-        result += `**[${index + 1}]** ${citation}\n`;
+    // Use AI to reformat the content properly
+    try {
+      const openai = new (await import('openai')).default({ apiKey: process.env.OPENAI_API_KEY });
+      
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a clinical research formatter. Transform raw research content into clean, well-formatted text.
+
+CRITICAL FORMATTING RULES:
+1. NEVER use ASCII tables with dashes, pipes, or similar formatting
+2. Replace any table data with clear bullet points or numbered lists
+3. For clinical trials, format as:
+   • **NCT#####** - [Trial Name]
+     - Population: [details]
+     - Phase: [phase info]
+     - Status: [recruiting/active/completed]
+     - Key Details: [important info]
+
+4. Use proper markdown headings (##, ###)
+5. Make content readable and professional
+6. Keep all factual information and citations intact
+7. Focus on clarity and readability over tables`
+          },
+          {
+            role: "user",
+            content: `Please reformat this research content for "${search.query}". Remove any ASCII table formatting and present as clean, readable text:\n\n${content}`
+          }
+        ],
+        max_tokens: 1500,
+        temperature: 0.2
       });
+
+      const formattedContent = response.choices[0].message.content || content;
+      
+      // Extract key insights based on search type
+      const typeContext = this.getSearchTypeContext(search.type);
+      
+      // Build formatted result
+      let result = `${typeContext}\n\n## **Key Insights: ${search.query}**\n\n${formattedContent}`;
+      
+      // Format citations with better structure
+      if (citations.length > 0) {
+        result += `\n\n### **📚 Sources & References:**\n`;
+        citations.forEach((citation: string, index: number) => {
+          result += `**[${index + 1}]** ${citation}\n`;
+        });
+      }
+      
+      return result;
+      
+    } catch (error) {
+      console.error('Error formatting content with AI, using fallback:', error);
+      
+      // Fallback to basic formatting
+      const typeContext = this.getSearchTypeContext(search.type);
+      let result = `${typeContext}\n\n## **Key Insights: ${search.query}**\n\n${content}`;
+      
+      if (citations.length > 0) {
+        result += `\n\n### **📚 Sources & References:**\n`;
+        citations.forEach((citation: string, index: number) => {
+          result += `**[${index + 1}]** ${citation}\n`;
+        });
+      }
+      
+      return result;
     }
-    
-    return result;
   }
 
   private getSearchTypeContext(type: string): string {
