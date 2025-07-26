@@ -28,6 +28,8 @@ A comprehensive clinical study concept generation and validation application fea
 - ✓ **Enhanced Clinical Trial Search**: Improved Perplexity queries to find real ongoing trials with actual NCT numbers instead of hypothetical examples, using site:clinicaltrials.gov with recruitment status filters
 - ✓ **Universal Drug/Disease Support**: Fixed research strategy to work generically for any drug and disease combination using proper variable substitution, not limited to specific examples
 - ✓ **Improved Table Formatting**: Enhanced competitive analysis table display with professional styling and highlighted NCT numbers for better readability
+- ✓ **Immediate Research Results Access**: Added "View Results" button to show research findings immediately when complete, with option to add additional targeted searches
+- ✓ **Enhanced Research UX**: Users can now review research insights before concept generation and run supplementary research if gaps are identified
 
 ## Project Architecture
 

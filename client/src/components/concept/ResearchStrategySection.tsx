@@ -15,12 +15,15 @@ import {
   CheckCircle2, 
   Loader2,
   AlertCircle,
-  Lightbulb
+  Lightbulb,
+  Plus,
+  Eye
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ResearchStrategy, SearchItem } from '@shared/schema';
 import type { StrategicGoal } from '@/lib/types';
+import { SituationalAnalysisModal } from '@/components/concept/SituationalAnalysisModal';
 
 interface ResearchStrategySectionProps {
   drugName: string;
@@ -46,6 +49,9 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionResults, setExecutionResults] = useState<any>(null);
+  const [showResearchResults, setShowResearchResults] = useState(false);
+  const [showAdditionalResearch, setShowAdditionalResearch] = useState(false);
+  const [researchResults, setResearchResults] = useState<any[]>([]);
   const { toast } = useToast();
 
   const canGenerateStrategy = drugName && indication && strategicGoals.length > 0 && studyPhase && geography.length > 0;
@@ -132,6 +138,7 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
 
       const results = await response.json();
       setExecutionResults(results);
+      setResearchResults(results.researchResults || []);
       
       toast({
         title: "Research Executed",
@@ -332,31 +339,42 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
                   {executionResults && (
                     <div className="space-y-4">
                       <div className="p-4 bg-green-50 rounded-lg">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
-                          <h4 className="font-medium text-green-900">Research Complete</h4>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                            <h4 className="font-medium text-green-900">Research Complete</h4>
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setShowResearchResults(true)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Results
+                          </Button>
                         </div>
-                        <p className="text-sm text-green-800">
-                          Successfully completed {executionResults.successfulSearches} of {executionResults.totalSearches} research queries.
-                          Research insights are now available in the sidebar when you generate concepts.
+                        <p className="text-sm text-green-800 mb-2">
+                          Successfully completed {executionResults.successfulSearches} of {executionResults.totalSearches} research queries with {researchResults.reduce((acc, r) => acc + (r.rawResults?.citations?.length || 0), 0)} sources.
+                        </p>
+                        <p className="text-xs text-green-600">
+                          Research insights are now available and will enhance concept generation.
                         </p>
                       </div>
-
-                      {/* Compact Research Summary - No detailed display */}
-                      <Card className="border-l-4 border-l-blue-500">
-                        <CardHeader>
-                          <CardTitle className="text-base flex items-center space-x-2">
-                            <Lightbulb className="h-5 w-5 text-blue-600" />
-                            <span>Research Strategy Executed</span>
-                          </CardTitle>
-                          <CardDescription>
-                            {executionResults.totalSearches} research queries completed. 
-                            Detailed insights will appear in the research sidebar after concept generation.
-                          </CardDescription>
-                        </CardHeader>
-                      </Card>
-
-
+                      
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <h4 className="font-medium text-blue-900 mb-2">Need Additional Research?</h4>
+                        <p className="text-sm text-blue-800 mb-3">
+                          If specific areas need more investigation, you can run additional targeted searches.
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setShowAdditionalResearch(true)}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add More Research
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -380,6 +398,16 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
             )}
         </CardContent>
       )}
+      
+      {/* Research Results Modal */}
+      <SituationalAnalysisModal
+        isOpen={showResearchResults}
+        onClose={() => setShowResearchResults(false)}
+        drugName={drugName}
+        indication={indication}
+        researchResults={researchResults}
+        isLoading={false}
+      />
     </Card>
   );
 };
