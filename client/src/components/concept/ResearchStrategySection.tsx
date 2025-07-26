@@ -380,8 +380,7 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
                             setExecutionResults(null);
                             setEditingSearches([]);
                             setUserNotes('');
-                            setResearchResults([]);
-                            // cumulativeResults are intentionally preserved
+                            // Don't reset researchResults or cumulativeResults to preserve data
                           }}
                         >
                           <Plus className="h-4 w-4 mr-2" />
@@ -401,6 +400,8 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
                       setEditingSearches([]);
                       setUserNotes('');
                       setExecutionResults(null);
+                      setResearchResults([]);
+                      setCumulativeResults([]);
                     }}
                     className="text-sm"
                   >

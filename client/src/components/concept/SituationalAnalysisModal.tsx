@@ -47,116 +47,23 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
   const processMarkdown = (text: string) => {
     if (!text) return '';
     
-    // Enhanced table processing for competitive analysis
+    // Simple text formatting - no table processing to avoid alignment issues
     let processed = text
-      .replace(/## (.*?)\n/g, '<h2 class="text-xl font-bold mt-6 mb-3 text-blue-900 border-b border-blue-200 pb-2">$1</h2>')
-      .replace(/### (.*?)\n/g, '<h3 class="text-lg font-semibold mt-4 mb-2 text-blue-800">$1</h3>')
-      .replace(/#### (.*?)\n/g, '<h4 class="text-md font-medium mt-3 mb-2 text-blue-700">$1</h4>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-900">$1</strong>')
-      .replace(/\*([^*]+)\*/g, '<em class="text-blue-700">$1</em>')
-      .replace(/\n\n/g, '<br/><br/>')
-      .replace(/^\- (.*$)/gm, '<li class="ml-4 list-disc mb-1">$1</li>')
-      .replace(/^• (.*$)/gm, '<li class="ml-4 list-disc mb-1">$1</li>');
+      .replace(/## (.*?)\n/g, '<h2 class="text-lg font-bold mt-4 mb-2 text-blue-900 border-b border-blue-200 pb-1">$1</h2>')
+      .replace(/### (.*?)\n/g, '<h3 class="text-base font-semibold mt-3 mb-2 text-blue-800">$1</h3>')
+      .replace(/#### (.*?)\n/g, '<h4 class="text-sm font-medium mt-2 mb-1 text-blue-700">$1</h4>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-blue-900">$1</strong>')
+      .replace(/\*([^*]+)\*/g, '<em class="italic text-blue-700">$1</em>')
+      .replace(/\n\n/g, '<br><br>')
+      .replace(/\n/g, '<br>')
+      .replace(/^\- (.*$)/gm, '<div class="ml-4 mb-1">• $1</div>')
+      .replace(/^• (.*$)/gm, '<div class="ml-4 mb-1">• $1</div>');
 
-    // Enhanced table detection and formatting - handle pipe-separated tables
-    const lines = processed.split('\n');
-    let inTable = false;
-    let tableLines = [];
-    let processedLines = [];
+    // Highlight NCT numbers for clinical trials
+    processed = processed.replace(/NCT\d{8}/g, '<span class="inline-block bg-blue-100 text-blue-800 font-mono text-sm px-2 py-1 rounded border font-semibold">$&</span>');
     
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      
-      // Check if this line looks like a table row (has multiple pipes)
-      const pipeCount = (line.match(/\|/g) || []).length;
-      
-      if (pipeCount >= 2 && line.includes('|')) {
-        if (!inTable) {
-          inTable = true;
-          tableLines = [];
-        }
-        tableLines.push(line);
-      } else {
-        if (inTable) {
-          // End of table - process accumulated table lines
-          if (tableLines.length > 0) {
-            const tableHtml = formatTable(tableLines);
-            processedLines.push(tableHtml);
-          }
-          inTable = false;
-          tableLines = [];
-        }
-        processedLines.push(line);
-      }
-    }
-    
-    // Handle case where table is at end of text
-    if (inTable && tableLines.length > 0) {
-      const tableHtml = formatTable(tableLines);
-      processedLines.push(tableHtml);
-    }
-    
-    processed = processedLines.join('<br>');
-    
-    function formatTable(tableLines: string[]) {
-      if (tableLines.length === 0) return '';
-      
-      let tableHtml = '<div class="overflow-x-auto my-4 border border-gray-200 rounded-lg">';
-      tableHtml += '<table class="min-w-full divide-y divide-gray-200">';
-      
-      // Process all lines as table rows
-      tableHtml += '<tbody class="bg-white divide-y divide-gray-100">';
-      
-      // Find the maximum number of columns to ensure consistent table structure
-      const maxColumns = Math.max(...tableLines.map((line: string) => 
-        line.split('|').map((cell: string) => cell.trim()).filter((cell: string) => cell !== '').length
-      ));
-      
-      tableLines.forEach((line: string, rowIndex: number) => {
-        const allCells = line.split('|').map((cell: string) => cell.trim());
-        // Remove empty cells from start and end, but keep internal structure
-        let startIndex = 0;
-        let endIndex = allCells.length - 1;
-        while (startIndex < allCells.length && allCells[startIndex] === '') startIndex++;
-        while (endIndex >= 0 && allCells[endIndex] === '') endIndex--;
-        
-        const cells = allCells.slice(startIndex, endIndex + 1);
-        
-        if (cells.length > 0) {
-          const isHeader = rowIndex === 0;
-          const rowClass = isHeader 
-            ? 'bg-gray-50 font-semibold'
-            : rowIndex % 2 === 1 ? 'bg-gray-25' : 'bg-white';
-          
-          tableHtml += `<tr class="${rowClass}">`;
-          
-          // Pad cells to ensure consistent column count
-          const paddedCells = [...cells];
-          while (paddedCells.length < maxColumns) {
-            paddedCells.push('');
-          }
-          
-          paddedCells.slice(0, maxColumns).forEach((cell: string) => {
-            const isNCT = /NCT\d{8}/.test(cell);
-            const cellClass = isNCT 
-              ? 'px-3 py-2 text-xs text-blue-700 font-mono bg-blue-50 border-r border-gray-200 last:border-r-0'
-              : isHeader
-              ? 'px-3 py-2 text-xs font-semibold text-gray-900 border-r border-gray-200 last:border-r-0'
-              : 'px-3 py-2 text-xs text-gray-700 border-r border-gray-200 last:border-r-0';
-            
-            const tag = isHeader ? 'th' : 'td';
-            tableHtml += `<${tag} class="${cellClass}">${cell}</${tag}>`;
-          });
-          tableHtml += '</tr>';
-        }
-      });
-      
-      tableHtml += '</tbody></table></div>';
-      return tableHtml;
-    }
-
-    // Format NCT numbers specifically
-    processed = processed.replace(/NCT\d{8}/g, '<span class="inline-block bg-blue-100 text-blue-800 font-mono text-sm px-2 py-1 rounded border">$&</span>');
+    // Handle pipe-separated content as simple formatted text blocks instead of tables
+    processed = processed.replace(/\|([^|\n]+\|[^|\n]*)/g, '<div class="bg-gray-50 p-2 rounded text-sm border-l-4 border-blue-300 mb-2">$1</div>');
     
     return processed;
   };
