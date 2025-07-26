@@ -4,8 +4,7 @@ import { useParams } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SituationalAnalysisModal } from "@/components/concept/SituationalAnalysisModal";
 import { ArrowLeft, BookOpen, Search, Calendar, TrendingUp, Star } from "lucide-react";
 import { Link } from "wouter";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
@@ -103,41 +102,15 @@ const ConceptDetailPage: React.FC = () => {
           <div className="flex items-center space-x-4">
             {/* Situational Analysis Button - if research data available */}
             {relatedProposal?.researchResults && (
-              <Dialog open={showSituationalAnalysis} onOpenChange={setShowSituationalAnalysis}>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="flex items-center space-x-2"
-                  >
-                    <Search className="h-4 w-4" />
-                    <span>Situational Analysis</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Situational Analysis - Research Intelligence</DialogTitle>
-                  </DialogHeader>
-                  <div className="mt-4">
-                    <Tabs defaultValue="research">
-                      <TabsList className="grid w-full grid-cols-1">
-                        <TabsTrigger value="research">Research Results</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="research" className="mt-4">
-                        <div className="prose prose-sm max-w-none">
-                          {typeof relatedProposal.researchResults === 'string' ? (
-                            <div dangerouslySetInnerHTML={{ __html: relatedProposal.researchResults }} />
-                          ) : (
-                            <pre className="whitespace-pre-wrap text-xs bg-gray-50 p-4 rounded border">
-                              {JSON.stringify(relatedProposal.researchResults, null, 2)}
-                            </pre>
-                          )}
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex items-center space-x-2"
+                onClick={() => setShowSituationalAnalysis(true)}
+              >
+                <Search className="h-4 w-4" />
+                <span>Situational Analysis</span>
+              </Button>
             )}
             
             {/* Confidence Level */}
@@ -389,6 +362,27 @@ const ConceptDetailPage: React.FC = () => {
 
         </CardContent>
       </Card>
+
+      {/* Situational Analysis Modal */}
+      {relatedProposal?.researchResults && (
+        <SituationalAnalysisModal
+          isOpen={showSituationalAnalysis}
+          onClose={() => setShowSituationalAnalysis(false)}
+          drugName={concept.drugName}
+          indication={concept.indication}
+          researchResults={(() => {
+            try {
+              // Parse the JSON string back to structured data
+              const parsed = JSON.parse(relatedProposal.researchResults);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+              console.error('Error parsing research results:', error);
+              return [];
+            }
+          })()}
+          isLoading={false}
+        />
+      )}
     </div>
   );
 };

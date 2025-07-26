@@ -248,17 +248,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             try {
               const results = await storage.getResearchResultsByStrategy(data.researchStrategyId);
               if (results.length > 0) {
-                // Format research results for display
-                researchResults = results.map(result => ({
-                  query: result.searchQuery,
-                  type: result.searchType,
-                  insights: result.synthesizedInsights,
-                  keyFindings: result.keyFindings
-                })).map(result => 
-                  `<h4>${result.type.toUpperCase()}: ${result.query}</h4>
-                   <div>${result.insights}</div>
-                   ${result.keyFindings ? `<ul>${result.keyFindings.map((finding: any) => `<li>${finding}</li>`).join('')}</ul>` : ''}`
-                ).join('<hr>');
+                // Store research results in structured JSON format for proper display
+                researchResults = JSON.stringify(results);
               }
             } catch (error) {
               console.error("Error fetching research results:", error);
@@ -864,23 +855,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(`Found ${results.length} research results for strategy ${proposal.researchStrategyId}`);
               
               if (results.length > 0) {
-                // Format research results for display
-                const formattedResults = results.map(result => ({
-                  query: result.searchQuery,
-                  type: result.searchType,
-                  insights: result.synthesizedInsights,
-                  keyFindings: result.keyFindings
-                })).map(result => 
-                  `<h4>${result.type.toUpperCase()}: ${result.query}</h4>
-                   <div>${result.insights}</div>
-                   ${result.keyFindings ? `<ul>${result.keyFindings.map((finding: any) => `<li>${finding}</li>`).join('')}</ul>` : ''}`
-                ).join('<hr>');
+                // Store research results in structured JSON format for proper display
+                const structuredResults = JSON.stringify(results);
 
-                console.log(`Formatted results length: ${formattedResults.length} characters`);
+                console.log(`Structured results length: ${structuredResults.length} characters`);
 
                 // Update the proposal with research results
                 const updatedProposal = await storage.updateSavedStudyProposal(proposal.id, {
-                  researchResults: formattedResults
+                  researchResults: structuredResults
                 });
                 
                 console.log(`Updated proposal result:`, updatedProposal ? 'success' : 'failed');
@@ -914,6 +896,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching proposal:", error);
       res.status(500).json({ message: "Failed to fetch proposal" });
+    }
+  });
+
+  // Add a simple PATCH route to update proposals
+  app.patch("/api/saved-proposals/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const updatedProposal = await storage.updateSavedStudyProposal(id, updates);
+      
+      if (!updatedProposal) {
+        return res.status(404).json({ message: "Proposal not found" });
+      }
+      
+      res.json(updatedProposal);
+    } catch (error) {
+      console.error("Error updating proposal:", error);
+      res.status(500).json({ message: "Failed to update proposal" });
     }
   });
 
