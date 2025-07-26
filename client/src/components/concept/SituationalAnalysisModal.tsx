@@ -98,7 +98,7 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
     
     processed = processedLines.join('<br>');
     
-    function formatTable(tableLines) {
+    function formatTable(tableLines: string[]) {
       if (tableLines.length === 0) return '';
       
       let tableHtml = '<div class="overflow-x-auto my-4 border border-gray-200 rounded-lg">';
@@ -107,8 +107,21 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
       // Process all lines as table rows
       tableHtml += '<tbody class="bg-white divide-y divide-gray-100">';
       
-      tableLines.forEach((line, rowIndex) => {
-        const cells = line.split('|').map(cell => cell.trim()).filter(cell => cell !== '');
+      // Find the maximum number of columns to ensure consistent table structure
+      const maxColumns = Math.max(...tableLines.map((line: string) => 
+        line.split('|').map((cell: string) => cell.trim()).filter((cell: string) => cell !== '').length
+      ));
+      
+      tableLines.forEach((line: string, rowIndex: number) => {
+        const allCells = line.split('|').map((cell: string) => cell.trim());
+        // Remove empty cells from start and end, but keep internal structure
+        let startIndex = 0;
+        let endIndex = allCells.length - 1;
+        while (startIndex < allCells.length && allCells[startIndex] === '') startIndex++;
+        while (endIndex >= 0 && allCells[endIndex] === '') endIndex--;
+        
+        const cells = allCells.slice(startIndex, endIndex + 1);
+        
         if (cells.length > 0) {
           const isHeader = rowIndex === 0;
           const rowClass = isHeader 
@@ -116,7 +129,14 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
             : rowIndex % 2 === 1 ? 'bg-gray-25' : 'bg-white';
           
           tableHtml += `<tr class="${rowClass}">`;
-          cells.forEach(cell => {
+          
+          // Pad cells to ensure consistent column count
+          const paddedCells = [...cells];
+          while (paddedCells.length < maxColumns) {
+            paddedCells.push('');
+          }
+          
+          paddedCells.slice(0, maxColumns).forEach((cell: string) => {
             const isNCT = /NCT\d{8}/.test(cell);
             const cellClass = isNCT 
               ? 'px-3 py-2 text-xs text-blue-700 font-mono bg-blue-50 border-r border-gray-200 last:border-r-0'
