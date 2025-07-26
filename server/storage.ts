@@ -94,6 +94,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(studyConcepts).orderBy(desc(studyConcepts.createdAt));
   }
 
+  async getRecentStudyConcepts(limit: number = 10): Promise<StudyConcept[]> {
+    return await db.select().from(studyConcepts).orderBy(desc(studyConcepts.createdAt)).limit(limit);
+  }
+
   // Synopsis validation methods
   async createSynopsisValidation(validation: InsertSynopsisValidation): Promise<SynopsisValidation> {
     const [created] = await db.insert(synopsisValidations).values(validation).returning();

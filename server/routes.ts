@@ -250,10 +250,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             strategicGoals: data.strategicGoals,
             geography: data.geography || ['US', 'EU'],
             researchStrategyId: data.researchStrategyId || null,
-            conceptIds: savedConcepts.map(c => c.id),
             generatedConcepts: savedConcepts,
-            requestParameters: {
+            userInputs: {
+              drugName: data.drugName,
+              indication: data.indication,
               studyPhasePref: data.studyPhasePref,
+              strategicGoals: data.strategicGoals,
+              geography: data.geography,
               targetSubpopulation: data.targetSubpopulation,
               comparatorDrugs: data.comparatorDrugs,
               budgetCeilingEur: data.budgetCeilingEur,
@@ -261,8 +264,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               globalLoeDate: data.globalLoeDate,
               hasPatentExtensionPotential: data.hasPatentExtensionPotential,
               anticipatedFpiDate: data.anticipatedFpiDate,
-              aiModel: data.aiModel
-            }
+              aiModel: data.aiModel,
+              researchStrategyId: data.researchStrategyId
+            },
+            conceptCount: savedConcepts.length
           };
 
           await storage.createSavedStudyProposal(proposalData);
