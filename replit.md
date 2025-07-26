@@ -24,6 +24,10 @@ A comprehensive clinical study concept generation and validation application fea
 - ✓ **Duplicate Search Prevention**: Fixed concept generation to properly reuse existing research strategy results via researchStrategyId parameter, eliminating redundant API calls
 - ✓ **Enhanced Research Quality**: Deep Research provides structured analysis with strategic importance, design implications, and actionable recommendations with proper citation formatting
 - ✓ **Consistent Situational Analysis UI**: Replaced research sidebar with Tournament-style "Situational Analysis" modal for consistent UX across applications, eliminating scrolling issues and providing organized tabbed research intelligence display
+- ✓ **Fixed Duplicate Confidence Labels**: Removed duplicate confidence badges from ReasonsToBelieve component to show single accurate confidence level
+- ✓ **Enhanced Clinical Trial Search**: Improved Perplexity queries to find real ongoing trials with actual NCT numbers instead of hypothetical examples, using site:clinicaltrials.gov with recruitment status filters
+- ✓ **Universal Drug/Disease Support**: Fixed research strategy to work generically for any drug and disease combination using proper variable substitution, not limited to specific examples
+- ✓ **Improved Table Formatting**: Enhanced competitive analysis table display with professional styling and highlighted NCT numbers for better readability
 
 ## Project Architecture
 

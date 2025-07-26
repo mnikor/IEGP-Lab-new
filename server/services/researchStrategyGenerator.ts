@@ -85,20 +85,20 @@ TASK: Generate 8-12 comprehensive research queries that will provide actionable 
 CRITICAL ONGOING TRIALS SEARCHES:
 - Current ongoing clinical trials for ${drugName} in ${indication} (use ClinicalTrials.gov, NCT numbers)
 - Recent 2024-2025 trial initiations and pipeline updates for ${drugName}
-- Competitive trials in ${indication} with similar mechanisms of action
+- Competitive trials in ${indication} with similar mechanisms of action or drug targets
 - New formulations, dosing regimens, or combination studies for ${drugName}
 
 COMPREHENSIVE COMPETITIVE INTELLIGENCE:
 - Direct competitors currently in clinical development for ${indication}
-- Recent approvals and pipeline drugs targeting same pathways
-- Competitive positioning and differentiation opportunities
-- Market share and treatment landscape analysis
+- Recent approvals and pipeline drugs targeting similar pathways or mechanisms
+- Competitive positioning and differentiation opportunities for ${drugName}
+- Treatment landscape and market dynamics analysis for ${indication}
 
 REGULATORY AND STRATEGIC INTELLIGENCE:
-- FDA guidance and regulatory precedents for ${indication}
-- Biomarker strategies and companion diagnostics requirements
-- Health economics and payer access considerations
-- Safety monitoring and risk management requirements
+- FDA guidance and regulatory precedents for ${indication} therapeutic area
+- Biomarker strategies and companion diagnostics requirements for ${indication}
+- Health economics and payer access considerations for ${indication} treatments
+- Safety monitoring and risk management requirements for ${drugName} class
 
 SEARCH TYPES:
 - "core": Essential baseline information (regulatory precedents, unmet needs)
@@ -186,7 +186,7 @@ Generate specific, actionable queries that a research analyst could execute imme
       },
       {
         id: uuidv4(),
-        query: `competitive trials ${indication} EGFR MET targeted therapy ongoing recruiting`,
+        query: `competitive trials ${indication} targeted therapy ongoing recruiting pipeline`,
         type: 'competitive',
         priority: 9,
         rationale: 'Competitive landscape analysis to inform positioning',
