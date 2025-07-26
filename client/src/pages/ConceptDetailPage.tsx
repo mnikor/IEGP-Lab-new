@@ -4,9 +4,9 @@ import { useParams } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, DollarSign, Users, MapPin, Target, Clock } from "lucide-react";
+import { ArrowLeft, Calendar, DollarSign, Users, MapPin, Target, Clock, BookOpen } from "lucide-react";
 import { Link } from "wouter";
-import type { StudyConcept } from "@shared/schema";
+import type { StudyConcept, SavedStudyProposal } from "@shared/schema";
 
 const ConceptDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +22,22 @@ const ConceptDetailPage: React.FC = () => {
     },
     enabled: !!id
   });
+
+  // Try to find related saved proposals that might contain research insights
+  const { data: savedProposals } = useQuery({
+    queryKey: ['/api/saved-proposals'],
+    queryFn: async (): Promise<SavedStudyProposal[]> => {
+      const response = await fetch('/api/saved-proposals');
+      if (!response.ok) return [];
+      return response.json();
+    }
+  });
+
+  // Find proposal that contains this concept
+  const relatedProposal = savedProposals?.find(proposal => 
+    Array.isArray(proposal.generatedConcepts) && 
+    proposal.generatedConcepts.some((c: any) => c.id === concept?.id)
+  );
 
   if (isLoading) {
     return (
@@ -121,6 +137,132 @@ const ConceptDetailPage: React.FC = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* PICO Analysis */}
+          {concept.picoData && (
+            <Card>
+              <CardHeader>
+                <CardTitle>PICO Analysis</CardTitle>
+                <CardDescription>Population, Intervention, Comparator, Outcomes</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.entries(concept.picoData as any).map(([key, value]) => (
+                    <div key={key}>
+                      <h4 className="font-semibold mb-1 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</h4>
+                      <p className="text-muted-foreground text-sm">{String(value)}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* SWOT Analysis */}
+          {concept.swotAnalysis && (
+            <Card>
+              <CardHeader>
+                <CardTitle>SWOT Analysis</CardTitle>
+                <CardDescription>Strengths, Weaknesses, Opportunities, Threats</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.entries(concept.swotAnalysis as any).map(([category, items]) => (
+                    <div key={category} className="space-y-2">
+                      <h4 className="font-semibold capitalize text-sm">{category}</h4>
+                      <ul className="space-y-1">
+                        {Array.isArray(items) ? items.map((item: string, index: number) => (
+                          <li key={index} className="text-sm text-muted-foreground flex items-start">
+                            <span className="mr-2 mt-1.5 h-1 w-1 bg-current rounded-full flex-shrink-0"></span>
+                            {item}
+                          </li>
+                        )) : (
+                          <li className="text-sm text-muted-foreground">{String(items)}</li>
+                        )}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Reasons to Believe */}
+          {concept.reasonsToBelieve && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Reasons to Believe</CardTitle>
+                <CardDescription>Evidence supporting study feasibility and success</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Array.isArray(concept.reasonsToBelieve) ? concept.reasonsToBelieve.map((reason: any, index: number) => (
+                    <div key={index} className="border-l-4 border-blue-200 pl-4 py-2">
+                      <p className="text-sm leading-relaxed">{typeof reason === 'string' ? reason : reason.text || JSON.stringify(reason)}</p>
+                    </div>
+                  )) : (
+                    <p className="text-muted-foreground">{String(concept.reasonsToBelieve)}</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* MCDA Scores */}
+          {concept.mcdaScores && (
+            <Card>
+              <CardHeader>
+                <CardTitle>MCDA Assessment</CardTitle>
+                <CardDescription>Multi-Criteria Decision Analysis scoring</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Object.entries(concept.mcdaScores as any).map(([criterion, score]) => (
+                    <div key={criterion} className="flex items-center justify-between">
+                      <span className="text-sm font-medium capitalize">
+                        {criterion.replace(/([A-Z])/g, ' $1').trim()}
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-24 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full" 
+                            style={{ width: `${Math.min(100, (Number(score) || 0) * 10)}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-semibold w-8 text-right">
+                          {typeof score === 'number' ? score.toFixed(1) : String(score)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Research Insights */}
+          {relatedProposal?.researchResults && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BookOpen className="mr-2 h-5 w-5" />
+                  Research Insights
+                </CardTitle>
+                <CardDescription>Market intelligence and competitive analysis</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="prose prose-sm max-w-none">
+                  {typeof relatedProposal.researchResults === 'string' ? (
+                    <div dangerouslySetInnerHTML={{ __html: relatedProposal.researchResults }} />
+                  ) : (
+                    <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded">
+                      {JSON.stringify(relatedProposal.researchResults, null, 2)}
+                    </pre>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Strategic Goals */}
           <Card>
