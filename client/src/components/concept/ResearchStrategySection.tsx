@@ -137,8 +137,10 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
       });
 
       const results = await response.json();
+      console.log("Execution results received:", results);
       setExecutionResults(results);
       setResearchResults(results.researchResults || []);
+      console.log("Research results set:", results.researchResults?.length || 0);
       
       toast({
         title: "Research Executed",

@@ -40,6 +40,15 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
 
+  // Debug logging
+  console.log('SituationalAnalysisModal props:', { 
+    isOpen, 
+    drugName, 
+    indication, 
+    researchResultsLength: researchResults?.length,
+    researchResults: researchResults 
+  });
+
   if (!isOpen) return null;
 
   const processMarkdown = (text: string) => {
@@ -122,12 +131,12 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
     return 'bg-blue-100 text-blue-700';
   };
 
-  const totalCitations = researchResults.reduce((acc, result) => 
-    acc + (result.rawResults.citations?.length || 0), 0
-  );
+  const totalCitations = researchResults ? researchResults.reduce((acc, result) => 
+    acc + (result.rawResults?.citations?.length || 0), 0
+  ) : 0;
 
   const getSearchesByType = (type: string) => 
-    researchResults.filter(result => result.searchType.toLowerCase() === type.toLowerCase());
+    researchResults ? researchResults.filter(result => result.searchType?.toLowerCase() === type.toLowerCase()) : [];
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-auto">
@@ -153,7 +162,7 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
               <Loader2 className="w-12 h-12 animate-spin text-blue-600 mb-4" />
               <p>Loading situational analysis...</p>
             </div>
-          ) : researchResults.length > 0 ? (
+          ) : researchResults && researchResults.length > 0 ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="mb-6">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -389,6 +398,9 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
               <p className="text-gray-500">
                 Generate concepts with research strategy to see situational analysis here.
               </p>
+              <div className="mt-4 text-xs text-gray-400">
+                Debug: {researchResults ? `Array with ${researchResults.length} items` : 'researchResults is null/undefined'}
+              </div>
             </div>
           )}
         </div>

@@ -762,7 +762,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         designImplications: executionResult.designImplications,
         strategicRecommendations: executionResult.strategicRecommendations,
         totalSearches: executionResult.results.length,
-        successfulSearches: executionResult.results.filter(r => !r.rawResults.error).length
+        successfulSearches: executionResult.results.filter(r => !r.rawResults.error).length,
+        researchResults: executionResult.results,
+        totalCitations: executionResult.results.reduce((acc, r) => acc + (r.rawResults?.citations?.length || 0), 0)
       });
 
     } catch (error) {
