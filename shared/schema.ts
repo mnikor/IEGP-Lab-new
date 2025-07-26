@@ -223,7 +223,7 @@ export const researchResults = pgTable("research_results", {
   id: serial("id").primaryKey(),
   strategyId: serial("strategy_id").references(() => researchStrategies.id),
   searchQuery: text("search_query").notNull(),
-  searchType: text("search_type").notNull(), // "core", "competitive", "regulatory", "strategic", "therapeutic"
+  searchType: text("search_type").notNull(), // "core", "competitive", "regulatory", "strategic", "therapeutic", "guidelines"
   priority: integer("priority").notNull().default(5),
   
   // Search results
@@ -253,12 +253,14 @@ export const insertResearchResultSchema = createInsertSchema(researchResults).om
 export const searchItemSchema = z.object({
   id: z.string(),
   query: z.string(),
-  type: z.enum(["core", "competitive", "regulatory", "strategic", "therapeutic"]),
+  type: z.enum(["core", "competitive", "regulatory", "strategic", "therapeutic", "guidelines"]),
   priority: z.number().min(1).max(10).default(5),
   rationale: z.string(),
   enabled: z.boolean().default(true),
   userModified: z.boolean().default(false),
 });
+
+export type SearchType = z.infer<typeof searchItemSchema>['type'];
 
 export const researchStrategyRequestSchema = z.object({
   drugName: z.string().min(1),

@@ -1,8 +1,5 @@
-import OpenAI from 'openai';
-import { SearchItem } from '@shared/schema';
 import { v4 as uuidv4 } from 'uuid';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import type { SearchItem } from '@shared/schema';
 
 interface StrategyContext {
   drugName: string;
@@ -19,229 +16,157 @@ interface GeneratedStrategy {
 
 export class ResearchStrategyGenerator {
   
-  /**
-   * Generate AI-driven research strategy based on study context
-   */
   async generateStrategy(context: StrategyContext): Promise<GeneratedStrategy> {
-    const prompt = this.buildStrategyPrompt(context);
+    const { drugName, indication, strategicGoals, studyPhase, geography } = context;
     
     try {
-      const response = await openai.chat.completions.create({
-        // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        model: "gpt-4o",
-        messages: [
+      // Use OpenAI to generate targeted research strategy
+      const openai = new (await import('openai')).default({ apiKey: process.env.OPENAI_API_KEY });
+      
+      const strategyPrompt = `Create a comprehensive research strategy for a clinical study with the following parameters:
+      - Drug: ${drugName}
+      - Indication: ${indication}
+      - Strategic Goals: ${strategicGoals.join(', ')}
+      - Study Phase: ${studyPhase}
+      - Geography: ${geography.join(', ')}
+      
+      Generate 8-12 specific, actionable research queries that will provide the most valuable insights for this study concept. Each query should be highly specific and targeted to find real, current information.
+      
+      Focus on:
+      1. Competitive landscape and ongoing trials (with specific NCT numbers)
+      2. Regulatory pathways and requirements
+      3. Market access and reimbursement considerations
+      4. Clinical evidence gaps and opportunities
+      5. Treatment guidelines and standard of care
+      
+      For each search, provide:
+      - A specific, targeted query
+      - Search type (core, competitive, regulatory, strategic, therapeutic, guidelines)
+      - Priority (1-10)
+      - Rationale for why this search is important
+      
+      Return as JSON array with this structure:
+      {
+        "searches": [
           {
-            role: "system",
-            content: `You are an expert clinical research strategist who designs targeted literature search strategies for pharmaceutical studies. Your role is to analyze study context and recommend specific, actionable research queries that will directly inform study design decisions.
-
-RESPONSE FORMAT: Return valid JSON with this exact structure:
-{
-  "searches": [
-    {
-      "id": "unique_id",
-      "query": "specific search query",
-      "type": "core|competitive|regulatory|strategic|therapeutic",
-      "priority": 1-10,
-      "rationale": "why this search is important"
-    }
-  ],
-  "rationale": "overall strategy explanation"
-}`
-          },
-          {
-            role: "user",
-            content: prompt
+            "query": "specific search query",
+            "type": "competitive",
+            "priority": 9,
+            "rationale": "why this search is critical"
           }
         ],
+        "rationale": "overall strategy explanation"
+      }`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are a clinical research strategist. Generate targeted research queries for comprehensive competitive intelligence and study design optimization." },
+          { role: "user", content: strategyPrompt }
+        ],
         response_format: { type: "json_object" },
-        temperature: 0.3
+        temperature: 0.3,
+        max_tokens: 2000
       });
 
       const result = JSON.parse(response.choices[0].message.content || '{}');
-      
-      // Validate and format the response
-      return this.validateAndFormatStrategy(result);
+      const searches: SearchItem[] = [];
+
+      // Process AI-generated searches
+      if (result.searches && Array.isArray(result.searches)) {
+        for (const search of result.searches) {
+          searches.push({
+            id: uuidv4(),
+            query: search.query,
+            type: this.validateSearchType(search.type),
+            priority: Math.max(1, Math.min(10, search.priority || 5)),
+            rationale: search.rationale || 'AI-generated research query',
+            enabled: true,
+            userModified: false
+          });
+        }
+      }
+
+      // Add strategic goal-specific searches
+      for (const goal of strategicGoals) {
+        searches.push(this.getStrategicGoalSearch(goal, indication));
+      }
+
+      return {
+        searches: searches.length > 0 ? searches : this.getDefaultSearches(drugName, indication, strategicGoals, studyPhase, geography),
+        rationale: result.rationale || 'AI-generated research strategy'
+      };
       
     } catch (error) {
-      console.error('Error generating research strategy:', error);
-      // Return fallback strategy
+      console.error('Error generating AI strategy, using fallback:', error);
       return this.generateFallbackStrategy(context);
     }
   }
 
-  private buildStrategyPrompt(context: StrategyContext): string {
-    const { drugName, indication, strategicGoals, studyPhase, geography } = context;
+  private inferTherapeuticArea(indication: string): string {
+    const lowerIndication = indication.toLowerCase();
     
-    return `
-STUDY CONTEXT:
-- Drug: ${drugName}
-- Indication: ${indication}
-- Strategic Goals: ${strategicGoals.join(', ')}
-- Study Phase: ${studyPhase}
-- Geography: ${geography.join(', ')}
-
-TASK: Generate 8-12 comprehensive research queries that will provide actionable intelligence for this study design. MUST INCLUDE specific searches for:
-
-CRITICAL ONGOING TRIALS SEARCHES (CAST WIDE NET):
-- Current ongoing clinical trials for ${drugName} in ${indication} - search broadly for all sources including congress abstracts, press releases, clinical updates
-- Recent 2024-2025 trial initiations and pipeline updates for ${drugName} - check company announcements, medical conferences, regulatory filings
-- Competitive trials in ${indication} with similar mechanisms - expand beyond ClinicalTrials.gov to capture all relevant studies
-- New formulations, dosing regimens, or combination studies for ${drugName} - search medical literature, congress abstracts, company communications
-
-COMPREHENSIVE COMPETITIVE INTELLIGENCE:
-- Direct competitors currently in clinical development for ${indication}
-- Recent approvals and pipeline drugs targeting similar pathways or mechanisms
-- Competitive positioning and differentiation opportunities for ${drugName}
-- Treatment landscape and market dynamics analysis for ${indication}
-
-REGULATORY AND STRATEGIC INTELLIGENCE:
-- FDA guidance and regulatory precedents for ${indication} therapeutic area
-- Biomarker strategies and companion diagnostics requirements for ${indication}
-- Health economics and payer access considerations for ${indication} treatments
-- Safety monitoring and risk management requirements for ${drugName} class
-
-SEARCH TYPES:
-- "core": Essential baseline information (regulatory precedents, unmet needs)
-- "competitive": Ongoing trials, competitive products, pipeline analysis
-- "regulatory": Approval pathways, FDA guidance, regulatory precedents
-- "strategic": Market access, biomarkers, commercial considerations
-- "therapeutic": Disease/therapeutic area specific considerations
-
-PRIORITY LEVELS:
-- 9-10: Critical for study success, immediate impact on design
-- 7-8: Important for optimization and risk mitigation
-- 5-6: Valuable context and background intelligence
-- 1-4: Nice-to-have supplementary information
-
-STRATEGIC GOAL MAPPINGS:
-- expand_label: Focus on comparative effectiveness, health economics, payer requirements
-- validate_biomarker: Focus on companion diagnostics, precision medicine, biomarker validation
-- accelerate_uptake: Focus on treatment patterns, physician preferences, adoption barriers
-- gain_approval: Focus on regulatory precedents, approval pathways, endpoint guidance
-- defend_market_share: Focus on competitive landscape, differentiation strategies
-- manage_safety_risk: Focus on safety monitoring, risk management plans
-
-Generate specific, actionable queries that a research analyst could execute immediately. 
-
-IMPORTANT SEARCH STRATEGY:
-- DO NOT restrict searches to site:clinicaltrials.gov only - cast a wide net
-- Include searches for congress abstracts, company press releases, medical conferences
-- Search for drug name + indication broadly to capture all relevant sources
-- Look for information in medical literature, industry reports, regulatory filings
-- Focus on finding real ongoing trials from ANY source, not just ClinicalTrials.gov
-`;
-  }
-
-  private validateAndFormatStrategy(result: any): GeneratedStrategy {
-    const searches: SearchItem[] = [];
-    
-    if (result.searches && Array.isArray(result.searches)) {
-      for (const search of result.searches) {
-        searches.push({
-          id: search.id || uuidv4(),
-          query: search.query || 'Missing query',
-          type: this.validateSearchType(search.type),
-          priority: Math.max(1, Math.min(10, search.priority || 5)),
-          rationale: search.rationale || 'AI-generated search',
-          enabled: true,
-          userModified: false
-        });
-      }
+    if (lowerIndication.includes('cancer') || lowerIndication.includes('tumor') || lowerIndication.includes('carcinoma') || 
+        lowerIndication.includes('oncology') || lowerIndication.includes('melanoma') || lowerIndication.includes('lymphoma') ||
+        lowerIndication.includes('leukemia') || lowerIndication.includes('sarcoma')) {
+      return 'oncology';
     }
-
-    return {
-      searches: searches.length > 0 ? searches : this.getDefaultSearches(),
-      rationale: result.rationale || 'AI-generated research strategy'
-    };
+    
+    if (lowerIndication.includes('diabetes') || lowerIndication.includes('insulin') || lowerIndication.includes('glucose') ||
+        lowerIndication.includes('endocrin')) {
+      return 'endocrinology';
+    }
+    
+    if (lowerIndication.includes('heart') || lowerIndication.includes('cardio') || lowerIndication.includes('hypertension') ||
+        lowerIndication.includes('arrhythmia') || lowerIndication.includes('myocardial')) {
+      return 'cardiology';
+    }
+    
+    if (lowerIndication.includes('brain') || lowerIndication.includes('neuro') || lowerIndication.includes('alzheimer') ||
+        lowerIndication.includes('parkinson') || lowerIndication.includes('epilepsy') || lowerIndication.includes('stroke')) {
+      return 'neurology';
+    }
+    
+    if (lowerIndication.includes('arthritis') || lowerIndication.includes('rheumat') || lowerIndication.includes('lupus') ||
+        lowerIndication.includes('psoriasis') || lowerIndication.includes('immune') || lowerIndication.includes('crohn')) {
+      return 'immunology';
+    }
+    
+    if (lowerIndication.includes('liver') || lowerIndication.includes('hepat') || lowerIndication.includes('gastro') ||
+        lowerIndication.includes('ibd') || lowerIndication.includes('colitis')) {
+      return 'gastroenterology';
+    }
+    
+    if (lowerIndication.includes('lung') || lowerIndication.includes('asthma') || lowerIndication.includes('copd') ||
+        lowerIndication.includes('respiratory') || lowerIndication.includes('pulmonary')) {
+      return 'respiratory';
+    }
+    
+    if (lowerIndication.includes('infection') || lowerIndication.includes('antimicrobial') || lowerIndication.includes('antibiotic') ||
+        lowerIndication.includes('sepsis') || lowerIndication.includes('pneumonia')) {
+      return 'infectious disease';
+    }
+    
+    return 'general medicine';
   }
 
-  private validateSearchType(type: string): 'core' | 'competitive' | 'regulatory' | 'strategic' | 'therapeutic' {
-    const validTypes = ['core', 'competitive', 'regulatory', 'strategic', 'therapeutic'];
+  private validateSearchType(type: any): 'core' | 'competitive' | 'regulatory' | 'strategic' | 'therapeutic' | 'guidelines' {
+    const validTypes = ['core', 'competitive', 'regulatory', 'strategic', 'therapeutic', 'guidelines'];
     return validTypes.includes(type) ? type as any : 'core';
   }
 
-  private generateFallbackStrategy(context: StrategyContext): GeneratedStrategy {
-    const { drugName, indication, strategicGoals, studyPhase } = context;
-    
+  private getDefaultSearches(drugName: string, indication: string, strategicGoals: string[], studyPhase: string, geography: string[]): SearchItem[] {
+    return this.createFallbackSearches(drugName, indication, strategicGoals, studyPhase, geography);
+  }
+
+  private createFallbackSearches(drugName: string, indication: string, strategicGoals: string[], studyPhase: string, geography: string[]): SearchItem[] {
     const searches: SearchItem[] = [
       {
         id: uuidv4(),
-        query: `${drugName} clinical trials ${indication} ongoing recruiting active 2024 2025`,
-        type: 'competitive',
-        priority: 10,
-        rationale: 'Critical - identify current ongoing trials from all sources including congress abstracts and press releases',
-        enabled: true,
-        userModified: false
-      },
-      {
-        id: uuidv4(),
-        query: `"${drugName}" clinical trials status recruiting active ${indication} NCT site:clinicaltrials.gov`,
-        type: 'competitive',
-        priority: 10,
-        rationale: 'Find specific ongoing trials with real NCT numbers',
-        enabled: true,
-        userModified: false
-      },
-      {
-        id: uuidv4(),
-        query: `${drugName} new formulations dosing regimens combination therapy ${indication} congress abstracts company updates 2024 2025`,
-        type: 'competitive',
-        priority: 9,
-        rationale: 'Essential - find new formulations and combinations from medical conferences and company updates',
-        enabled: true,
-        userModified: false
-      },
-      {
-        id: uuidv4(),
-        query: `${indication} clinical trials competitive landscape pipeline drugs targeted therapy recent approvals`,
-        type: 'competitive',
-        priority: 9,
-        rationale: 'Competitive landscape analysis from all sources including medical literature and industry reports',
-        enabled: true,
-        userModified: false
-      },
-      {
-        id: uuidv4(),
-        query: `${drugName} ${indication} breakthrough therapy FDA fast track company press releases regulatory updates`,
-        type: 'regulatory',
-        priority: 9,
-        rationale: 'Regulatory developments and company announcements about fast track designations',
-        enabled: true,
-        userModified: false
-      },
-      {
-        id: uuidv4(),
-        query: `FDA guidance ${indication} regulatory precedents approval pathway EMA regulatory science`,
-        type: 'regulatory',
-        priority: 8,
-        rationale: 'Regulatory requirements and guidance documents from FDA and EMA',
-        enabled: true,
-        userModified: false
-      },
-      {
-        id: uuidv4(),
-        query: `Recent clinical trials ${indication} ${studyPhase} phase regulatory approvals`,
+        query: `Clinical trial design ${indication} study considerations regulatory requirements`,
         type: 'core',
-        priority: 8,
-        rationale: 'Essential regulatory precedents for study design',
-        enabled: true,
-        userModified: false
-      },
-      {
-        id: uuidv4(),
-        query: `Unmet medical needs ${indication} treatment gaps current therapies`,
-        type: 'core',
-        priority: 7,
-        rationale: 'Identify clinical gaps this study could address',
-        enabled: true,
-        userModified: false
-      },
-      {
-        id: uuidv4(),
-        query: `Clinical trial design considerations ${indication} endpoints sample size`,
-        type: 'therapeutic',
-        priority: 7,
-        rationale: 'Therapeutic area-specific design requirements',
+        priority: 9,
+        rationale: 'Foundational clinical study design intelligence',
         enabled: true,
         userModified: false
       }
@@ -252,6 +177,14 @@ IMPORTANT SEARCH STRATEGY:
       searches.push(this.getStrategicGoalSearch(goal, indication));
     }
 
+    return searches;
+  }
+
+  private generateFallbackStrategy(context: StrategyContext): GeneratedStrategy {
+    const { drugName, indication, strategicGoals, studyPhase, geography } = context;
+    
+    const searches = this.createFallbackSearches(drugName, indication, strategicGoals, studyPhase, geography);
+
     return {
       searches,
       rationale: `Fallback research strategy for ${indication} ${studyPhase} study focusing on ${strategicGoals.join(', ')}`
@@ -259,31 +192,66 @@ IMPORTANT SEARCH STRATEGY:
   }
 
   private getStrategicGoalSearch(goal: string, indication: string): SearchItem {
-    const goalSearchMap: Record<string, { query: string; priority: number; rationale: string }> = {
+    const goalSearchMap: Record<string, { query: string, priority: number, rationale: string }> = {
       expand_label: {
-        query: `Health economics outcomes ${indication} comparative effectiveness payer evidence requirements`,
-        priority: 8,
-        rationale: 'Critical for label expansion and market access strategy'
+        query: `${indication} expanded indications label expansion clinical evidence regulatory pathway`,
+        priority: 10,
+        rationale: 'Critical regulatory and clinical data for label expansion strategy'
       },
-      validate_biomarker: {
-        query: `Companion diagnostics biomarker validation ${indication} precision medicine regulatory guidance`,
-        priority: 9,
-        rationale: 'Essential for biomarker validation study design'
+      defend_market_share: {
+        query: `Competitive landscape ${indication} market share analysis emerging therapies`,
+        priority: 8,
+        rationale: 'Competitive intelligence for market defense'
       },
       accelerate_uptake: {
-        query: `Treatment patterns ${indication} physician adoption barriers clinical practice guidelines`,
+        query: `${indication} physician adoption treatment patterns real world evidence uptake barriers`,
         priority: 7,
-        rationale: 'Understanding adoption challenges and opportunities'
+        rationale: 'Market access and adoption intelligence'
+      },
+      facilitate_market_access: {
+        query: `${indication} payer landscape reimbursement health technology assessment`,
+        priority: 8,
+        rationale: 'Payer and market access strategy intelligence'
+      },
+      generate_real_world_evidence: {
+        query: `${indication} real world evidence post-market surveillance patient outcomes`,
+        priority: 7,
+        rationale: 'Real world evidence generation strategy'
+      },
+      optimise_dosing: {
+        query: `${indication} optimal dosing regimens pharmacokinetics dose response`,
+        priority: 8,
+        rationale: 'Dosing optimization clinical evidence'
+      },
+      validate_biomarker: {
+        query: `${indication} biomarker validation predictive biomarkers patient selection`,
+        priority: 8,
+        rationale: 'Biomarker validation and personalized medicine'
+      },
+      manage_safety_risk: {
+        query: `${indication} safety profile risk management adverse events post-market`,
+        priority: 9,
+        rationale: 'Safety management and risk mitigation strategy'
+      },
+      extend_lifecycle_combinations: {
+        query: `${indication} combination therapy drug interactions synergistic effects`,
+        priority: 8,
+        rationale: 'Lifecycle extension through combination strategies'
+      },
+      secure_initial_approval: {
+        query: `${indication} approval requirements regulatory guidance clinical endpoints`,
+        priority: 10,
+        rationale: 'Initial approval pathway and requirements'
+      },
+      demonstrate_poc: {
+        query: `${indication} proof of concept early efficacy signals biomarkers`,
+        priority: 9,
+        rationale: 'Proof of concept demonstration strategy'
       },
       gain_approval: {
         query: `FDA EMA regulatory guidance ${indication} approval pathways breakthrough designation`,
         priority: 9,
         rationale: 'Critical regulatory strategy and pathway optimization'
-      },
-      defend_market_share: {
-        query: `Competitive landscape ${indication} market share analysis emerging therapies`,
-        priority: 7,
-        rationale: 'Competitive intelligence for market defense strategy'
       }
     };
 
@@ -302,19 +270,5 @@ IMPORTANT SEARCH STRATEGY:
       enabled: true,
       userModified: false
     };
-  }
-
-  private getDefaultSearches(): SearchItem[] {
-    return [
-      {
-        id: uuidv4(),
-        query: 'Clinical trial design considerations regulatory requirements',
-        type: 'core',
-        priority: 5,
-        rationale: 'Basic clinical trial design intelligence',
-        enabled: true,
-        userModified: false
-      }
-    ];
   }
 }

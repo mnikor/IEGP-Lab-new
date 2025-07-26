@@ -1,5 +1,7 @@
 import { SearchItem, ResearchResult, InsertResearchResult } from '@shared/schema';
 import { perplexityWebSearch } from './perplexity';
+import { NCTVerifier } from './nctVerifier';
+import { GuidelinesSearcher } from './guidelinesSearcher';
 
 interface ExecutionContext {
   strategyId: number;
@@ -14,6 +16,13 @@ interface ExecutionResult {
 }
 
 export class ResearchExecutor {
+  private nctVerifier: NCTVerifier;
+  private guidelinesSearcher: GuidelinesSearcher;
+  
+  constructor() {
+    this.nctVerifier = new NCTVerifier();
+    this.guidelinesSearcher = new GuidelinesSearcher();
+  }
   
   /**
    * Execute all approved searches and synthesize results
@@ -36,8 +45,12 @@ export class ResearchExecutor {
     try {
       const results = await Promise.all(searchPromises);
       
-      // Synthesize all results into actionable insights
-      const synthesizedInsights = await this.synthesizeResults(results);
+      // Step 1: Verify NCT numbers found in all results
+      const allContent = results.map(r => r.synthesizedInsights).join('\n');
+      const nctVerification = await this.nctVerifier.verifyNCTNumbers(allContent);
+      
+      // Step 2: Synthesize results with verified trial information
+      const synthesizedInsights = await this.synthesizeResults(results, nctVerification);
       const designImplications = this.extractDesignImplications(results);
       const strategicRecommendations = this.extractStrategicRecommendations(results);
 
@@ -62,27 +75,27 @@ export class ResearchExecutor {
     
     switch (search.type) {
       case 'competitive':
-        // Very specific terms for finding actual ongoing trials with real NCT numbers
-        if (baseQuery.toLowerCase().includes('ongoing') || baseQuery.toLowerCase().includes('clinical trials')) {
-          return `site:clinicaltrials.gov ${baseQuery} status:"Recruiting" OR status:"Active, not recruiting" OR status:"Enrolling by invitation" NCT 2024 2025`;
-        }
-        return `${baseQuery} ongoing trials recruiting active NCT site:clinicaltrials.gov 2024 2025`;
+        // Broad search for trials from all sources - NO site restrictions
+        return `${baseQuery} clinical trials ongoing recruiting active 2024 2025 NCT`;
       
       case 'regulatory':
-        // Focus on regulatory guidance and precedents
-        return `${baseQuery} FDA guidance EMA guidance regulatory precedents approval pathway site:fda.gov OR site:ema.europa.eu`;
+        // Regulatory guidance from multiple sources - NO site restrictions  
+        return `${baseQuery} regulatory guidance approval pathway clinical development FDA EMA`;
       
       case 'strategic':
         // Business and market intelligence focus
         return `${baseQuery} market access reimbursement health technology assessment payer evidence`;
       
       case 'therapeutic':
-        // Clinical and medical focus with recent evidence
+        // Clinical evidence and guidelines focus
         return `${baseQuery} clinical evidence treatment guidelines recent studies 2024 2025`;
+      
+      case 'guidelines':
+        // Treatment guidelines from medical societies
+        return `${baseQuery} treatment guidelines clinical practice guidelines consensus recommendations`;
       
       case 'core':
       default:
-        // Keep core searches broad but add recent filter
         return `${baseQuery} recent studies clinical evidence 2024 2025`;
     }
   }
@@ -234,7 +247,7 @@ export class ResearchExecutor {
     // Extract key points using simple text analysis
     const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 20);
     const keyFindings = sentences
-      .filter(sentence => 
+      .filter((sentence: string) => 
         sentence.includes('significant') || 
         sentence.includes('important') || 
         sentence.includes('key') ||
@@ -245,9 +258,9 @@ export class ResearchExecutor {
         sentence.includes('efficacy')
       )
       .slice(0, 3)
-      .map(s => s.trim());
+      .map((s: string) => s.trim());
 
-    return keyFindings.length > 0 ? keyFindings : sentences.slice(0, 2).map(s => s.trim());
+    return keyFindings.length > 0 ? keyFindings : sentences.slice(0, 2).map((s: string) => s.trim());
   }
 
   private extractSingleSearchImplications(search: SearchItem, perplexityResult: any): any {
@@ -280,7 +293,7 @@ export class ResearchExecutor {
     return null;
   }
 
-  private async synthesizeResults(results: ResearchResult[]): Promise<string> {
+  private async synthesizeResults(results: ResearchResult[], nctVerification?: any): Promise<string> {
     const successfulResults = results.filter(r => !(r.rawResults as any)?.error);
     
     console.log(`Synthesizing ${successfulResults.length} successful results out of ${results.length} total searches`);
@@ -341,9 +354,24 @@ Create a detailed synthesis with bold headings and specific citations that will 
 
       const aiSynthesis = synthesisResponse.choices[0].message.content || "";
       
+      // Add verified trial information if available
+      let verifiedTrialsSection = '';
+      if (nctVerification && nctVerification.verified.length > 0) {
+        verifiedTrialsSection = `\n\n${this.nctVerifier.formatVerifiedTrials(nctVerification.verified)}\n`;
+        
+        if (nctVerification.invalid.length > 0) {
+          verifiedTrialsSection += `\n## ⚠️ Unverified Trial References\n`;
+          verifiedTrialsSection += `The following NCT numbers could not be verified: ${nctVerification.invalid.join(', ')}\n`;
+          verifiedTrialsSection += `*These may be hypothetical examples or incorrectly cited trials.*\n`;
+        }
+      }
+      
       // Add summary statistics
+      const searchTypeSet = Array.from(new Set(successfulResults.map(r => r.searchType)));
       const synthesisWithStats = `# RESEARCH SYNTHESIS
-*Based on ${successfulResults.length} successful research queries across ${[...new Set(successfulResults.map(r => r.searchType))].length} intelligence areas*
+*Based on ${successfulResults.length} successful research queries across ${searchTypeSet.length} intelligence areas*
+
+${verifiedTrialsSection}
 
 ${aiSynthesis}
 
@@ -352,7 +380,7 @@ ${aiSynthesis}
 - **Total Searches Executed**: ${results.length}
 - **Successful Searches**: ${successfulResults.length}
 - **Failed Searches**: ${results.length - successfulResults.length}
-- **Intelligence Areas Covered**: ${[...new Set(successfulResults.map(r => r.searchType))].join(', ')}
+- **Intelligence Areas Covered**: ${Array.from(new Set(successfulResults.map(r => r.searchType))).join(', ')}
 - **High Priority Findings**: ${successfulResults.filter(r => r.priority >= 8).length}`;
 
       return synthesisWithStats;
