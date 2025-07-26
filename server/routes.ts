@@ -786,7 +786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update strategy as executed
       await storage.updateResearchStrategy(strategyId, {
         status: "executed",
-        executedAt: new Date().toISOString()
+        executedAt: new Date()
       });
 
       res.json({
