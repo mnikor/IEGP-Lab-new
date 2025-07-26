@@ -242,6 +242,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Step 5: Automatically save as a study proposal for persistence
       if (savedConcepts.length > 0) {
         try {
+          // Fetch research results if researchStrategyId is provided
+          let researchResults = null;
+          if (data.researchStrategyId) {
+            try {
+              const results = await storage.getResearchResultsByStrategy(data.researchStrategyId);
+              if (results.length > 0) {
+                // Format research results for display
+                researchResults = results.map(result => ({
+                  query: result.searchQuery,
+                  type: result.searchType,
+                  insights: result.synthesizedInsights,
+                  keyFindings: result.keyFindings
+                })).map(result => 
+                  `<h4>${result.type.toUpperCase()}: ${result.query}</h4>
+                   <div>${result.insights}</div>
+                   ${result.keyFindings ? `<ul>${result.keyFindings.map((finding: any) => `<li>${finding}</li>`).join('')}</ul>` : ''}`
+                ).join('<hr>');
+              }
+            } catch (error) {
+              console.error("Error fetching research results:", error);
+            }
+          }
+
           const proposalData = {
             title: `${data.drugName} in ${data.indication} Study Proposal`,
             drugName: data.drugName,
@@ -250,6 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             strategicGoals: data.strategicGoals,
             geography: data.geography || ['US', 'EU'],
             researchStrategyId: data.researchStrategyId || null,
+            researchResults: researchResults, // Include the formatted research results
             generatedConcepts: savedConcepts,
             userInputs: {
               drugName: data.drugName,
