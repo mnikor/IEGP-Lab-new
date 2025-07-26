@@ -102,6 +102,10 @@ export class ResearchStrategyGenerator {
         }
       }
 
+      // ALWAYS add essential drug-specific searches regardless of AI output
+      const drugSpecificSearches = this.getEssentialDrugSearches(drugName, indication, strategicGoals, studyPhase, geography);
+      searches.push(...drugSpecificSearches);
+
       // Add strategic goal-specific searches
       for (const goal of strategicGoals) {
         searches.push(this.getStrategicGoalSearch(goal, indication));
@@ -114,7 +118,11 @@ export class ResearchStrategyGenerator {
       
     } catch (error) {
       console.error('Error generating AI strategy, using fallback:', error);
-      return this.generateFallbackStrategy(context);
+      // Even in fallback, ensure drug-specific searches are included
+      const fallbackStrategy = this.generateFallbackStrategy(context);
+      const drugSpecificSearches = this.getEssentialDrugSearches(drugName, indication, strategicGoals, studyPhase, geography);
+      fallbackStrategy.searches.push(...drugSpecificSearches);
+      return fallbackStrategy;
     }
   }
 
@@ -262,6 +270,57 @@ export class ResearchStrategyGenerator {
     }
     
     return orgs.join(' ');
+  }
+
+  /**
+   * Get essential drug-specific searches that must always be included
+   */
+  private getEssentialDrugSearches(drugName: string, indication: string, strategicGoals: string[], studyPhase: string, geography: string[]): SearchItem[] {
+    const therapeuticArea = this.inferTherapeuticArea(indication);
+    const therapeuticTerms = this.getTherapeuticAreaTerms(therapeuticArea);
+    
+    return [
+      // Drug-specific clinical trials and development
+      {
+        id: uuidv4(),
+        query: `${drugName} clinical trials ${indication} development pipeline phase studies NCT`,
+        type: 'competitive',
+        priority: 10,
+        rationale: `Essential: Current clinical trials and development status for ${drugName} in ${indication}`,
+        enabled: true,
+        userModified: false
+      },
+      // Drug mechanism and competitive analysis
+      {
+        id: uuidv4(),
+        query: `${drugName} mechanism of action target pathway competitive positioning ${indication}`,
+        type: 'competitive',
+        priority: 9,
+        rationale: `Essential: Mechanism-based competitive analysis for ${drugName}`,
+        enabled: true,
+        userModified: false
+      },
+      // Drug regulatory status and safety
+      {
+        id: uuidv4(),
+        query: `${drugName} regulatory status FDA EMA approval safety profile ${indication}`,
+        type: 'regulatory',
+        priority: 9,
+        rationale: `Essential: Regulatory pathway and safety profile for ${drugName}`,
+        enabled: true,
+        userModified: false
+      },
+      // Drug efficacy and clinical evidence
+      {
+        id: uuidv4(),
+        query: `${drugName} efficacy clinical data ${indication} response rates patient outcomes`,
+        type: 'therapeutic',
+        priority: 8,
+        rationale: `Essential: Clinical efficacy and outcomes data for ${drugName} in ${indication}`,
+        enabled: true,
+        userModified: false
+      }
+    ];
   }
 
   private validateSearchType(type: any): 'core' | 'competitive' | 'regulatory' | 'strategic' | 'therapeutic' | 'guidelines' {
