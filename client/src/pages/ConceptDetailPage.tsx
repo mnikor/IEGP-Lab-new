@@ -4,7 +4,7 @@ import { useParams } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, DollarSign, Users, MapPin, Target, Clock, BookOpen } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import { Link } from "wouter";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
 import ReasonsToBelieve from "@/components/shared/ReasonsToBelieve";
@@ -43,10 +43,9 @@ const ConceptDetailPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading concept details...</p>
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-muted-foreground">Loading concept details...</div>
         </div>
       </div>
     );
@@ -54,33 +53,30 @@ const ConceptDetailPage: React.FC = () => {
 
   if (error || !concept) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">Failed to load concept details</p>
-          <Link href="/generate-concept">
-            <Button variant="outline">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Concepts
-            </Button>
-          </Link>
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-red-600">
+            {error ? 'Error loading concept details' : 'Concept not found'}
+          </div>
         </div>
       </div>
     );
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+  const formatCurrency = (amount: number): string => {
+    if (amount >= 1000000) {
+      return `€${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `€${(amount / 1000).toFixed(0)}K`;
+    } else {
+      return `€${amount.toLocaleString()}`;
+    }
   };
 
   const feasibilityData = concept.feasibilityData as any;
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div className="container mx-auto p-6">
       <div className="mb-6">
         <Link href="/generate-concept">
           <Button variant="outline" size="sm" className="mb-4">
@@ -88,273 +84,250 @@ const ConceptDetailPage: React.FC = () => {
             Back to Concepts
           </Button>
         </Link>
-        
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{concept.title}</h1>
-            <p className="text-lg text-muted-foreground">
-              {concept.drugName} for {concept.indication}
-            </p>
-          </div>
-          <Badge variant="secondary" className="text-sm">
-            Phase {concept.studyPhase}
-          </Badge>
-        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Study Overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Study Overview</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-semibold mb-2">Rationale</h4>
-                <p className="text-muted-foreground leading-relaxed">
-                  {concept.rationale}
-                </p>
+      <Card className="border border-neutral-light rounded-lg overflow-hidden">
+        <CardHeader className="bg-neutral-lightest p-4 border-b border-neutral-light flex flex-row items-center justify-between">
+          <div className="flex items-center">
+            <span className="text-lg font-medium text-primary">{concept.title}</span>
+            <Badge variant="secondary" className="ml-3 bg-blue-100 text-primary">
+              Phase {concept.studyPhase === "any" ? "Any" : concept.studyPhase}
+            </Badge>
+          </div>
+          <div className="flex items-center space-x-4">
+            {concept.mcdaScores && (
+              <div className="flex items-center">
+                <span className="ml-1 text-sm font-medium text-neutral-dark">
+                  {concept.mcdaScores.overall != null 
+                    ? concept.mcdaScores.overall.toFixed(1) + '/5'
+                    : 'N/A'}
+                </span>
               </div>
-              
-              {concept.targetSubpopulation && (
-                <div>
-                  <h4 className="font-semibold mb-2">Target Population</h4>
-                  <p className="text-muted-foreground">
-                    {concept.targetSubpopulation}
-                  </p>
-                </div>
-              )}
-
-              {concept.comparatorDrugs && concept.comparatorDrugs.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-2">Comparator Drugs</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {concept.comparatorDrugs.map((drug, index) => (
-                      <Badge key={index} variant="outline">{drug}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* PICO Analysis */}
-          {concept.picoData && (
-            <Card>
-              <CardHeader>
-                <CardTitle>PICO Analysis</CardTitle>
-                <CardDescription>Population, Intervention, Comparator, Outcomes</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(concept.picoData as any).map(([key, value]) => (
-                    <div key={key}>
-                      <h4 className="font-semibold mb-1 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</h4>
-                      <p className="text-muted-foreground text-sm">{String(value)}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="p-4">
+          <p className="text-lg text-muted-foreground mb-4">
+            {concept.drugName} for {concept.indication}
+          </p>
+          
+          {/* Strategic Goals */}
+          {concept.strategicGoals && concept.strategicGoals.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {concept.strategicGoals.map((goal, index) => (
+                <Badge key={index} variant="secondary" className="bg-blue-100 text-primary">
+                  {goal.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </Badge>
+              ))}
+            </div>
           )}
-
-          {/* SWOT Analysis */}
-          {concept.swotAnalysis && (
-            <Card>
-              <CardContent className="pt-6">
-                <SwotAnalysis swotAnalysis={concept.swotAnalysis as any} />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Reasons to Believe */}
+          
+          {/* Reasons to Believe - First after title, just like original */}
           {concept.reasonsToBelieve && (
-            <ReasonsToBelieve reasonsToBelieve={concept.reasonsToBelieve as any} />
+            <div className="mb-4">
+              <ReasonsToBelieve reasonsToBelieve={concept.reasonsToBelieve as any} />
+            </div>
+          )}
+
+          {/* Knowledge Gap & Innovation Justification */}
+          {(concept.knowledgeGapAddressed || concept.innovationJustification) && (
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4">
+              {concept.knowledgeGapAddressed && (
+                <div className="mb-2">
+                  <h4 className="text-sm font-semibold text-amber-800">Knowledge Gap Addressed:</h4>
+                  <p className="text-sm text-amber-700">{concept.knowledgeGapAddressed}</p>
+                </div>
+              )}
+              {concept.innovationJustification && (
+                <div>
+                  <h4 className="text-sm font-semibold text-amber-800">Innovation Value:</h4>
+                  <p className="text-sm text-amber-700">{concept.innovationJustification}</p>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* PICO Framework */}
+          {concept.picoData && (
+            <div className="mb-4">
+              <div className="flex items-center mb-2">
+                <h4 className="text-sm font-medium text-neutral-dark">PICO Framework</h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="p-3 bg-gray-50 border border-gray-100 rounded-md">
+                  <h5 className="text-xs font-medium text-secondary mb-1">Population</h5>
+                  <p className="text-xs text-neutral-medium">{(concept.picoData as any).population || 'Not specified'}</p>
+                </div>
+                <div className="p-3 bg-gray-50 border border-gray-100 rounded-md">
+                  <h5 className="text-xs font-medium text-secondary mb-1">Intervention</h5>
+                  <p className="text-xs text-neutral-medium">{(concept.picoData as any).intervention || 'Not specified'}</p>
+                </div>
+                <div className="p-3 bg-gray-50 border border-gray-100 rounded-md">
+                  <h5 className="text-xs font-medium text-secondary mb-1">Comparator</h5>
+                  <p className="text-xs text-neutral-medium">{(concept.picoData as any).comparator || 'Not specified'}</p>
+                </div>
+                <div className="p-3 bg-gray-50 border border-gray-100 rounded-md">
+                  <h5 className="text-xs font-medium text-secondary mb-1">Outcomes</h5>
+                  <p className="text-xs text-neutral-medium">{(concept.picoData as any).outcomes || 'Not specified'}</p>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* MCDA Scores */}
           {concept.mcdaScores && (
-            <Card>
-              <CardHeader>
-                <CardTitle>MCDA Assessment</CardTitle>
-                <CardDescription>Multi-Criteria Decision Analysis scoring</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {Object.entries(concept.mcdaScores as any).map(([criterion, score]) => (
-                    <div key={criterion} className="flex items-center justify-between">
-                      <span className="text-sm font-medium capitalize">
-                        {criterion.replace(/([A-Z])/g, ' $1').trim()}
-                      </span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{ width: `${Math.min(100, (Number(score) || 0) * 10)}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-sm font-semibold w-8 text-right">
-                          {typeof score === 'number' ? score.toFixed(1) : String(score)}
-                        </span>
-                      </div>
-                    </div>
+            <div className="mb-4">
+              <div className="flex items-center mb-2">
+                <h4 className="text-sm font-medium text-neutral-dark">MCDA Assessment</h4>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="p-3 bg-blue-50 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-neutral-medium">Scientific Validity</span>
+                    <span className="text-sm font-medium text-primary">
+                      {concept.mcdaScores.scientificValidity != null 
+                        ? concept.mcdaScores.scientificValidity.toFixed(1) + '/5'
+                        : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-neutral-medium">Clinical Impact</span>
+                    <span className="text-sm font-medium text-primary">
+                      {concept.mcdaScores.clinicalImpact != null 
+                        ? concept.mcdaScores.clinicalImpact.toFixed(1) + '/5'
+                        : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-neutral-medium">Commercial Value</span>
+                    <span className="text-sm font-medium text-primary">
+                      {concept.mcdaScores.commercialValue != null 
+                        ? concept.mcdaScores.commercialValue.toFixed(1) + '/5'
+                        : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-neutral-medium">Feasibility</span>
+                    <span className="text-sm font-medium text-primary">
+                      {concept.mcdaScores.feasibility != null 
+                        ? concept.mcdaScores.feasibility.toFixed(1) + '/5'
+                        : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SWOT Analysis */}
+          {concept.swotAnalysis && (
+            <div className="mb-4">
+              <SwotAnalysis swotAnalysis={concept.swotAnalysis as any} />
+            </div>
+          )}
+
+          {/* Study Overview Details */}
+          <div className="mb-4">
+            <div className="bg-gray-50 border border-gray-100 rounded-md p-3">
+              <h4 className="text-sm font-semibold text-gray-800 mb-2">Study Rationale</h4>
+              <p className="text-sm text-gray-700 leading-relaxed">{concept.rationale}</p>
+            </div>
+          </div>
+
+          {/* Target Population & Comparators */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            {concept.targetSubpopulation && (
+              <div className="bg-gray-50 border border-gray-100 rounded-md p-3">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2">Target Population</h4>
+                <p className="text-sm text-gray-700">{concept.targetSubpopulation}</p>
+              </div>
+            )}
+            
+            {concept.comparatorDrugs && concept.comparatorDrugs.length > 0 && (
+              <div className="bg-gray-50 border border-gray-100 rounded-md p-3">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2">Comparator Drugs</h4>
+                <div className="flex flex-wrap gap-2">
+                  {concept.comparatorDrugs.map((drug, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">{drug}</Badge>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            )}
+          </div>
+
+          {/* Geography */}
+          {concept.geography && concept.geography.length > 0 && (
+            <div className="mb-4">
+              <div className="bg-gray-50 border border-gray-100 rounded-md p-3">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2">Geographic Scope</h4>
+                <div className="flex flex-wrap gap-2">
+                  {concept.geography.map((region, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">{region}</Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Feasibility Data Sidebar-style content at bottom */}
+          {feasibilityData && (
+            <div className="bg-blue-50 border border-blue-100 rounded-md p-4">
+              <h4 className="text-sm font-semibold text-blue-800 mb-3">Feasibility Metrics</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-xs text-blue-600 mb-1">Estimated Cost</div>
+                  <div className="text-sm font-semibold text-blue-800">
+                    {formatCurrency(feasibilityData.estimatedCost)}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-blue-600 mb-1">Timeline</div>
+                  <div className="text-sm font-semibold text-blue-800">
+                    {feasibilityData.timeline} months
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-blue-600 mb-1">Sample Size</div>
+                  <div className="text-sm font-semibold text-blue-800">
+                    {feasibilityData.sampleSize} patients
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-blue-600 mb-1">Projected ROI</div>
+                  <div className="text-sm font-semibold text-blue-800">
+                    {feasibilityData.projectedROI ? `${feasibilityData.projectedROI}%` : 'N/A'}
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Research Insights */}
           {relatedProposal?.researchResults && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BookOpen className="mr-2 h-5 w-5" />
-                  Research Insights
-                </CardTitle>
-                <CardDescription>Market intelligence and competitive analysis</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="prose prose-sm max-w-none">
-                  {typeof relatedProposal.researchResults === 'string' ? (
-                    <div dangerouslySetInnerHTML={{ __html: relatedProposal.researchResults }} />
-                  ) : (
-                    <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded">
-                      {JSON.stringify(relatedProposal.researchResults, null, 2)}
-                    </pre>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Strategic Goals */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Target className="mr-2 h-5 w-5" />
-                Strategic Goals
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {concept.strategicGoals.map((goal, index) => (
-                  <Badge key={index} variant="secondary">
-                    {goal.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                  </Badge>
-                ))}
+            <div className="mt-4 bg-green-50 border border-green-100 rounded-md p-4">
+              <h4 className="text-sm font-semibold text-green-800 mb-3 flex items-center">
+                <BookOpen className="mr-2 h-4 w-4" />
+                Research Insights
+              </h4>
+              <div className="prose prose-sm max-w-none">
+                {typeof relatedProposal.researchResults === 'string' ? (
+                  <div dangerouslySetInnerHTML={{ __html: relatedProposal.researchResults }} />
+                ) : (
+                  <pre className="whitespace-pre-wrap text-xs bg-white p-3 rounded border">
+                    {JSON.stringify(relatedProposal.researchResults, null, 2)}
+                  </pre>
+                )}
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Geography */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <MapPin className="mr-2 h-5 w-5" />
-                Geographic Scope
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {concept.geography.map((region, index) => (
-                  <Badge key={index} variant="outline">{region}</Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar - Key Metrics */}
-        <div className="space-y-6">
-          {feasibilityData && (
-            <>
-              {/* Cost & Timeline */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Key Metrics</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <DollarSign className="mr-2 h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium">Estimated Cost</span>
-                    </div>
-                    <span className="font-semibold">
-                      {formatCurrency(feasibilityData.estimatedCost)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Clock className="mr-2 h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium">Timeline</span>
-                    </div>
-                    <span className="font-semibold">
-                      {feasibilityData.timeline} months
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Users className="mr-2 h-4 w-4 text-purple-600" />
-                      <span className="text-sm font-medium">Sample Size</span>
-                    </div>
-                    <span className="font-semibold">
-                      {feasibilityData.sampleSize} patients
-                    </span>
-                  </div>
-
-                  {feasibilityData.projectedROI && (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Target className="mr-2 h-4 w-4 text-amber-600" />
-                        <span className="text-sm font-medium">Projected ROI</span>
-                      </div>
-                      <span className="font-semibold">
-                        {(feasibilityData.projectedROI * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Study Dates */}
-              {(feasibilityData.estimatedFpiDate || feasibilityData.globalLoeDate) && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center">
-                      <Calendar className="mr-2 h-5 w-5" />
-                      Timeline
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {feasibilityData.estimatedFpiDate && (
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">First Patient In</div>
-                        <div className="font-semibold">
-                          {new Date(feasibilityData.estimatedFpiDate).toLocaleDateString()}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {feasibilityData.globalLoeDate && (
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Global LOE</div>
-                        <div className="font-semibold">
-                          {new Date(feasibilityData.globalLoeDate).toLocaleDateString()}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </>
+            </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
