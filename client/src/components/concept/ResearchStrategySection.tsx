@@ -137,10 +137,8 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
       });
 
       const results = await response.json();
-      console.log("Execution results received:", results);
       setExecutionResults(results);
       setResearchResults(results.researchResults || []);
-      console.log("Research results set:", results.researchResults?.length || 0);
       
       toast({
         title: "Research Executed",
@@ -371,7 +369,13 @@ export const ResearchStrategySection: React.FC<ResearchStrategySectionProps> = (
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => setShowAdditionalResearch(true)}
+                          onClick={() => {
+                            // Reset to allow generating new research strategy
+                            setCurrentStrategy(null);
+                            setExecutionResults(null);
+                            setEditingSearches([]);
+                            setUserNotes('');
+                          }}
                         >
                           <Plus className="h-4 w-4 mr-2" />
                           Add More Research

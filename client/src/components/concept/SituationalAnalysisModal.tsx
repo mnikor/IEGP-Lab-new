@@ -40,14 +40,7 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Debug logging
-  console.log('SituationalAnalysisModal props:', { 
-    isOpen, 
-    drugName, 
-    indication, 
-    researchResultsLength: researchResults?.length,
-    researchResults: researchResults 
-  });
+
 
   if (!isOpen) return null;
 
@@ -297,15 +290,15 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
                       <CardContent>
                         {result.rawResults.content && (
                           <div 
-                            className="prose prose-sm max-w-none"
-                            dangerouslySetInnerHTML={{ __html: processMarkdown(result.rawResults.content.slice(0, 1000) + '...') }}
+                            className="text-sm text-gray-700 leading-relaxed max-w-none overflow-hidden"
+                            dangerouslySetInnerHTML={{ __html: processMarkdown(result.rawResults.content) }}
                           />
                         )}
                         {result.strategicRecommendations && result.strategicRecommendations.length > 0 && (
                           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                             <h5 className="font-semibold text-blue-800 mb-2">Competitive Recommendations</h5>
                             <ul className="text-sm text-blue-700 space-y-1">
-                              {result.strategicRecommendations.slice(0, 3).map((rec, idx) => (
+                              {result.strategicRecommendations.map((rec, idx) => (
                                 <li key={idx}>• {rec}</li>
                               ))}
                             </ul>
@@ -330,8 +323,8 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
                       <CardContent>
                         {result.rawResults.content && (
                           <div 
-                            className="prose prose-sm max-w-none"
-                            dangerouslySetInnerHTML={{ __html: processMarkdown(result.rawResults.content.slice(0, 1000) + '...') }}
+                            className="text-sm text-gray-700 leading-relaxed max-w-none overflow-hidden"
+                            dangerouslySetInnerHTML={{ __html: processMarkdown(result.rawResults.content) }}
                           />
                         )}
                       </CardContent>
@@ -398,9 +391,7 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
               <p className="text-gray-500">
                 Generate concepts with research strategy to see situational analysis here.
               </p>
-              <div className="mt-4 text-xs text-gray-400">
-                Debug: {researchResults ? `Array with ${researchResults.length} items` : 'researchResults is null/undefined'}
-              </div>
+
             </div>
           )}
         </div>
