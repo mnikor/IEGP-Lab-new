@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, DollarSign, Users, MapPin, Target, Clock, BookOpen } from "lucide-react";
 import { Link } from "wouter";
+import SwotAnalysis from "@/components/shared/SwotAnalysis";
+import ReasonsToBelieve from "@/components/shared/ReasonsToBelieve";
 import type { StudyConcept, SavedStudyProposal } from "@shared/schema";
 
 const ConceptDetailPage: React.FC = () => {
@@ -161,51 +163,15 @@ const ConceptDetailPage: React.FC = () => {
           {/* SWOT Analysis */}
           {concept.swotAnalysis && (
             <Card>
-              <CardHeader>
-                <CardTitle>SWOT Analysis</CardTitle>
-                <CardDescription>Strengths, Weaknesses, Opportunities, Threats</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(concept.swotAnalysis as any).map(([category, items]) => (
-                    <div key={category} className="space-y-2">
-                      <h4 className="font-semibold capitalize text-sm">{category}</h4>
-                      <ul className="space-y-1">
-                        {Array.isArray(items) ? items.map((item: string, index: number) => (
-                          <li key={index} className="text-sm text-muted-foreground flex items-start">
-                            <span className="mr-2 mt-1.5 h-1 w-1 bg-current rounded-full flex-shrink-0"></span>
-                            {item}
-                          </li>
-                        )) : (
-                          <li className="text-sm text-muted-foreground">{String(items)}</li>
-                        )}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
+              <CardContent className="pt-6">
+                <SwotAnalysis swotAnalysis={concept.swotAnalysis as any} />
               </CardContent>
             </Card>
           )}
 
           {/* Reasons to Believe */}
           {concept.reasonsToBelieve && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Reasons to Believe</CardTitle>
-                <CardDescription>Evidence supporting study feasibility and success</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {Array.isArray(concept.reasonsToBelieve) ? concept.reasonsToBelieve.map((reason: any, index: number) => (
-                    <div key={index} className="border-l-4 border-blue-200 pl-4 py-2">
-                      <p className="text-sm leading-relaxed">{typeof reason === 'string' ? reason : reason.text || JSON.stringify(reason)}</p>
-                    </div>
-                  )) : (
-                    <p className="text-muted-foreground">{String(concept.reasonsToBelieve)}</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <ReasonsToBelieve reasonsToBelieve={concept.reasonsToBelieve as any} />
           )}
 
           {/* MCDA Scores */}
