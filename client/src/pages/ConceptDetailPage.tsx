@@ -1,19 +1,23 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen, Search, Calendar, TrendingUp } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, BookOpen, Search, Calendar, TrendingUp, Star } from "lucide-react";
 import { Link } from "wouter";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
 import ReasonsToBelieve from "@/components/shared/ReasonsToBelieve";
 import LoeDetails from "@/components/shared/LoeDetails";
 import FeasibilityDashboard from "@/components/shared/FeasibilityDashboard";
+import ConfidenceLevel from "@/components/shared/ConfidenceLevel";
 import type { StudyConcept, SavedStudyProposal } from "@shared/schema";
 
 const ConceptDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [showSituationalAnalysis, setShowSituationalAnalysis] = useState(false);
   
   const { data: concept, isLoading, error } = useQuery({
     queryKey: ['/api/study-concepts', parseInt(id!)],
@@ -99,24 +103,54 @@ const ConceptDetailPage: React.FC = () => {
           <div className="flex items-center space-x-4">
             {/* Situational Analysis Button - if research data available */}
             {relatedProposal?.researchResults && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  // For now, scroll to research insights section
-                  const researchSection = document.getElementById('research-insights');
-                  if (researchSection) {
-                    researchSection.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-                className="flex items-center space-x-2"
-              >
-                <Search className="h-4 w-4" />
-                <span>Situational Analysis</span>
-              </Button>
+              <Dialog open={showSituationalAnalysis} onOpenChange={setShowSituationalAnalysis}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="flex items-center space-x-2"
+                  >
+                    <Search className="h-4 w-4" />
+                    <span>Situational Analysis</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Situational Analysis - Research Intelligence</DialogTitle>
+                  </DialogHeader>
+                  <div className="mt-4">
+                    <Tabs defaultValue="research">
+                      <TabsList className="grid w-full grid-cols-1">
+                        <TabsTrigger value="research">Research Results</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="research" className="mt-4">
+                        <div className="prose prose-sm max-w-none">
+                          {typeof relatedProposal.researchResults === 'string' ? (
+                            <div dangerouslySetInnerHTML={{ __html: relatedProposal.researchResults }} />
+                          ) : (
+                            <pre className="whitespace-pre-wrap text-xs bg-gray-50 p-4 rounded border">
+                              {JSON.stringify(relatedProposal.researchResults, null, 2)}
+                            </pre>
+                          )}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  </div>
+                </DialogContent>
+              </Dialog>
             )}
+            
+            {/* Confidence Level */}
+            <ConfidenceLevel 
+              feasibilityData={concept.feasibilityData}
+              mcdaScores={concept.mcdaScores}
+              className="flex-shrink-0"
+            />
+            
+            {/* Overall Score */}
             {concept.mcdaScores && (concept.mcdaScores as any).overall != null && (
               <div className="flex items-center">
+                <Star className="h-5 w-5 text-yellow-400 fill-current" />
                 <span className="ml-1 text-sm font-medium text-neutral-dark">
                   {(concept.mcdaScores as any).overall.toFixed(1) + '/5'}
                 </span>
@@ -352,24 +386,7 @@ const ConceptDetailPage: React.FC = () => {
             </div>
           )}
 
-          {/* Research Insights - Situational Analysis */}
-          {relatedProposal?.researchResults && (
-            <div id="research-insights" className="mt-4 bg-green-50 border border-green-100 rounded-md p-4">
-              <h4 className="text-sm font-semibold text-green-800 mb-3 flex items-center">
-                <BookOpen className="mr-2 h-4 w-4" />
-                Situational Analysis - Research Insights
-              </h4>
-              <div className="prose prose-sm max-w-none">
-                {typeof relatedProposal.researchResults === 'string' ? (
-                  <div dangerouslySetInnerHTML={{ __html: relatedProposal.researchResults }} />
-                ) : (
-                  <pre className="whitespace-pre-wrap text-xs bg-white p-3 rounded border">
-                    {JSON.stringify(relatedProposal.researchResults, null, 2)}
-                  </pre>
-                )}
-              </div>
-            </div>
-          )}
+
         </CardContent>
       </Card>
     </div>
