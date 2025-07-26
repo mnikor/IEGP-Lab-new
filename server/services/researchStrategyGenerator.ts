@@ -82,11 +82,11 @@ STUDY CONTEXT:
 
 TASK: Generate 8-12 comprehensive research queries that will provide actionable intelligence for this study design. MUST INCLUDE specific searches for:
 
-CRITICAL ONGOING TRIALS SEARCHES:
-- Current ongoing clinical trials for ${drugName} in ${indication} (use ClinicalTrials.gov, NCT numbers)
-- Recent 2024-2025 trial initiations and pipeline updates for ${drugName}
-- Competitive trials in ${indication} with similar mechanisms of action or drug targets
-- New formulations, dosing regimens, or combination studies for ${drugName}
+CRITICAL ONGOING TRIALS SEARCHES (CAST WIDE NET):
+- Current ongoing clinical trials for ${drugName} in ${indication} - search broadly for all sources including congress abstracts, press releases, clinical updates
+- Recent 2024-2025 trial initiations and pipeline updates for ${drugName} - check company announcements, medical conferences, regulatory filings
+- Competitive trials in ${indication} with similar mechanisms - expand beyond ClinicalTrials.gov to capture all relevant studies
+- New formulations, dosing regimens, or combination studies for ${drugName} - search medical literature, congress abstracts, company communications
 
 COMPREHENSIVE COMPETITIVE INTELLIGENCE:
 - Direct competitors currently in clinical development for ${indication}
@@ -121,7 +121,14 @@ STRATEGIC GOAL MAPPINGS:
 - defend_market_share: Focus on competitive landscape, differentiation strategies
 - manage_safety_risk: Focus on safety monitoring, risk management plans
 
-Generate specific, actionable queries that a research analyst could execute immediately.
+Generate specific, actionable queries that a research analyst could execute immediately. 
+
+IMPORTANT SEARCH STRATEGY:
+- DO NOT restrict searches to site:clinicaltrials.gov only - cast a wide net
+- Include searches for congress abstracts, company press releases, medical conferences
+- Search for drug name + indication broadly to capture all relevant sources
+- Look for information in medical literature, industry reports, regulatory filings
+- Focus on finding real ongoing trials from ANY source, not just ClinicalTrials.gov
 `;
   }
 
@@ -159,10 +166,10 @@ Generate specific, actionable queries that a research analyst could execute imme
     const searches: SearchItem[] = [
       {
         id: uuidv4(),
-        query: `"${drugName}" ongoing recruiting active trials ${indication} ClinicalTrials.gov 2024 2025`,
+        query: `${drugName} clinical trials ${indication} ongoing recruiting active 2024 2025`,
         type: 'competitive',
         priority: 10,
-        rationale: 'Critical - identify current ongoing trials to avoid duplication',
+        rationale: 'Critical - identify current ongoing trials from all sources including congress abstracts and press releases',
         enabled: true,
         userModified: false
       },
@@ -177,28 +184,37 @@ Generate specific, actionable queries that a research analyst could execute imme
       },
       {
         id: uuidv4(),
-        query: `${drugName} new formulations dosing regimens combination therapy ${indication} 2024 2025`,
+        query: `${drugName} new formulations dosing regimens combination therapy ${indication} congress abstracts company updates 2024 2025`,
         type: 'competitive',
         priority: 9,
-        rationale: 'Essential - find new formulations and combinations in development',
+        rationale: 'Essential - find new formulations and combinations from medical conferences and company updates',
         enabled: true,
         userModified: false
       },
       {
         id: uuidv4(),
-        query: `competitive trials ${indication} targeted therapy ongoing recruiting pipeline`,
+        query: `${indication} clinical trials competitive landscape pipeline drugs targeted therapy recent approvals`,
         type: 'competitive',
         priority: 9,
-        rationale: 'Competitive landscape analysis to inform positioning',
+        rationale: 'Competitive landscape analysis from all sources including medical literature and industry reports',
         enabled: true,
         userModified: false
       },
       {
         id: uuidv4(),
-        query: `FDA guidance ${indication} regulatory precedents approval pathway`,
+        query: `${drugName} ${indication} breakthrough therapy FDA fast track company press releases regulatory updates`,
+        type: 'regulatory',
+        priority: 9,
+        rationale: 'Regulatory developments and company announcements about fast track designations',
+        enabled: true,
+        userModified: false
+      },
+      {
+        id: uuidv4(),
+        query: `FDA guidance ${indication} regulatory precedents approval pathway EMA regulatory science`,
         type: 'regulatory',
         priority: 8,
-        rationale: 'Regulatory requirements for study design',
+        rationale: 'Regulatory requirements and guidance documents from FDA and EMA',
         enabled: true,
         userModified: false
       },
