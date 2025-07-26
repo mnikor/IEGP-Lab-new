@@ -62,25 +62,28 @@ export class ResearchExecutor {
     
     switch (search.type) {
       case 'competitive':
-        // Add specific terms for finding ongoing trials and competitive intelligence
-        return `${baseQuery} ongoing active recruiting trials NCT numbers ClinicalTrials.gov 2024 2025 pipeline status`;
+        // Very specific terms for finding actual ongoing trials with real NCT numbers
+        if (baseQuery.toLowerCase().includes('ongoing') || baseQuery.toLowerCase().includes('clinical trials')) {
+          return `site:clinicaltrials.gov ${baseQuery} status:"Recruiting" OR status:"Active, not recruiting" OR status:"Enrolling by invitation" NCT 2024 2025`;
+        }
+        return `${baseQuery} ongoing trials recruiting active NCT site:clinicaltrials.gov 2024 2025`;
       
       case 'regulatory':
         // Focus on regulatory guidance and precedents
-        return `${baseQuery} FDA guidance draft guidance regulatory precedents approval pathway`;
+        return `${baseQuery} FDA guidance EMA guidance regulatory precedents approval pathway site:fda.gov OR site:ema.europa.eu`;
       
       case 'strategic':
         // Business and market intelligence focus
-        return `${baseQuery} market access payer evidence health economics outcomes`;
+        return `${baseQuery} market access reimbursement health technology assessment payer evidence`;
       
       case 'therapeutic':
-        // Clinical and medical focus
-        return `${baseQuery} clinical evidence medical guidelines treatment patterns`;
+        // Clinical and medical focus with recent evidence
+        return `${baseQuery} clinical evidence treatment guidelines recent studies 2024 2025`;
       
       case 'core':
       default:
         // Keep core searches broad but add recent filter
-        return `${baseQuery} recent studies 2024 evidence`;
+        return `${baseQuery} recent studies clinical evidence 2024 2025`;
     }
   }
 

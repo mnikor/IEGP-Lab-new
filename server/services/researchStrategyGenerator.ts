@@ -159,7 +159,7 @@ Generate specific, actionable queries that a research analyst could execute imme
     const searches: SearchItem[] = [
       {
         id: uuidv4(),
-        query: `${drugName} ongoing clinical trials ${indication} ClinicalTrials.gov NCT 2024 2025`,
+        query: `"${drugName}" ongoing recruiting active trials ${indication} ClinicalTrials.gov 2024 2025`,
         type: 'competitive',
         priority: 10,
         rationale: 'Critical - identify current ongoing trials to avoid duplication',
@@ -168,7 +168,16 @@ Generate specific, actionable queries that a research analyst could execute imme
       },
       {
         id: uuidv4(),
-        query: `${drugName} new formulations dosing regimens combination therapy ${indication}`,
+        query: `"${drugName}" clinical trials status recruiting active ${indication} NCT site:clinicaltrials.gov`,
+        type: 'competitive',
+        priority: 10,
+        rationale: 'Find specific ongoing trials with real NCT numbers',
+        enabled: true,
+        userModified: false
+      },
+      {
+        id: uuidv4(),
+        query: `${drugName} new formulations dosing regimens combination therapy ${indication} 2024 2025`,
         type: 'competitive',
         priority: 9,
         rationale: 'Essential - find new formulations and combinations in development',
@@ -177,7 +186,7 @@ Generate specific, actionable queries that a research analyst could execute imme
       },
       {
         id: uuidv4(),
-        query: `competitive trials ${indication} similar mechanism of action ${drugName} pipeline`,
+        query: `competitive trials ${indication} EGFR MET targeted therapy ongoing recruiting`,
         type: 'competitive',
         priority: 9,
         rationale: 'Competitive landscape analysis to inform positioning',

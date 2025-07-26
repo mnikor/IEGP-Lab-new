@@ -44,14 +44,61 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
 
   const processMarkdown = (text: string) => {
     if (!text) return '';
-    return text
-      .replace(/## (.*?)\n/g, '<h2 class="text-xl font-bold mt-6 mb-3">$1</h2>')
-      .replace(/### (.*?)\n/g, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    
+    // Enhanced table processing for competitive analysis
+    let processed = text
+      .replace(/## (.*?)\n/g, '<h2 class="text-xl font-bold mt-6 mb-3 text-blue-900 border-b border-blue-200 pb-2">$1</h2>')
+      .replace(/### (.*?)\n/g, '<h3 class="text-lg font-semibold mt-4 mb-2 text-blue-800">$1</h3>')
+      .replace(/#### (.*?)\n/g, '<h4 class="text-md font-medium mt-3 mb-2 text-blue-700">$1</h4>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-900">$1</strong>')
+      .replace(/\*([^*]+)\*/g, '<em class="text-blue-700">$1</em>')
       .replace(/\n\n/g, '<br/><br/>')
-      .replace(/^\- (.*$)/gm, '<li class="ml-4 list-disc">$1</li>')
-      .replace(/^• (.*$)/gm, '<li class="ml-4 list-disc">$1</li>');
+      .replace(/^\- (.*$)/gm, '<li class="ml-4 list-disc mb-1">$1</li>')
+      .replace(/^• (.*$)/gm, '<li class="ml-4 list-disc mb-1">$1</li>');
+
+    // Enhanced table detection and formatting
+    const tableRegex = /\|([^|\n]+\|[^|\n]+\|[^|\n]*)\n\|(-+\|?-*\|?[^|\n]*)\n((\|[^|\n]*\n?)+)/g;
+    processed = processed.replace(tableRegex, (match, header, separator, rows) => {
+      const headerCells = header.split('|').map(cell => cell.trim()).filter(cell => cell);
+      const rowData = rows.trim().split('\n').map(row => 
+        row.split('|').map(cell => cell.trim()).filter(cell => cell)
+      );
+
+      let tableHtml = '<div class="overflow-x-auto my-4">';
+      tableHtml += '<table class="min-w-full border border-blue-200 rounded-lg overflow-hidden shadow-sm">';
+      
+      // Header
+      tableHtml += '<thead class="bg-blue-50 border-b border-blue-200">';
+      tableHtml += '<tr>';
+      headerCells.forEach(cell => {
+        tableHtml += `<th class="px-4 py-3 text-left text-sm font-semibold text-blue-900 border-r border-blue-200 last:border-r-0">${cell}</th>`;
+      });
+      tableHtml += '</tr></thead>';
+      
+      // Body
+      tableHtml += '<tbody class="bg-white divide-y divide-blue-100">';
+      rowData.forEach((row, rowIndex) => {
+        if (row.length > 0) {
+          tableHtml += `<tr class="${rowIndex % 2 === 0 ? 'bg-white' : 'bg-blue-25'} hover:bg-blue-50 transition-colors">`;
+          row.forEach((cell, cellIndex) => {
+            const isNCT = /NCT\d{8}/.test(cell);
+            const cellClass = isNCT 
+              ? 'px-4 py-3 text-sm text-blue-700 font-mono font-semibold border-r border-blue-100 last:border-r-0'
+              : 'px-4 py-3 text-sm text-gray-700 border-r border-blue-100 last:border-r-0';
+            tableHtml += `<td class="${cellClass}">${cell}</td>`;
+          });
+          tableHtml += '</tr>';
+        }
+      });
+      tableHtml += '</tbody></table></div>';
+      
+      return tableHtml;
+    });
+
+    // Format NCT numbers specifically
+    processed = processed.replace(/NCT\d{8}/g, '<span class="inline-block bg-blue-100 text-blue-800 font-mono text-sm px-2 py-1 rounded border">$&</span>');
+    
+    return processed;
   };
 
   const getSearchTypeColor = (type: string) => {

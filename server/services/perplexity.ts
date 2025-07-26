@@ -37,14 +37,15 @@ async function performSingleSearch(question: string, domains: string[] | null = 
             ? `Conduct a comprehensive research analysis on: ${question}. 
 
 Please provide a detailed analysis including:
-1. **Current State of Evidence**: Latest clinical studies, trials, and research findings
-2. **Key Research Insights**: Recent breakthrough studies and their clinical implications  
-3. **Regulatory Landscape**: FDA/EMA guidance, approval precedents, and regulatory considerations
-4. **Market Dynamics**: Competitive landscape, market access factors, and commercial considerations
-5. **Risk Assessment**: Safety profiles, risk management strategies, and mitigation approaches
-6. **Strategic Recommendations**: Evidence-based recommendations for clinical development
-7. **Research Gaps**: Identified limitations and areas requiring further investigation
+1. **Current State of Evidence**: Latest clinical studies, trials, and research findings with ACTUAL trial numbers (NCT, EudraCT, etc.)
+2. **Ongoing Trials**: SPECIFIC ongoing clinical trials with real NCT numbers, enrollment status, and study details
+3. **Key Research Insights**: Recent breakthrough studies and their clinical implications  
+4. **Regulatory Landscape**: FDA/EMA guidance, approval precedents, and regulatory considerations
+5. **Market Dynamics**: Competitive landscape, market access factors, and commercial considerations
+6. **Risk Assessment**: Safety profiles, risk management strategies, and mitigation approaches
+7. **Strategic Recommendations**: Evidence-based recommendations for clinical development
 
+IMPORTANT: When reporting ongoing trials, provide REAL NCT numbers and specific enrollment details from ClinicalTrials.gov. Do not use hypothetical examples.
 Structure your response with bold headings and provide specific, actionable insights with proper citations.`
             : question
         }
@@ -53,7 +54,7 @@ Structure your response with bold headings and provide specific, actionable insi
       return_images: false,
       return_related_questions: false,
       search_domain_filter: domains && domains.length > 0 ? domains : undefined,
-      search_recency_filter: "month",
+      search_recency_filter: "year",
       temperature: useDeepResearch ? 0.1 : 0.2,
       max_tokens: useDeepResearch ? 4000 : 2000,
       top_p: 0.9,
