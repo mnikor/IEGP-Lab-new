@@ -131,53 +131,8 @@ export async function perplexityWebSearch(baseQuery: string, domains: string[] |
   } catch (error) {
     console.error("Error in Perplexity search:", error);
     
-    // Return enhanced fallback response with citations when Perplexity API fails
-    const errorMessage = error instanceof Error ? error.message : '';
-    const errorCode = (error as any)?.code;
-    const isTimeout = errorMessage.includes('timed out') || errorCode === 'ECONNABORTED' || errorCode === 'ETIMEDOUT';
-    console.log(`Providing fallback response. Is timeout: ${isTimeout}`);
-    
-    return {
-      content: `# Clinical Research Analysis: ${baseQuery}
-
-## Research Framework
-${isTimeout ? 'Due to search service timeout, providing structured clinical research guidance:' : 'Clinical research guidance based on established frameworks:'}
-
-### Study Design Considerations
-- **Phase-appropriate design** for the therapeutic area and indication
-- **Regulatory precedent analysis** and compliance requirements  
-- **Patient population characteristics** and recruitment feasibility
-- **Primary/secondary endpoint selection** based on indication standards
-
-### Sample Size & Feasibility Analysis
-- **Statistical power calculations** based on therapeutic area norms
-- **Geographic distribution strategy** and site selection criteria
-- **Competitive recruitment landscape** assessment
-- **Timeline projections** with regulatory milestones
-- **Cost modeling** for phase-appropriate studies
-
-### Regulatory & Market Access Strategy
-- **FDA and EMA guidance alignment** for indication-specific requirements
-- **Health technology assessment** considerations for market access
-- **Reimbursement pathway optimization** and value demonstration
-- **Post-marketing commitment** planning for approval maintenance
-
-### Key References & Guidelines
-- Review relevant therapeutic area guidance documents
-- Consider indication-specific regulatory precedents
-- Align with established clinical development pathways
-- Incorporate patient advocacy and HTA feedback
-
-*Note: This analysis uses established clinical research frameworks${isTimeout ? ' due to search service timeout limitations' : ''}.*`,
-      citations: [
-        "https://clinicaltrials.gov/",
-        "https://www.fda.gov/drugs/development-approval-process/",
-        "https://www.ema.europa.eu/en/human-regulatory/marketing-authorisation/",
-        "https://pubmed.ncbi.nlm.nih.gov/",
-        "https://www.nice.org.uk/guidance/",
-        "https://www.ich.org/page/efficacy-guidelines"
-      ]
-    };
+    // Don't provide fallback content - throw the error to be handled transparently
+    throw error;
   }
 }
 

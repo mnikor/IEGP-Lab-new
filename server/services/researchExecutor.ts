@@ -196,16 +196,25 @@ export class ResearchExecutor {
     } catch (error) {
       console.error(`Error executing search "${search.query}":`, error);
       
-      // Return error result
+      // Return detailed error result with clear failure indication
+      const errorMessage = (error as any).message || 'Unknown error';
+      const errorType = errorMessage.includes('rate limit') ? 'RATE_LIMIT' :
+                       errorMessage.includes('timeout') ? 'TIMEOUT' :
+                       errorMessage.includes('authentication') ? 'AUTH_ERROR' : 'API_ERROR';
+      
       return {
         id: Date.now() + Math.random(),
         strategyId,
         searchQuery: search.query,
         searchType: search.type,
         priority: search.priority,
-        rawResults: { error: (error as any).message },
-        synthesizedInsights: `Search failed: ${(error as any).message}`,
-        keyFindings: [],
+        rawResults: { 
+          error: errorMessage,
+          errorType,
+          timestamp: new Date().toISOString()
+        },
+        synthesizedInsights: `❌ **Search Failed**: ${search.query}\n\n**Error**: ${errorMessage}\n\n**Reason**: ${this.getErrorExplanation(errorType)}\n\n*This search did not return results due to the above error. Consider trying again later or modifying the search query.*`,
+        keyFindings: [`Search failed: ${errorType}`],
         designImplications: null,
         strategicRecommendations: null,
         executedAt: new Date()
@@ -360,16 +369,27 @@ CRITICAL FORMATTING RULES:
     return null;
   }
 
+  private getErrorExplanation(errorType: string): string {
+    switch (errorType) {
+      case 'RATE_LIMIT':
+        return 'The research service is experiencing high demand. Please wait a few minutes before trying again.';
+      case 'TIMEOUT':
+        return 'The search request took too long to complete. This may be due to network issues or complex queries.';
+      case 'AUTH_ERROR':
+        return 'Authentication failed with the research service. Please check API credentials.';
+      default:
+        return 'An unexpected error occurred while searching. Please try again or contact support if the issue persists.';
+    }
+  }
+
   private collectAllCitations(results: ResearchResult[]): string[] {
     const allCitations: string[] = [];
     
     results.forEach(result => {
-      if (result.rawResults && result.rawResults.citations && Array.isArray(result.rawResults.citations)) {
-        // Only collect citations from successful Perplexity API calls (not fallback content)
+      if (result.rawResults && result.rawResults.citations && Array.isArray(result.rawResults.citations) && !(result.rawResults as any).error) {
+        // Only collect citations from successful Perplexity API calls (no errors)
         const realCitations = result.rawResults.citations.filter((citation: string) => 
-          citation.includes('http') && 
-          !citation.includes('clinicalresearch') && // Exclude fallback citations
-          !citation.includes('established frameworks') // Exclude fallback content
+          citation.includes('http') && citation.length > 20 // Basic validation for real URLs
         );
         allCitations.push(...realCitations);
       }
@@ -386,7 +406,29 @@ CRITICAL FORMATTING RULES:
     
     if (successfulResults.length === 0) {
       console.error("No successful research results to synthesize");
-      return "❌ No successful research results to synthesize. Please check search queries and try again.";
+      const failedResults = results.filter(r => (r.rawResults as any)?.error);
+      const errorSummary = failedResults.map(r => {
+        const errorType = (r.rawResults as any)?.errorType || 'UNKNOWN';
+        return `• **${r.searchQuery}**: ${errorType}`;
+      }).join('\n');
+      
+      return `# ❌ Research Execution Failed
+
+## Search Results Summary
+**Total Searches**: ${results.length}  
+**Successful**: 0  
+**Failed**: ${failedResults.length}
+
+## Failed Searches:
+${errorSummary}
+
+## Recommended Actions:
+1. **Rate Limits**: Wait 2-3 minutes before retrying if you see rate limit errors
+2. **Timeouts**: Try again with simpler, more focused search queries  
+3. **API Issues**: Contact support if authentication errors persist
+4. **Alternative Approach**: Consider running fewer searches at once to reduce load
+
+*No fallback content is provided to ensure data integrity. All research results must come from authentic sources.*`;
     }
 
     // Use OpenAI to create a comprehensive synthesis
