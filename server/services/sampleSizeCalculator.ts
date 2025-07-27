@@ -28,11 +28,14 @@ interface StatisticalParameters {
  * Endpoint types with their typical parameters
  */
 interface EndpointParameters {
-  type: 'survival' | 'response_rate' | 'continuous' | 'safety' | 'biomarker';
+  type: 'survival' | 'response_rate' | 'continuous' | 'safety' | 'biomarker' | 'rwe_effectiveness' | 'rwe_safety' | 'registry' | 'real_world_outcomes';
   baseline: number;       // Baseline rate/value
   target: number;         // Target improvement
   standardDeviation?: number; // For continuous endpoints
   hazardRatio?: number;   // For survival endpoints
+  prevalence?: number;    // For rare event detection
+  precision?: number;     // For precision-based calculations
+  clinicalSignificance?: number; // Minimum clinically important difference
 }
 
 /**
@@ -187,6 +190,30 @@ export function calculateSampleSize(concept: Partial<StudyConcept>, requestData:
       powerAnalysis = biomarkerCalc.analysis;
       break;
     
+    case 'rwe_effectiveness':
+      const rweEffectivenessCalc = calculateRWEEffectivenessSampleSize(endpoint, parameters);
+      sampleSize = rweEffectivenessCalc.sampleSize;
+      powerAnalysis = rweEffectivenessCalc.analysis;
+      break;
+    
+    case 'rwe_safety':
+      const rweSafetyCalc = calculateRWESafetySampleSize(endpoint, parameters);
+      sampleSize = rweSafetyCalc.sampleSize;
+      powerAnalysis = rweSafetyCalc.analysis;
+      break;
+    
+    case 'registry':
+      const registryCalc = calculateRegistrySampleSize(endpoint, parameters);
+      sampleSize = registryCalc.sampleSize;
+      powerAnalysis = registryCalc.analysis;
+      break;
+    
+    case 'real_world_outcomes':
+      const realWorldCalc = calculateRealWorldOutcomesSampleSize(endpoint, parameters);
+      sampleSize = realWorldCalc.sampleSize;
+      powerAnalysis = realWorldCalc.analysis;
+      break;
+    
     default:
       sampleSize = getDefaultSampleSize(studyPhase, isOncology);
       powerAnalysis = "Sample size based on standard phase requirements";
@@ -269,7 +296,8 @@ function determineEndpoint(
     } else {
       // Add study-specific variability for Phase III non-oncology studies
       const studyTitle = concept?.title || '';
-      const studyDesign = concept?.picoData?.intervention || '';
+      const picoData = concept?.picoData as any;
+      const studyDesign = picoData?.intervention || '';
       const targetSubpopulation = concept?.targetSubpopulation || '';
       const comparatorDrugs = concept?.comparatorDrugs || [];
       
@@ -325,10 +353,87 @@ function determineEndpoint(
   }
   
   if (studyPhase === 'IV') {
+    // Phase IV studies - determine endpoint based on study objectives
+    const studyTitle = concept?.title || '';
+    const studyTitleLower = studyTitle.toLowerCase();
+    
+    // Real-world evidence studies
+    if (strategicGoals.includes('generate_real_world_evidence') || 
+        studyTitleLower.includes('real-world') || 
+        studyTitleLower.includes('registry') ||
+        studyTitleLower.includes('rwe') ||
+        studyTitleLower.includes('observational')) {
+      
+      if (isOncology) {
+        // Oncology RWE - typically survival or progression endpoints
+        return {
+          type: 'rwe_effectiveness',
+          baseline: 12,    // 12 months median survival/PFS
+          target: 15,      // 15 months target (25% improvement)
+          hazardRatio: 0.80, // More conservative than RCT
+          precision: 0.1   // ±10% precision around estimate
+        };
+      } else {
+        // Non-oncology RWE - typically effectiveness or QoL outcomes
+        return {
+          type: 'real_world_outcomes',
+          baseline: 0,
+          target: 0.3,     // 30% improvement in outcome measure
+          standardDeviation: 1.2, // Higher variability in real-world setting
+          precision: 0.15  // ±15% precision
+        };
+      }
+    }
+    
+    // Safety surveillance studies
+    if (studyTitleLower.includes('safety') || 
+        studyTitleLower.includes('surveillance') ||
+        studyTitleLower.includes('adverse') ||
+        strategicGoals.includes('safety_monitoring')) {
+      
+      // Determine baseline AE rate based on indication
+      let baselineAE = 0.05; // 5% default
+      let targetDetection = 0.10; // Detect 10% rate
+      
+      if (isOncology) {
+        baselineAE = 0.15; // 15% for oncology drugs
+        targetDetection = 0.25; // Detect 25% rate
+      } else if (studyTitleLower.includes('rare') || studyTitleLower.includes('serious')) {
+        baselineAE = 0.01; // 1% for rare serious events
+        targetDetection = 0.03; // Detect 3% rate
+      }
+      
+      return {
+        type: 'rwe_safety',
+        baseline: baselineAE,
+        target: targetDetection,
+        prevalence: baselineAE,
+        precision: baselineAE * 0.5 // Precision = 50% of baseline rate
+      };
+    }
+    
+    // Registry studies for rare diseases or long-term outcomes
+    if (studyTitleLower.includes('registry') || 
+        studyTitleLower.includes('rare') ||
+        studyTitleLower.includes('long-term') ||
+        studyTitleLower.includes('natural history')) {
+      
+      return {
+        type: 'registry',
+        baseline: 0.1,   // 10% baseline event rate
+        target: 0.15,    // 15% detectable difference
+        prevalence: 0.1, // Disease/event prevalence
+        precision: 0.03  // ±3% precision around prevalence estimate
+      };
+    }
+    
+    // Default Phase IV safety study
     return {
       type: 'safety',
-      baseline: 0.05, // 5% baseline adverse event rate
-      target: 0.10,   // 10% target detection rate
+      baseline: isOncology ? 0.15 : 0.05,
+      target: isOncology ? 0.25 : 0.10,
+      prevalence: isOncology ? 0.15 : 0.05,
+      precision: isOncology ? 0.05 : 0.02
     };
   }
   
@@ -386,13 +491,26 @@ function getStatisticalParameters(studyPhase: string, isOncology: boolean, study
       };
     
     case 'IV':
-      return {
-        ...baseParams,
-        beta: 0.20,
-        power: 0.80,
-        dropoutRate: 0.30, // Higher dropout in post-market studies
-        effectSize: 0.4
-      };
+      // Phase IV studies have different statistical requirements
+      if (baseParams.studyDesign.comparatorType === 'historical') {
+        // Single-arm RWE studies - less stringent requirements
+        return {
+          ...baseParams,
+          beta: 0.30,
+          power: 0.70, // Lower power acceptable for exploratory RWE
+          dropoutRate: 0.40, // Higher dropout/loss to follow-up in real-world
+          effectSize: 0.3 // More conservative effect size expectations
+        };
+      } else {
+        // Comparative RWE studies
+        return {
+          ...baseParams,
+          beta: 0.20,
+          power: 0.80,
+          dropoutRate: 0.35, // Higher dropout than RCTs but lower than single-arm
+          effectSize: 0.25 // Small effect sizes in real-world comparisons
+        };
+      }
     
     default:
       return {
@@ -565,6 +683,145 @@ function calculateBiomarkerSampleSize(
   return { sampleSize, analysis };
 }
 
+function calculateRWEEffectivenessSampleSize(
+  endpoint: EndpointParameters, 
+  params: StatisticalParameters
+): { sampleSize: number; analysis: string } {
+  
+  // For RWE effectiveness studies using time-to-event endpoints
+  const hazardRatio = endpoint.hazardRatio || 0.80; // More conservative than RCT
+  const precision = endpoint.precision || 0.1; // ±10% precision
+  
+  // Precision-based sample size for survival estimation
+  // N = (Z_α/2 / precision)² × (1-S(t)) / S(t)
+  // Where S(t) is survival probability at analysis time
+  
+  const zAlpha = 1.96; // 95% confidence interval
+  const analysisTime = endpoint.baseline; // months
+  const targetTime = endpoint.target;
+  
+  // Estimate survival probability at analysis time (assuming exponential)
+  const survivalProb = Math.exp(-Math.log(2) * analysisTime / endpoint.baseline);
+  
+  let sampleSize = Math.pow(zAlpha / precision, 2) * (1 - survivalProb) / survivalProb;
+  
+  // Adjust for expected follow-up and loss to follow-up (higher in RWE)
+  const lossToFollowUp = 0.30; // 30% higher loss in real-world settings
+  sampleSize = sampleSize / (1 - lossToFollowUp);
+  
+  // Minimum sample size for real-world studies
+  sampleSize = Math.max(sampleSize, 500);
+  
+  const analysis = `Real-world effectiveness study targeting ${targetTime}-month outcomes vs ${analysisTime}-month baseline. HR≤${hazardRatio.toFixed(2)} with ±${(precision*100).toFixed(0)}% precision. Accounts for ${(lossToFollowUp*100).toFixed(0)}% loss to follow-up.`;
+  
+  return { sampleSize, analysis };
+}
+
+function calculateRWESafetySampleSize(
+  endpoint: EndpointParameters, 
+  params: StatisticalParameters
+): { sampleSize: number; analysis: string } {
+  
+  const baselineRate = endpoint.baseline;
+  const targetRate = endpoint.target;
+  const precision = endpoint.precision || (baselineRate * 0.5);
+  
+  // For safety surveillance - precision-based calculation
+  // N = (Z_α/2)² × p × (1-p) / precision²
+  const zAlpha = 1.96;
+  let sampleSize = Math.pow(zAlpha, 2) * baselineRate * (1 - baselineRate) / Math.pow(precision, 2);
+  
+  // Rule of 3 for rare events (if we want to rule out events occurring at 3x baseline rate)
+  const ruleOf3Size = 3 / baselineRate;
+  
+  // Use larger of precision-based or rule-of-3
+  sampleSize = Math.max(sampleSize, ruleOf3Size);
+  
+  // For detecting differences between rates (if target > baseline)
+  if (targetRate > baselineRate) {
+    const differenceDetection = 2 * Math.pow(zAlpha, 2) * 
+      (baselineRate * (1 - baselineRate) + targetRate * (1 - targetRate)) / 
+      Math.pow(targetRate - baselineRate, 2);
+    sampleSize = Math.max(sampleSize, differenceDetection);
+  }
+  
+  // Adjust for real-world data completeness (85% data quality)
+  sampleSize = sampleSize / 0.85;
+  
+  // Minimum for safety studies
+  sampleSize = Math.max(sampleSize, 1000);
+  
+  const analysis = `Real-world safety surveillance for events at ${(baselineRate*100).toFixed(1)}% baseline rate. Precision ±${(precision*100).toFixed(1)}%, with 95% confidence to rule out rates ≥${(targetRate*100).toFixed(1)}%. Adjusted for 85% real-world data completeness.`;
+  
+  return { sampleSize, analysis };
+}
+
+function calculateRegistrySampleSize(
+  endpoint: EndpointParameters, 
+  params: StatisticalParameters
+): { sampleSize: number; analysis: string } {
+  
+  const prevalence = endpoint.prevalence || 0.1;
+  const precision = endpoint.precision || 0.03;
+  
+  // Registry studies - precision around prevalence estimate
+  // N = (Z_α/2)² × p × (1-p) / precision²
+  const zAlpha = 1.96;
+  let sampleSize = Math.pow(zAlpha, 2) * prevalence * (1 - prevalence) / Math.pow(precision, 2);
+  
+  // For rare diseases, ensure adequate number of cases
+  const minimumCases = 100; // At least 100 cases
+  const minimumSampleForCases = minimumCases / prevalence;
+  sampleSize = Math.max(sampleSize, minimumSampleForCases);
+  
+  // Adjust for enrollment over time (registry studies often have incomplete enrollment)
+  const enrollmentEfficiency = 0.70; // 70% of targeted population enrolls
+  sampleSize = sampleSize / enrollmentEfficiency;
+  
+  // Long-term studies need buffer for loss to follow-up
+  const longTermFollowUp = 0.40; // 40% loss over long-term follow-up
+  sampleSize = sampleSize / (1 - longTermFollowUp);
+  
+  const analysis = `Registry study for ${(prevalence*100).toFixed(1)}% prevalence condition. Precision ±${(precision*100).toFixed(1)}% around prevalence estimate. Minimum ${minimumCases} cases required. Accounts for ${(enrollmentEfficiency*100).toFixed(0)}% enrollment efficiency and ${(longTermFollowUp*100).toFixed(0)}% long-term loss to follow-up.`;
+  
+  return { sampleSize, analysis };
+}
+
+function calculateRealWorldOutcomesSampleSize(
+  endpoint: EndpointParameters, 
+  params: StatisticalParameters
+): { sampleSize: number; analysis: string } {
+  
+  const effectSize = params.effectSize;
+  const sd = endpoint.standardDeviation || 1.2; // Higher variability in real-world
+  const precision = endpoint.precision || 0.15;
+  
+  // Real-world outcomes - typically continuous measures (QoL, functional scores)
+  // For precision around mean: N = (Z_α/2 × σ / precision)²
+  const zAlpha = 1.96;
+  let precisionSampleSize = Math.pow(zAlpha * sd / (precision * sd), 2);
+  
+  // For detecting clinically meaningful differences
+  const zBeta = params.power === 0.80 ? 0.84 : 1.28;
+  let effectSampleSize = 2 * Math.pow((zAlpha + zBeta) * sd / (effectSize * sd), 2);
+  
+  // Use larger of the two
+  let sampleSize = Math.max(precisionSampleSize, effectSampleSize);
+  
+  // Adjust for real-world data challenges
+  const dataCompletenessRate = 0.75; // 75% complete data in real-world
+  const confoundingAdjustment = 1.25; // 25% increase for confounding adjustment
+  
+  sampleSize = sampleSize / dataCompletenessRate * confoundingAdjustment;
+  
+  // Minimum for meaningful real-world analysis
+  sampleSize = Math.max(sampleSize, 800);
+  
+  const analysis = `Real-world outcomes study with ${effectSize.toFixed(2)} effect size and SD=${sd.toFixed(1)}. Precision ±${(precision*100).toFixed(0)}% around estimates. Adjusted for ${(dataCompletenessRate*100).toFixed(0)}% data completeness and confounding (${((confoundingAdjustment-1)*100).toFixed(0)}% increase).`;
+  
+  return { sampleSize, analysis };
+}
+
 function getDefaultSampleSize(studyPhase: string, isOncology: boolean): number {
   const defaults = {
     'I': isOncology ? 30 : 40,
@@ -639,7 +896,11 @@ function generateSampleSizeJustification(
     'response_rate': 'objective response rate',
     'continuous': 'continuous efficacy endpoint',
     'safety': 'safety and tolerability',
-    'biomarker': 'biomarker validation'
+    'biomarker': 'biomarker validation',
+    'rwe_effectiveness': 'real-world effectiveness',
+    'rwe_safety': 'real-world safety surveillance',
+    'registry': 'disease registry and natural history',
+    'real_world_outcomes': 'real-world patient outcomes'
   };
   
   let justification = `Sample size of ${sampleSize} patients calculated for Phase ${studyPhase} `;
