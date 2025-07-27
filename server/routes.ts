@@ -20,6 +20,7 @@ import { generateSwot } from "./services/swotGenerator";
 import { generatePdfReport, generateSingleConceptPdfReport, generatePptxReport, generateValidationPdfReport, generateProposalPdfReport } from "./services/reportBuilder";
 import { ResearchStrategyGenerator } from "./services/researchStrategyGenerator";
 import { ResearchExecutor } from "./services/researchExecutor";
+import { ValidationResearchGenerator } from "./services/validationResearchGenerator";
 import { 
   researchStrategyRequestSchema, 
   amendStrategyRequestSchema, 
@@ -526,7 +527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validationResults.extractedPico = {
           ...validationResults.extractedPico,
           population: updatePicoPopulationWithSampleSize(
-            validationResults.extractedPico.population,
+            validationResults.extractedPico?.population,
             feasibilityData.sampleSize,
             data.indication,
             tempConcept.targetSubpopulation
@@ -999,13 +1000,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Validation Research API endpoints
+
+
+  // Validation research routes
   app.post("/api/validation-research/generate-strategy", async (req, res) => {
     try {
-      const { ValidationResearchGenerator } = await import("./services/validationResearchGenerator");
-      const generator = new ValidationResearchGenerator();
+      const { drugName, indication, strategicGoals, studyPhase, geography, additionalContext } = req.body;
       
-      const strategy = await generator.generateValidationStrategy(req.body);
+      const generator = new ValidationResearchGenerator();
+      const strategy = await generator.generateValidationStrategy({
+        drugName,
+        indication,
+        strategicGoals: strategicGoals || [],
+        studyPhase,
+        geography,
+        additionalContext
+      });
+      
       res.json(strategy);
     } catch (error) {
       console.error("Error generating validation research strategy:", error);
@@ -1040,11 +1051,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
  * Helper function copied from ideaGenerator.ts to ensure consistency
  */
 function updatePicoPopulationWithSampleSize(
-  originalPopulation: string,
+  originalPopulation: string | undefined | null,
   calculatedSampleSize: number,
   indication: string,
   targetSubpopulation?: string | null
 ): string {
+  // Handle undefined or null originalPopulation
+  if (!originalPopulation || typeof originalPopulation !== 'string') {
+    const sampleSizeText = `n=${calculatedSampleSize} patients with ${indication}${targetSubpopulation ? ` (${targetSubpopulation})` : ''}`;
+    return `${sampleSizeText}, meeting study inclusion criteria`;
+  }
+
   // Remove any existing patient numbers that might conflict
   let cleanedPopulation = originalPopulation
     .replace(/\b\d{3,4}\s+(?:patients?|subjects?|adults?|participants?)\b/gi, '')
