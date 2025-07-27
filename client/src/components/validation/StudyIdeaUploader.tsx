@@ -17,7 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ValidationResearchSection from "./ValidationResearchSection";
 
 interface StudyIdeaUploaderProps {
-  onValidationSuccess: (results: ValidationResults) => void;
+  onValidationSuccess: (results: ValidationResults, existingResearch?: any) => void;
   isValidating: boolean;
   setIsValidating: (isValidating: boolean) => void;
   onStudyParamsCapture?: (params: any) => void;
@@ -420,7 +420,12 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
         description: "Your study idea has been successfully validated.",
       });
 
-      onValidationSuccess(validationResults);
+      // Pass existing research data if it was used in validation
+      const existingResearchToPass = validationResults.usedExistingResearch 
+        ? (validationResults.existingResearchData || researchResults)
+        : researchResults;
+
+      onValidationSuccess(validationResults, existingResearchToPass);
     } catch (error) {
       console.error("Failed to validate study idea:", error);
       toast({

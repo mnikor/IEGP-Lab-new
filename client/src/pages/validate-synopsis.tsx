@@ -11,9 +11,14 @@ const ValidateSynopsis: React.FC = () => {
   const [isValidating, setIsValidating] = useState<boolean>(false);
   const [studyParams, setStudyParams] = useState<any>(null);
   const [researchResults, setResearchResults] = useState<any>(null);
+  const [hasExistingResearch, setHasExistingResearch] = useState<boolean>(false);
 
-  const handleValidationSuccess = (results: ValidationResultsType) => {
+  const handleValidationSuccess = (results: ValidationResultsType, existingResearch?: any) => {
     setValidationResults(results);
+    if (existingResearch) {
+      setResearchResults(existingResearch);
+      setHasExistingResearch(true);
+    }
     setActiveTab("results");
   };
 
@@ -64,7 +69,7 @@ const ValidateSynopsis: React.FC = () => {
               </div>
               
               <div className="space-y-6">
-                {studyParams && (
+                {studyParams && !hasExistingResearch && (
                   <ValidationResearchSection
                     drugName={studyParams.drugName}
                     indication={studyParams.indication}
@@ -74,6 +79,12 @@ const ValidateSynopsis: React.FC = () => {
                     additionalContext={studyParams.additionalContext}
                     onResearchComplete={handleResearchComplete}
                   />
+                )}
+                {hasExistingResearch && (
+                  <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+                    <p><strong>Research Intelligence already available</strong></p>
+                    <p>This validation used existing research data from your concept generation. Use the "Situational Analysis" button to review the research findings.</p>
+                  </div>
                 )}
               </div>
             </div>

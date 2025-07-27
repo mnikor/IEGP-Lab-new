@@ -587,7 +587,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         additionalContext: data.additionalContext
       });
 
-      res.json(savedValidation);
+      // Add metadata about research data usage for client-side handling
+      const responseData = {
+        ...savedValidation,
+        usedExistingResearch: !!existingResearchResults,
+        existingResearchData: existingResearchResults
+      };
+
+      res.json(responseData);
     } catch (error) {
       console.error("Error validating study idea:", error);
       res.status(500).json({ message: "Failed to validate study idea" });

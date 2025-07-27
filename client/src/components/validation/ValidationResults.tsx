@@ -69,11 +69,12 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
         <h2 className="text-xl font-semibold text-neutral-dark">Validation Results</h2>
         <div className="flex items-center space-x-3">
           {/* Situational Analysis Button - show if research data available */}
-          {researchResults && (
+          {(researchResults || results.usedExistingResearch) && (
             <Button 
               variant="outline" 
               onClick={() => {
                 console.log('Situational Analysis clicked, researchResults:', researchResults);
+                console.log('Results used existing research:', results.usedExistingResearch);
                 setShowSituationalAnalysis(true);
               }}
               className="flex items-center space-x-2"
@@ -398,13 +399,13 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
       </CardContent>
       
       {/* Situational Analysis Modal */}
-      {showSituationalAnalysis && researchResults && (
+      {showSituationalAnalysis && (researchResults || results.usedExistingResearch) && (
         <SituationalAnalysisModal
           isOpen={showSituationalAnalysis}
           onClose={() => setShowSituationalAnalysis(false)}
-          drugName={researchResults.drugName || "Study Drug"}
-          indication={researchResults.indication || "Study Indication"}
-          researchResults={researchResults.results || []}
+          drugName={(researchResults?.drugName || results.existingResearchData?.drugName || results.drugName || "Study Drug")}
+          indication={(researchResults?.indication || results.existingResearchData?.indication || results.indication || "Study Indication")}
+          researchResults={(researchResults?.results || results.existingResearchData?.results || [])}
           isLoading={false}
         />
       )}
