@@ -190,7 +190,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
             )}
             
             <div className="space-y-2">
-              {results.benchmarkDeltas.map((delta, index) => (
+              {(results.benchmarkDeltas || []).map((delta, index) => (
                 <div key={index} className="p-3 border rounded-md">
                   <h4 className="text-sm font-medium text-neutral-dark mb-1">{delta.aspect}</h4>
                   <div className="flex items-center text-sm">

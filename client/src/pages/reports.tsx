@@ -220,10 +220,10 @@ const Reports: React.FC = () => {
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <span className="font-medium">Risk Flags:</span> {validation.riskFlags.length}
+                          <span className="font-medium">Risk Flags:</span> {(validation.riskFlags || []).length}
                         </div>
                         <div>
-                          <span className="font-medium">Deltas:</span> {validation.benchmarkDeltas.length}
+                          <span className="font-medium">Deltas:</span> {(validation.benchmarkDeltas || []).length}
                         </div>
                       </div>
                     </CardContent>
