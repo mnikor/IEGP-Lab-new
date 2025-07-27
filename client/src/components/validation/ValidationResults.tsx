@@ -15,9 +15,10 @@ import { apiRequest } from "@/lib/queryClient";
 
 interface ValidationResultsProps {
   results: ValidationResultsType;
+  researchResults?: any;
 }
 
-const ValidationResults: React.FC<ValidationResultsProps> = ({ results }) => {
+const ValidationResults: React.FC<ValidationResultsProps> = ({ results, researchResults }) => {
   const { toast } = useToast();
   const [showDeltasInfo, setShowDeltasInfo] = React.useState(true);
   const [showRiskInfo, setShowRiskInfo] = React.useState(false);

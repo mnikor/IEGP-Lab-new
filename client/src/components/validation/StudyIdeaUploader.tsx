@@ -19,6 +19,7 @@ interface StudyIdeaUploaderProps {
   onValidationSuccess: (results: ValidationResults) => void;
   isValidating: boolean;
   setIsValidating: (isValidating: boolean) => void;
+  onStudyParamsCapture?: (params: any) => void;
 }
 
 const formSchema = z.object({
@@ -65,7 +66,8 @@ const formSchema = z.object({
 const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({ 
   onValidationSuccess, 
   isValidating,
-  setIsValidating 
+  setIsValidating,
+  onStudyParamsCapture 
 }) => {
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -358,6 +360,23 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
       
       // Append AI model selection
       formData.append('aiModel', values.aiModel || 'gpt-4o');
+
+      // Capture study parameters for research section
+      if (onStudyParamsCapture) {
+        onStudyParamsCapture({
+          drugName: values.drugName,
+          indication: values.indication,
+          strategicGoals: selectedStrategicGoals,
+          studyPhase: values.studyPhasePref,
+          geography: selectedGeographies,
+          additionalContext: values.additionalContext,
+          targetSubpopulation: values.targetSubpopulation,
+          comparatorDrugs: comparatorDrugs,
+          budgetCeilingEur: values.budgetCeilingEur,
+          timelineCeilingMonths: values.timelineCeilingMonths,
+          salesImpactThreshold: values.salesImpactThreshold
+        });
+      }
 
       // Log formData for debugging
       console.log("Submitting form with data:");

@@ -997,6 +997,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Validation Research API endpoints
+  app.post("/api/validation-research/generate-strategy", async (req, res) => {
+    try {
+      const { ValidationResearchGenerator } = await import("./services/validationResearchGenerator");
+      const generator = new ValidationResearchGenerator();
+      
+      const strategy = await generator.generateValidationStrategy(req.body);
+      res.json(strategy);
+    } catch (error) {
+      console.error("Error generating validation research strategy:", error);
+      res.status(500).json({ message: "Failed to generate validation research strategy" });
+    }
+  });
+
+  app.post("/api/validation-research/execute", async (req, res) => {
+    try {
+      const { searches, context } = req.body;
+      
+      // Execute research using existing ResearchExecutor
+      const executor = new ResearchExecutor();
+      const results = await executor.executeValidationResearch(searches, context);
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Error executing validation research:", error);
+      res.status(500).json({ message: "Failed to execute validation research" });
+    }
+  });
+
   // Register tournament routes
   app.use('/api/tournaments', tournamentRoutes);
 

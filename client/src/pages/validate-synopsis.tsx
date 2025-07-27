@@ -2,16 +2,27 @@ import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StudyIdeaUploader from "@/components/validation/StudyIdeaUploader";
 import ValidationResults from "@/components/validation/ValidationResults";
+import ValidationResearchSection from "@/components/validation/ValidationResearchSection";
 import { ValidationResults as ValidationResultsType } from "@/lib/types";
 
 const ValidateSynopsis: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("upload");
   const [validationResults, setValidationResults] = useState<ValidationResultsType | null>(null);
   const [isValidating, setIsValidating] = useState<boolean>(false);
+  const [studyParams, setStudyParams] = useState<any>(null);
+  const [researchResults, setResearchResults] = useState<any>(null);
 
   const handleValidationSuccess = (results: ValidationResultsType) => {
     setValidationResults(results);
     setActiveTab("results");
+  };
+
+  const handleStudyParamsCapture = (params: any) => {
+    setStudyParams(params);
+  };
+
+  const handleResearchComplete = (results: any) => {
+    setResearchResults(results);
   };
 
   return (
@@ -28,6 +39,7 @@ const ValidateSynopsis: React.FC = () => {
               <a href="/generate-concept">Generate Concept</a>
             </TabsTrigger>
             <TabsTrigger value="upload">Validate Study Idea</TabsTrigger>
+            <TabsTrigger value="research">Research Intelligence</TabsTrigger>
           </TabsList>
           
           <TabsContent value="upload" forceMount className={activeTab !== "upload" ? "hidden" : ""}>
@@ -35,12 +47,28 @@ const ValidateSynopsis: React.FC = () => {
               onValidationSuccess={handleValidationSuccess}
               isValidating={isValidating}
               setIsValidating={setIsValidating}
+              onStudyParamsCapture={handleStudyParamsCapture}
+            />
+          </TabsContent>
+          
+          <TabsContent value="research" forceMount className={activeTab !== "research" ? "hidden" : ""}>
+            <ValidationResearchSection
+              drugName={studyParams?.drugName || ''}
+              indication={studyParams?.indication || ''}
+              strategicGoals={studyParams?.strategicGoals || []}
+              studyPhase={studyParams?.studyPhase}
+              geography={studyParams?.geography}
+              additionalContext={studyParams?.additionalContext}
+              onResearchComplete={handleResearchComplete}
             />
           </TabsContent>
           
           <TabsContent value="results" forceMount className={activeTab !== "results" ? "hidden" : ""}>
             {validationResults && (
-              <ValidationResults results={validationResults} />
+              <ValidationResults 
+                results={validationResults} 
+                researchResults={researchResults}
+              />
             )}
           </TabsContent>
         </Tabs>
