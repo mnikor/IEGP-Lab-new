@@ -407,6 +407,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Strategic goals array from form:", req.body['strategicGoals[]']);
       }
       
+      // Check if research results are provided
+      let existingResearchResults = null;
+      if (req.body.researchResults) {
+        try {
+          existingResearchResults = JSON.parse(req.body.researchResults);
+          console.log("Research Intelligence provided - enhancing validation with existing data");
+        } catch (e) {
+          console.warn("Failed to parse research results:", e);
+        }
+      }
+      
       // Handle strategic goals - could be an array or a single value from the form
       let strategicGoals = req.body.strategicGoals || req.body['strategicGoals[]'];
       
@@ -458,34 +469,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Step 2: Extract PICO from the document text
       const extractedPico = await extractPicoFromText(text);
       
-      // Step 3: Perform web search to gather evidence for benchmarking
-      // Create a more detailed query similar to the one used in concept generation
-      const isOncology = (data.indication || '').toLowerCase().includes('cancer') || 
-                         (data.indication || '').toLowerCase().includes('oncol') ||
-                         (data.indication || '').toLowerCase().includes('tumor');
-                         
-      const strategicGoalsFocus = data.strategicGoals.map(goal => goal.replace('_', ' ')).join(' and ');
+      // Step 3: Use existing research if available, otherwise perform web search
+      let searchResults;
       
-      // Use a more detailed query similar to concept generation
-      const searchQuery = `Provide clinical evidence benchmarks for ${data.drugName} in ${data.indication} focusing on ${strategicGoalsFocus}. 
-      Include details about: 
-      1. Optimal study design${data.studyPhasePref ? ` (Phase ${data.studyPhasePref})` : ''} 
-      2. Typical patient populations and sample sizes 
-      3. Common comparators used in similar studies
-      4. Standard endpoints and outcomes
-      5. Average costs and durations for similar trials${isOncology ? ' in oncology' : ''}
-      6. Common inclusion/exclusion criteria 
-      7. Geographic patterns/differences in conducting these trials`;
-      
-      // Use the same comprehensive domain list as concept generation
-      const searchResults = await perplexityWebSearch(searchQuery, [
-        "pubmed.ncbi.nlm.nih.gov",
-        "clinicaltrials.gov", 
-        "nejm.org",
-        "accessdata.fda.gov",
-        "ema.europa.eu",
-        "nature.com"
-      ]);
+      if (existingResearchResults?.results) {
+        console.log("Using existing Research Intelligence data for validation");
+        // Use the existing research results instead of duplicating search
+        searchResults = {
+          content: existingResearchResults.results.map((result: any) => 
+            `**${result.search.query}**\n${result.content}`
+          ).join('\n\n'),
+          citations: existingResearchResults.results.flatMap((result: any) => result.citations || [])
+        };
+      } else {
+        console.log("No existing research - performing new web search for validation");
+        // Create a more detailed query similar to the one used in concept generation
+        const strategicGoalsFocus = data.strategicGoals.map(goal => goal.replace('_', ' ')).join(' and ');
+        
+        // Use a more detailed query similar to concept generation
+        const searchQuery = `Provide clinical evidence benchmarks for ${data.drugName} in ${data.indication} focusing on ${strategicGoalsFocus}. 
+        Include details about: 
+        1. Optimal study design${data.studyPhasePref ? ` (Phase ${data.studyPhasePref})` : ''} 
+        2. Typical patient populations and sample sizes 
+        3. Common comparators used in similar studies
+        4. Standard endpoints and outcomes
+        5. Average costs and durations for similar trials
+        6. Common inclusion/exclusion criteria 
+        7. Geographic patterns/differences in conducting these trials`;
+        
+        // Use the same comprehensive domain list as concept generation
+        searchResults = await perplexityWebSearch(searchQuery, [
+          "pubmed.ncbi.nlm.nih.gov",
+          "clinicaltrials.gov", 
+          "nejm.org",
+          "accessdata.fda.gov",
+          "ema.europa.eu",
+          "nature.com"
+        ]);
+      }
       
       // Include additional context in analysis if provided
       let enrichedText = text;

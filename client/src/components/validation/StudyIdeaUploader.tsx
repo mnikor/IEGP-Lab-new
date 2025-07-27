@@ -323,6 +323,11 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
       // Send additional context
       formData.append('additionalContext', values.additionalContext || '');
       
+      // Include research results if available to enhance validation
+      if (researchResults) {
+        formData.append('researchResults', JSON.stringify(researchResults));
+      }
+      
       // Append geographies
       selectedGeographies.forEach(geo => {
         formData.append('geography[]', geo);
@@ -841,20 +846,12 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
                   )}
                 />
                 
-                <div className="flex justify-end pt-2">
-                  <Button type="button" variant="outline" className="mr-3">
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isValidating}>
-                    {isValidating ? "Validating..." : "Validate Study Idea"}
-                  </Button>
-                </div>
               </form>
             </Form>
           </CardContent>
         </Card>
         
-        {/* Research Intelligence Section - shows when parameters are filled */}
+        {/* Research Intelligence Section - shows when parameters are filled (BEFORE validation button) */}
         {shouldShowResearch && (
           <Card>
             <CardHeader>
@@ -876,6 +873,26 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
             </CardContent>
           </Card>
         )}
+        
+        {/* Validation Action Card - AFTER research intelligence */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="border-t border-neutral-light pt-4 flex justify-end">
+              <Button type="button" variant="outline" className="mr-3">
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                disabled={isValidating}
+                onClick={() => {
+                  form.handleSubmit(onSubmit)();
+                }}
+              >
+                {isValidating ? "Validating..." : "Validate Study Idea"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
       <div className="lg:col-span-1">
