@@ -17,6 +17,9 @@ const ValidationDetailPage: React.FC = () => {
     queryKey: ['/api/study-idea-validations', id],
     enabled: !!id,
   });
+  
+  // Debug log to see what we're getting from the API
+  console.log('ValidationDetailPage data:', validation);
 
   const handleExportPDF = async () => {
     try {

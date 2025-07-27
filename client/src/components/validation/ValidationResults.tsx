@@ -28,6 +28,15 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
   const [showDeltasInfo, setShowDeltasInfo] = React.useState(true);
   const [showRiskInfo, setShowRiskInfo] = React.useState(false);
   const [showSituationalAnalysis, setShowSituationalAnalysis] = React.useState(false);
+  
+  // Debug log to see what we have
+  console.log('ValidationResults data:', {
+    extractedPico: results.extractedPico,
+    revisedEconomics: results.revisedEconomics,
+    swotAnalysis: results.swotAnalysis,
+    benchmarkDeltas: results.benchmarkDeltas,
+    riskFlags: results.riskFlags
+  });
 
   // Handle research results from multiple sources - props, results data, or none
   const getResearchResults = () => {
@@ -158,12 +167,14 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
           </div>
 
           {/* Extracted PICO */}
-          {results.extractedPico && (
           <div>
             <h3 className="text-md font-medium text-neutral-dark mb-3">Extracted PICO Framework</h3>
-            <PicoFramework picoData={results.extractedPico} />
+            {results.extractedPico ? (
+              <PicoFramework picoData={results.extractedPico} />
+            ) : (
+              <p className="text-sm text-neutral-medium">PICO data not available</p>
+            )}
           </div>
-          )}
 
           {/* Benchmark Deltas */}
           {results.benchmarkDeltas && results.benchmarkDeltas.length > 0 && (
@@ -294,7 +305,6 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
           )}
 
           {/* Revised Economics */}
-          {results.revisedEconomics && (
           <div>
             <h3 className="text-md font-medium text-neutral-dark mb-3">Revised Economics</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -355,15 +365,16 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
               </div>
             )}
           </div>
-          )}
 
           {/* SWOT Analysis */}
-          {results.swotAnalysis && (
           <div>
             <h3 className="text-md font-medium text-neutral-dark mb-3">SWOT Analysis</h3>
-            <SwotAnalysis swotAnalysis={results.swotAnalysis} />
+            {results.swotAnalysis ? (
+              <SwotAnalysis swotAnalysis={results.swotAnalysis} />
+            ) : (
+              <p className="text-sm text-neutral-medium">SWOT analysis not available</p>
+            )}
           </div>
-          )}
 
 
 
