@@ -80,9 +80,10 @@ const ValidationResearchSection: React.FC<ValidationResearchProps> = ({
 
     setIsGeneratingStrategy(true);
     try {
-      const response = await apiRequest('/api/validation-research/generate-strategy', {
-        method: 'POST',
-        body: {
+      const response = await apiRequest(
+        'POST',
+        '/api/validation-research/generate-strategy',
+        {
           drugName,
           indication,
           strategicGoals,
@@ -90,14 +91,15 @@ const ValidationResearchSection: React.FC<ValidationResearchProps> = ({
           geography: geography || ['US', 'EU'],
           additionalContext
         }
-      });
+      );
 
-      setResearchStrategy(response);
-      setEditedSearches(response.searches);
+      const data = await response.json();
+      setResearchStrategy(data);
+      setEditedSearches(data.searches);
       
       toast({
         title: "Research Strategy Generated",
-        description: `Generated ${response.searches.length} validation-focused research queries`
+        description: `Generated ${data.searches.length} validation-focused research queries`
       });
     } catch (error) {
       console.error('Failed to generate validation strategy:', error);
@@ -116,9 +118,10 @@ const ValidationResearchSection: React.FC<ValidationResearchProps> = ({
 
     setIsExecutingResearch(true);
     try {
-      const response = await apiRequest('/api/validation-research/execute', {
-        method: 'POST',
-        body: {
+      const response = await apiRequest(
+        'POST',
+        '/api/validation-research/execute',
+        {
           searches: editedSearches.filter(s => s.enabled),
           context: {
             drugName,
@@ -127,13 +130,14 @@ const ValidationResearchSection: React.FC<ValidationResearchProps> = ({
             riskCategories: researchStrategy.riskCategories
           }
         }
-      });
+      );
 
-      setResearchResults(response);
+      const data = await response.json();
+      setResearchResults(data);
       setShowResults(true);
       
       if (onResearchComplete) {
-        onResearchComplete(response);
+        onResearchComplete(data);
       }
       
       toast({
