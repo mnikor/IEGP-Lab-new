@@ -46,10 +46,10 @@ export class ResearchExecutor {
         const search = enabledSearches[i];
         console.log(`Executing search ${i + 1}/${enabledSearches.length}: ${search.query}`);
         
-        // Add delay between searches (except for first one)
+        // Add smaller delay between searches to reduce total time
         if (i > 0) {
-          console.log(`Waiting 3 seconds before next search (${i + 1}/${enabledSearches.length})...`);
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          console.log(`Waiting 1.5 seconds before next search (${i + 1}/${enabledSearches.length})...`);
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
         
         const result = await this.executeSearch(strategyId, search);
@@ -179,25 +179,13 @@ export class ResearchExecutor {
       const targetDomains = this.getSearchDomains(search.type);
       const useDeepResearch = search.priority >= 8; // Use deep research for high priority searches
       
-      // Add explicit timeout and retry logic for individual searches
-      let perplexityResult: any;
-      try {
-        perplexityResult = await Promise.race([
-          perplexityWebSearch(enhancedQuery, targetDomains, useDeepResearch),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Search timeout after 40 seconds')), 40000)
-          )
-        ]);
-      } catch (timeoutError) {
-        console.log(`Search timed out after 40s, will retry once: ${search.query}`);
-        // Single retry with shorter timeout for failed searches
-        perplexityResult = await Promise.race([
-          perplexityWebSearch(enhancedQuery, targetDomains, false), // Use faster mode for retry
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Retry timeout after 30 seconds')), 30000)
-          )
-        ]) as any;
-      }
+      // Use shorter timeout and no retry to keep total time under 2 minutes
+      const perplexityResult = await Promise.race([
+        perplexityWebSearch(enhancedQuery, targetDomains, useDeepResearch),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Search timeout after 25 seconds')), 25000)
+        )
+      ]) as any;
       console.log(`Perplexity search completed for: "${search.query}". Content length: ${perplexityResult.content?.length || 0}, Citations: ${perplexityResult.citations?.length || 0}`);
       
       // Process and structure the results
