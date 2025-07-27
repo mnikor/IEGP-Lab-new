@@ -365,22 +365,88 @@ function determineEndpoint(
         studyTitleLower.includes('observational')) {
       
       if (isOncology) {
-        // Oncology RWE - typically survival or progression endpoints
+        // Oncology RWE - adapt parameters based on study characteristics
+        const studyTitle = concept?.title || '';
+        const picoData = concept?.picoData as any;
+        const targetSubpopulation = concept?.targetSubpopulation || '';
+        
+        let baseline = 12; // months
+        let target = 15;   // months  
+        let hazardRatio = 0.80;
+        let precision = 0.1;
+        
+        // Adjust for disease severity and treatment line
+        if (studyTitle.toLowerCase().includes('first-line') || 
+            studyTitle.toLowerCase().includes('first line') ||
+            studyTitle.toLowerCase().includes('treatment-naive')) {
+          baseline = 15; // Better prognosis in first-line
+          target = 20;
+          hazardRatio = 0.75; // Larger effect expected
+        } else if (studyTitle.toLowerCase().includes('second-line') ||
+                   studyTitle.toLowerCase().includes('refractory') ||
+                   studyTitle.toLowerCase().includes('resistant')) {
+          baseline = 8;  // Worse prognosis in later lines
+          target = 11;
+          hazardRatio = 0.85; // Smaller effect in resistant disease
+        }
+        
+        // Adjust for specific cancer types
+        if (studyTitle.toLowerCase().includes('nsclc') || 
+            studyTitle.toLowerCase().includes('lung cancer')) {
+          baseline = studyTitle.toLowerCase().includes('first-line') ? 18 : 10;
+          target = baseline + 4; // 4 months improvement
+        } else if (studyTitle.toLowerCase().includes('breast cancer') ||
+                   studyTitle.toLowerCase().includes('her2')) {
+          baseline = studyTitle.toLowerCase().includes('metastatic') ? 20 : 36;
+          target = baseline + 6; // 6 months improvement
+        }
+        
+        // Adjust precision for registry vs comparative studies
+        if (studyTitle.toLowerCase().includes('registry') ||
+            studyTitle.toLowerCase().includes('cohort')) {
+          precision = 0.15; // Less precision needed for descriptive studies
+        }
+        
         return {
           type: 'rwe_effectiveness',
-          baseline: 12,    // 12 months median survival/PFS
-          target: 15,      // 15 months target (25% improvement)
-          hazardRatio: 0.80, // More conservative than RCT
-          precision: 0.1   // ±10% precision around estimate
+          baseline,
+          target,
+          hazardRatio,
+          precision
         };
       } else {
-        // Non-oncology RWE - typically effectiveness or QoL outcomes
+        // Non-oncology RWE - adapt based on indication
+        const studyTitle = concept?.title || '';
+        const indication = concept?.indication || '';
+        
+        let effectSize = 0.3;
+        let standardDeviation = 1.2;
+        let precision = 0.15;
+        
+        // Adjust for different therapeutic areas
+        if (indication.toLowerCase().includes('diabetes') ||
+            studyTitle.toLowerCase().includes('diabetes')) {
+          effectSize = 0.4; // Clear endpoint (HbA1c reduction)
+          standardDeviation = 1.0;
+          precision = 0.1;
+        } else if (indication.toLowerCase().includes('hypertension') ||
+                   studyTitle.toLowerCase().includes('blood pressure')) {
+          effectSize = 0.35;
+          standardDeviation = 1.1;
+          precision = 0.12;
+        } else if (indication.toLowerCase().includes('depression') ||
+                   indication.toLowerCase().includes('anxiety')) {
+          effectSize = 0.25; // Smaller effects in mental health
+          standardDeviation = 1.4; // Higher variability
+          precision = 0.18;
+        }
+        
         return {
           type: 'real_world_outcomes',
           baseline: 0,
-          target: 0.3,     // 30% improvement in outcome measure
-          standardDeviation: 1.2, // Higher variability in real-world setting
-          precision: 0.15  // ±15% precision
+          target: effectSize,
+          standardDeviation,
+          precision
         };
       }
     }
@@ -852,8 +918,26 @@ function adjustForStudyCharacteristics(
   
   // Adjust for strategic goals requiring larger populations
   const strategicGoals = concept.strategicGoals || [];
+  const studyTitle = concept.title || '';
+  
   if (strategicGoals.includes('generate_real_world_evidence')) {
-    adjustedSize *= 2.0; // Real-world evidence requires larger populations
+    // Variable RWE multiplier based on study type
+    let rweMultiplier = 1.5; // Base RWE multiplier
+    
+    if (studyTitle.toLowerCase().includes('registry') ||
+        studyTitle.toLowerCase().includes('cohort')) {
+      rweMultiplier = 2.5; // Larger registries for epidemiological validity
+    } else if (studyTitle.toLowerCase().includes('safety') ||
+               studyTitle.toLowerCase().includes('surveillance')) {
+      rweMultiplier = 3.0; // Safety studies need larger populations
+    } else if (studyTitle.toLowerCase().includes('pragmatic') ||
+               studyTitle.toLowerCase().includes('comparative effectiveness')) {
+      rweMultiplier = 1.8; // Moderate increase for pragmatic trials
+    } else if (studyTitle.toLowerCase().includes('observational')) {
+      rweMultiplier = 2.2; // Standard observational study increase
+    }
+    
+    adjustedSize *= rweMultiplier;
   }
   
   if (strategicGoals.includes('validate_biomarker')) {
