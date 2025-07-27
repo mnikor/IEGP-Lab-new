@@ -125,6 +125,10 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
     },
   });
   
+  // Watch form values to automatically show research section
+  const watchedValues = form.watch();
+  const shouldShowResearch = watchedValues.drugName && watchedValues.indication;
+  
   // Geography handling functions
   const addGeography = (geo: string) => {
     if (!selectedGeographies.includes(geo)) {
@@ -850,8 +854,8 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
           </CardContent>
         </Card>
         
-        {/* Research Intelligence Section */}
-        {studyParams?.drugName && studyParams?.indication && (
+        {/* Research Intelligence Section - shows when parameters are filled */}
+        {shouldShowResearch && (
           <Card>
             <CardHeader>
               <CardTitle>Research Intelligence</CardTitle>
@@ -861,12 +865,12 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
             </CardHeader>
             <CardContent>
               <ValidationResearchSection
-                drugName={studyParams.drugName}
-                indication={studyParams.indication}
-                strategicGoals={studyParams.strategicGoals || []}
-                studyPhase={studyParams.studyPhase}
-                geography={studyParams.geography}
-                additionalContext={studyParams.additionalContext}
+                drugName={watchedValues.drugName}
+                indication={watchedValues.indication}
+                strategicGoals={selectedStrategicGoals}
+                studyPhase={watchedValues.studyPhasePref}
+                geography={selectedGeographies}
+                additionalContext={watchedValues.additionalContext}
                 onResearchComplete={(results) => setResearchResults(results)}
               />
             </CardContent>
