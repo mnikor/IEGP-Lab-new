@@ -39,7 +39,6 @@ const ValidateSynopsis: React.FC = () => {
               <a href="/generate-concept">Generate Concept</a>
             </TabsTrigger>
             <TabsTrigger value="upload">Validate Study Idea</TabsTrigger>
-            <TabsTrigger value="research">Research Intelligence</TabsTrigger>
           </TabsList>
           
           <TabsContent value="upload" forceMount className={activeTab !== "upload" ? "hidden" : ""}>
@@ -51,17 +50,7 @@ const ValidateSynopsis: React.FC = () => {
             />
           </TabsContent>
           
-          <TabsContent value="research" forceMount className={activeTab !== "research" ? "hidden" : ""}>
-            <ValidationResearchSection
-              drugName={studyParams?.drugName || ''}
-              indication={studyParams?.indication || ''}
-              strategicGoals={studyParams?.strategicGoals || []}
-              studyPhase={studyParams?.studyPhase}
-              geography={studyParams?.geography}
-              additionalContext={studyParams?.additionalContext}
-              onResearchComplete={handleResearchComplete}
-            />
-          </TabsContent>
+
           
           <TabsContent value="results" forceMount className={activeTab !== "results" ? "hidden" : ""}>
             {validationResults && (

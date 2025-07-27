@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ValidationResults, StrategicGoal, strategicGoalLabels } from "@/lib/types";
 import { Upload, FileText, AlertCircle, X, UploadCloud } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import ValidationResearchSection from "./ValidationResearchSection";
 
 interface StudyIdeaUploaderProps {
   onValidationSuccess: (results: ValidationResults) => void;
@@ -73,6 +74,8 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState<boolean>(false);
   const [inputMethod, setInputMethod] = useState<string>("file");
+  const [studyParams, setStudyParams] = useState<any>(null);
+  const [researchResults, setResearchResults] = useState<any>(null);
   
   // Geography handling
   const [selectedGeographies, setSelectedGeographies] = useState<string[]>(["US", "EU"]);
@@ -362,20 +365,23 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
       formData.append('aiModel', values.aiModel || 'gpt-4o');
 
       // Capture study parameters for research section
+      const capturedParams = {
+        drugName: values.drugName,
+        indication: values.indication,
+        strategicGoals: selectedStrategicGoals,
+        studyPhase: values.studyPhasePref,
+        geography: selectedGeographies,
+        additionalContext: values.additionalContext,
+        targetSubpopulation: values.targetSubpopulation,
+        comparatorDrugs: comparatorDrugs,
+        budgetCeilingEur: values.budgetCeilingEur,
+        timelineCeilingMonths: values.timelineCeilingMonths,
+        salesImpactThreshold: values.salesImpactThreshold
+      };
+      
+      setStudyParams(capturedParams);
       if (onStudyParamsCapture) {
-        onStudyParamsCapture({
-          drugName: values.drugName,
-          indication: values.indication,
-          strategicGoals: selectedStrategicGoals,
-          studyPhase: values.studyPhasePref,
-          geography: selectedGeographies,
-          additionalContext: values.additionalContext,
-          targetSubpopulation: values.targetSubpopulation,
-          comparatorDrugs: comparatorDrugs,
-          budgetCeilingEur: values.budgetCeilingEur,
-          timelineCeilingMonths: values.timelineCeilingMonths,
-          salesImpactThreshold: values.salesImpactThreshold
-        });
+        onStudyParamsCapture(capturedParams);
       }
 
       // Log formData for debugging
@@ -420,10 +426,14 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2">
+      <div className="lg:col-span-2 space-y-6">
+        {/* Study Parameters Form */}
         <Card>
           <CardHeader>
-            <CardTitle>Study Idea Validation</CardTitle>
+            <CardTitle>Study Parameters</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Enter your study details to enable validation and research analysis
+            </p>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -839,6 +849,29 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
             </Form>
           </CardContent>
         </Card>
+        
+        {/* Research Intelligence Section */}
+        {studyParams?.drugName && studyParams?.indication && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Research Intelligence</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                AI-powered validation research to assess study feasibility and identify potential risks
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ValidationResearchSection
+                drugName={studyParams.drugName}
+                indication={studyParams.indication}
+                strategicGoals={studyParams.strategicGoals || []}
+                studyPhase={studyParams.studyPhase}
+                geography={studyParams.geography}
+                additionalContext={studyParams.additionalContext}
+                onResearchComplete={(results) => setResearchResults(results)}
+              />
+            </CardContent>
+          </Card>
+        )}
       </div>
       
       <div className="lg:col-span-1">
