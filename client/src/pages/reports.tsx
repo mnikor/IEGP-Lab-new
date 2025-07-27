@@ -72,6 +72,23 @@ const Reports: React.FC = () => {
     }
   });
 
+  // Filter out concepts that are already part of saved proposals
+  const conceptsInProposals = React.useMemo(() => {
+    if (!savedProposals) return new Set<number>();
+    const conceptIds = new Set<number>();
+    savedProposals.forEach(proposal => {
+      proposal.generatedConcepts?.forEach(concept => {
+        if (concept.id) conceptIds.add(concept.id);
+      });
+    });
+    return conceptIds;
+  }, [savedProposals]);
+
+  const filteredConcepts = React.useMemo(() => {
+    if (!concepts) return [];
+    return concepts.filter(concept => !conceptsInProposals.has(concept.id));
+  }, [concepts, conceptsInProposals]);
+
   const handleDownloadPDF = async (proposal: SavedStudyProposal) => {
     try {
       console.log('Starting PDF download for proposal:', proposal.id);
@@ -253,8 +270,8 @@ const Reports: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
               {loadingConcepts ? (
                 <p>Loading concepts...</p>
-              ) : concepts && concepts.length > 0 ? (
-                concepts.map((concept) => (
+              ) : filteredConcepts && filteredConcepts.length > 0 ? (
+                filteredConcepts.map((concept) => (
                   <Card key={concept.id} className="overflow-hidden">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg">{concept.title}</CardTitle>
