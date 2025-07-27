@@ -746,3 +746,185 @@ export async function generateValidationPdfReport(validation: SynopsisValidation
     }
   });
 }
+
+
+/**
+ * Generates a PDF report for a saved study proposal
+ * 
+ * @param proposal The saved study proposal
+ * @returns Buffer containing the PDF file
+ */
+export async function generateProposalPdfReport(proposal: any): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    try {
+      // Create a new PDF document
+      const doc = new PDFDocument({ margin: 50 });
+      const buffers: Buffer[] = [];
+      const stream = new PassThrough();
+
+      // Collect PDF data chunks
+      stream.on("data", (chunk) => buffers.push(chunk));
+      stream.on("end", () => resolve(Buffer.concat(buffers)));
+      stream.on("error", (err) => reject(err));
+
+      // Pipe the PDF to our stream
+      doc.pipe(stream);
+
+      // Add title page
+      doc.fontSize(24).font("Helvetica-Bold").text("Clinical Study Proposal", { align: "center" });
+      doc.moveDown();
+      doc.fontSize(18).font("Helvetica").text(proposal.title, { align: "center" });
+      doc.moveDown();
+      doc.fontSize(14).font("Helvetica").text(`Generated: ${new Date(proposal.createdAt).toLocaleDateString()}`, { align: "center" });
+      doc.moveDown(2);
+      
+      // Proposal Overview
+      doc.fontSize(16).font("Helvetica-Bold").text("Proposal Overview", { underline: true });
+      doc.moveDown();
+      
+      doc.fontSize(12).font("Helvetica-Bold").text("Drug: ").font("Helvetica").text(proposal.drugName, { continued: true });
+      doc.fontSize(12).font("Helvetica-Bold").text("   Indication: ").font("Helvetica").text(proposal.indication);
+      doc.fontSize(12).font("Helvetica-Bold").text("Strategic Goals: ").font("Helvetica").text(proposal.strategicGoals.join(", ").replace(/_/g, " "));
+      doc.fontSize(12).font("Helvetica-Bold").text("Geography: ").font("Helvetica").text(proposal.geography.join(", "));
+      doc.fontSize(12).font("Helvetica-Bold").text("Concept Count: ").font("Helvetica").text(`${proposal.conceptCount} study concepts`);
+      doc.moveDown(2);
+
+      // Research Strategy Results (if available)
+      if (proposal.researchResults && typeof proposal.researchResults === "string") {
+        try {
+          const researchResults = JSON.parse(proposal.researchResults);
+          if (researchResults && researchResults.length > 0) {
+            doc.fontSize(16).font("Helvetica-Bold").text("Research Strategy Results", { underline: true });
+            doc.moveDown();
+            
+            researchResults.slice(0, 3).forEach((result: any, index: number) => {
+              doc.fontSize(14).font("Helvetica-Bold").text(`${index + 1}. ${result.title || "Research Finding"}`);
+              doc.moveDown(0.5);
+              
+              if (result.content) {
+                // Truncate content if too long
+                const content = result.content.length > 500 ? 
+                  result.content.substring(0, 500) + "..." : 
+                  result.content;
+                doc.fontSize(10).font("Helvetica").text(content);
+              }
+              
+              if (result.citations && result.citations.length > 0) {
+                doc.fontSize(9).font("Helvetica-Oblique").text(`Sources: ${result.citations.slice(0, 3).join("; ")}`);
+              }
+              
+              doc.moveDown();
+            });
+            
+            doc.moveDown();
+          }
+        } catch (e) {
+          console.log("Error parsing research results for PDF");
+        }
+      }
+
+      // Generated Study Concepts
+      if (proposal.generatedConcepts && proposal.generatedConcepts.length > 0) {
+        doc.addPage();
+        doc.fontSize(16).font("Helvetica-Bold").text("Generated Study Concepts", { underline: true });
+        doc.moveDown();
+        
+        proposal.generatedConcepts.forEach((concept: any, index: number) => {
+          if (index > 0) {
+            doc.addPage();
+          }
+          
+          // Concept header
+          doc.fontSize(14).font("Helvetica-Bold").text(`Concept ${index + 1}: ${concept.title || "Study Concept"}`);
+          doc.moveDown();
+          
+          // Basic information
+          if (concept.studyPhase) {
+            doc.fontSize(10).font("Helvetica-Bold").text("Study Phase: ").font("Helvetica").text(concept.studyPhase);
+          }
+          
+          // PICO Framework
+          if (concept.picoData) {
+            doc.moveDown();
+            doc.fontSize(12).font("Helvetica-Bold").text("PICO Framework", { underline: true });
+            doc.moveDown(0.5);
+            
+            if (concept.picoData.population) {
+              doc.fontSize(10).font("Helvetica-Bold").text("Population: ");
+              doc.fontSize(9).font("Helvetica").text(concept.picoData.population);
+              doc.moveDown(0.3);
+            }
+            
+            if (concept.picoData.intervention) {
+              doc.fontSize(10).font("Helvetica-Bold").text("Intervention: ");
+              doc.fontSize(9).font("Helvetica").text(concept.picoData.intervention);
+              doc.moveDown(0.3);
+            }
+            
+            if (concept.picoData.comparator) {
+              doc.fontSize(10).font("Helvetica-Bold").text("Comparator: ");
+              doc.fontSize(9).font("Helvetica").text(concept.picoData.comparator);
+              doc.moveDown(0.3);
+            }
+            
+            if (concept.picoData.outcomes) {
+              doc.fontSize(10).font("Helvetica-Bold").text("Outcomes: ");
+              doc.fontSize(9).font("Helvetica").text(concept.picoData.outcomes);
+              doc.moveDown(0.3);
+            }
+          }
+
+          // Feasibility Data
+          if (concept.feasibilityData) {
+            doc.moveDown();
+            doc.fontSize(12).font("Helvetica-Bold").text("Feasibility Analysis", { underline: true });
+            doc.moveDown(0.5);
+            
+            if (concept.feasibilityData.totalCostEur) {
+              doc.fontSize(10).font("Helvetica-Bold").text("Estimated Cost: ");
+              doc.fontSize(9).font("Helvetica").text(`€${concept.feasibilityData.totalCostEur.toLocaleString()}`);
+              doc.moveDown(0.3);
+            }
+            
+            if (concept.feasibilityData.estimatedTimelineMonths) {
+              doc.fontSize(10).font("Helvetica-Bold").text("Timeline: ");
+              doc.fontSize(9).font("Helvetica").text(`${concept.feasibilityData.estimatedTimelineMonths} months`);
+              doc.moveDown(0.3);
+            }
+            
+            if (concept.feasibilityData.calculatedSampleSize) {
+              doc.fontSize(10).font("Helvetica-Bold").text("Sample Size: ");
+              doc.fontSize(9).font("Helvetica").text(`${concept.feasibilityData.calculatedSampleSize} patients`);
+              doc.moveDown(0.3);
+            }
+          }
+
+          // MCDA Scores
+          if (concept.mcdaScores && concept.mcdaScores.totalScore) {
+            doc.moveDown();
+            doc.fontSize(12).font("Helvetica-Bold").text("MCDA Evaluation", { underline: true });
+            doc.moveDown(0.5);
+            
+            doc.fontSize(10).font("Helvetica-Bold").text("Total Score: ");
+            doc.fontSize(9).font("Helvetica").text(`${concept.mcdaScores.totalScore.toFixed(1)}/100`);
+            doc.moveDown(0.3);
+            
+            if (concept.mcdaScores.finalScore) {
+              doc.fontSize(10).font("Helvetica-Bold").text("Final Score: ");
+              doc.fontSize(9).font("Helvetica").text(`${concept.mcdaScores.finalScore.toFixed(1)}/100`);
+              doc.moveDown(0.3);
+            }
+          }
+        });
+      }
+
+      // Add footer
+      doc.fontSize(8).font("Helvetica").text(`Generated by Clinical Study Ideator & Validator - ${new Date().toISOString()}`, { align: "center" });
+      
+      // Finalize the PDF and end the stream
+      doc.end();
+    } catch (error) {
+      reject(error);
+    }
+  });
+}

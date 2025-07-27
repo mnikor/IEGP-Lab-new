@@ -1,13 +1,36 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Eye, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Download, Eye, Trash2, Calendar, MapPin, Target } from "lucide-react";
 import { Link } from "wouter";
 import { StudyConcept, ValidationResults } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
+interface SavedStudyProposal {
+  id: number;
+  title: string;
+  drugName: string;
+  indication: string;
+  strategicGoals: string[];
+  geography: string[];
+  researchStrategyId?: number;
+  generatedConcepts: any[];
+  conceptCount: number;
+  userInputs?: any;
+  researchResults?: any;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const Reports: React.FC = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const { data: concepts, isLoading: loadingConcepts } = useQuery<StudyConcept[]>({
     queryKey: ["/api/study-concepts"],
   });
@@ -15,6 +38,68 @@ const Reports: React.FC = () => {
   const { data: validations, isLoading: loadingValidations } = useQuery<ValidationResults[]>({
     queryKey: ["/api/synopsis-validations"],
   });
+
+  const { data: savedProposals, isLoading: loadingSavedProposals } = useQuery<SavedStudyProposal[]>({
+    queryKey: ["/api/saved-proposals"],
+    queryFn: async () => {
+      const response = await fetch('/api/saved-proposals');
+      if (!response.ok) throw new Error('Failed to fetch proposals');
+      return response.json();
+    }
+  });
+
+  const deleteProposalMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/saved-proposals/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to delete proposal');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/saved-proposals'] });
+      toast({
+        title: "Success",
+        description: "Study proposal deleted successfully"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete proposal",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleDownloadPDF = async (proposal: SavedStudyProposal) => {
+    try {
+      const response = await fetch(`/api/saved-proposals/${proposal.id}/pdf`);
+      if (!response.ok) throw new Error('Failed to generate PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${proposal.drugName}_${proposal.indication}_study_proposal.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Success",
+        description: "PDF downloaded successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to download PDF",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <>
@@ -24,11 +109,123 @@ const Reports: React.FC = () => {
       </div>
 
       <div className="mb-6 border-b border-neutral-light">
-        <Tabs defaultValue="concepts">
+        <Tabs defaultValue="saved-proposals">
           <TabsList className="border-b-0">
+            <TabsTrigger value="saved-proposals">Saved Proposals</TabsTrigger>
             <TabsTrigger value="concepts">Generated Concepts</TabsTrigger>
             <TabsTrigger value="validations">Validated Synopses</TabsTrigger>
           </TabsList>
+          <TabsContent value="saved-proposals">
+            <div className="grid gap-4 mt-6">
+              {loadingSavedProposals ? (
+                <p>Loading saved proposals...</p>
+              ) : savedProposals && savedProposals.length > 0 ? (
+                savedProposals.map((proposal) => (
+                  <Card key={proposal.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-xl mb-2">{proposal.title}</CardTitle>
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            <Badge variant="outline" className="flex items-center gap-1">
+                              <Target className="h-3 w-3" />
+                              {proposal.drugName}
+                            </Badge>
+                            <Badge variant="outline">{proposal.indication}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          Created {format(new Date(proposal.createdAt), 'MMM d, yyyy')}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          {proposal.geography.join(', ')}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Target className="h-4 w-4" />
+                          {proposal.generatedConcepts.length} Concepts Generated
+                        </div>
+                      </div>
+                      
+                      {proposal.strategicGoals && proposal.strategicGoals.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-sm font-medium mb-2">Strategic Goals:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {proposal.strategicGoals.map((goal, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {goal.replace('_', ' ')}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+
+                    <CardFooter className="flex justify-between pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.location.href = `/concept/${proposal.generatedConcepts[0]?.id}`}
+                      >
+                        <Eye className="mr-1 h-4 w-4" />
+                        View Details
+                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadPDF(proposal)}
+                        >
+                          <Download className="mr-1 h-4 w-4" />
+                          Download PDF
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Study Proposal</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{proposal.title}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteProposalMutation.mutate(proposal.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </CardFooter>
+                  </Card>
+                ))
+              ) : (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center h-64">
+                    <Target className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Saved Proposals</h3>
+                    <p className="text-muted-foreground text-center">
+                      Generate study concepts to automatically save proposals here
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
           <TabsContent value="concepts">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
               {loadingConcepts ? (

@@ -17,7 +17,7 @@ import { calculateFeasibility } from "./services/feasibilityCalculator";
 import type { ConceptWithFeasibility } from "./services/feasibilityCalculator";
 import { scoreMcda } from "./services/mcdaScorer";
 import { generateSwot } from "./services/swotGenerator";
-import { generatePdfReport, generatePptxReport, generateValidationPdfReport } from "./services/reportBuilder";
+import { generatePdfReport, generatePptxReport, generateValidationPdfReport, generateProposalPdfReport } from "./services/reportBuilder";
 import { ResearchStrategyGenerator } from "./services/researchStrategyGenerator";
 import { ResearchExecutor } from "./services/researchExecutor";
 import { 
@@ -931,6 +931,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting proposal:", error);
       res.status(500).json({ message: "Failed to delete proposal" });
+    }
+  });
+
+  app.get("/api/saved-proposals/:id/pdf", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const proposal = await storage.getSavedStudyProposal(id);
+      
+      if (!proposal) {
+        return res.status(404).json({ message: "Proposal not found" });
+      }
+
+      // Generate PDF from the proposal data
+      const pdfBuffer = await generateProposalPdfReport(proposal);
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=${proposal.drugName.replace(/[^a-zA-Z0-9]/g, '_')}_${proposal.indication.replace(/[^a-zA-Z0-9]/g, '_')}_study_proposal.pdf`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Error generating proposal PDF:", error);
+      res.status(500).json({ message: "Failed to generate PDF" });
     }
   });
 
