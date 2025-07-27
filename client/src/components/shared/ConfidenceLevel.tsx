@@ -68,25 +68,25 @@ export default function ConfidenceLevel({
                       <div>
                         <span className="font-medium">Recruitment:</span>
                         <span className="ml-1 text-muted-foreground">
-                          {Math.round(feasibilityData.recruitmentRate * 100)}%
+                          {feasibilityData.recruitmentRate ? Math.round(feasibilityData.recruitmentRate * 100) : 'N/A'}%
                         </span>
                       </div>
                       <div>
                         <span className="font-medium">Risk:</span>
                         <span className="ml-1 text-muted-foreground">
-                          {Math.round(feasibilityData.completionRisk * 100)}%
+                          {feasibilityData.completionRisk ? Math.round(feasibilityData.completionRisk * 100) : 'N/A'}%
                         </span>
                       </div>
                       <div>
                         <span className="font-medium">ROI:</span>
                         <span className="ml-1 text-muted-foreground">
-                          {feasibilityData.projectedROI.toFixed(1)}x
+                          {feasibilityData.projectedROI ? feasibilityData.projectedROI.toFixed(1) : 'N/A'}x
                         </span>
                       </div>
                       <div>
                         <span className="font-medium">Timeline:</span>
                         <span className="ml-1 text-muted-foreground">
-                          {feasibilityData.timeline}mo
+                          {feasibilityData.timeline || 'N/A'}mo
                         </span>
                       </div>
                     </div>

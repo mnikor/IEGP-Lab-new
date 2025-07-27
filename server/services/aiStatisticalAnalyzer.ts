@@ -336,10 +336,22 @@ Provide as JSON with detailed explanations for each element.`;
     numberOfArms: number;
     sensitivityAnalysis?: any[];
   } {
-    const totalPatients = Math.max(20, Math.min(10000, calculation.totalPatients || 300));
+    // Ensure we have valid numbers, fallback to defaults if invalid
+    let totalPatients = calculation.totalPatients;
+    if (!totalPatients || isNaN(totalPatients) || totalPatients <= 0) {
+      totalPatients = this.getDefaultSampleSizeForPhase(concept.studyPhase || 'III');
+    }
+    totalPatients = Math.max(20, Math.min(10000, totalPatients));
+    
     const numberOfArms = plan.studyDesign === 'single_arm' ? 1 : 
                         plan.comparator === 'none' ? 1 : 2;
     const patientsPerArm = Math.round(totalPatients / numberOfArms);
+
+    // Double check all values are valid numbers
+    if (isNaN(totalPatients) || isNaN(patientsPerArm) || isNaN(numberOfArms)) {
+      console.error('Invalid calculation values detected, using fallback');
+      return this.generateFallbackCalculation(concept, plan);
+    }
 
     return {
       totalPatients,
@@ -347,6 +359,25 @@ Provide as JSON with detailed explanations for each element.`;
       numberOfArms,
       sensitivityAnalysis: calculation.sensitivityAnalysis || []
     };
+  }
+
+  private getDefaultSampleSizeForPhase(phase: string): number {
+    switch (phase?.toLowerCase()) {
+      case 'i':
+      case 'phase i':
+        return 30;
+      case 'ii':
+      case 'phase ii':
+        return 120;
+      case 'iii':
+      case 'phase iii':
+        return 400;
+      case 'iv':
+      case 'phase iv':
+        return 500;
+      default:
+        return 300;
+    }
   }
 
   private generateFallbackContext(concept: StudyConcept): any {

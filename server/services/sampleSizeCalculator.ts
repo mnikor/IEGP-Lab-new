@@ -173,8 +173,15 @@ export async function calculateSampleSizeWithAI(concept: Partial<StudyConcept>, 
       hazardRatio: aiResult.statisticalPlan.endpointType === 'survival' ? 0.75 : undefined
     };
 
+    // Final validation to ensure AI returned valid sample size
+    let sampleSize = aiResult.totalPatients;
+    if (!sampleSize || isNaN(sampleSize) || sampleSize <= 0) {
+      console.warn('AI returned invalid sample size, using fallback');
+      sampleSize = getDefaultSampleSize(concept.studyPhase || 'III', isOncologyIndication(concept.indication || ''));
+    }
+
     return {
-      sampleSize: aiResult.totalPatients,
+      sampleSize,
       justification: `${aiResult.justification.endpointSelection} ${aiResult.justification.effectSizeRationale} ${aiResult.justification.powerJustification}`,
       parameters,
       endpoint,
@@ -278,6 +285,12 @@ export function calculateSampleSizeTraditional(concept: Partial<StudyConcept>, r
   
   // Adjust for subpopulation and geography
   sampleSize = adjustForStudyCharacteristics(sampleSize, concept, requestData);
+  
+  // Final validation to prevent NaN values
+  if (!sampleSize || isNaN(sampleSize) || sampleSize <= 0) {
+    console.warn('Invalid sample size detected, using fallback for phase:', studyPhase);
+    sampleSize = getDefaultSampleSize(studyPhase, isOncology);
+  }
   
   // Generate comprehensive justification
   const justification = generateSampleSizeJustification(
