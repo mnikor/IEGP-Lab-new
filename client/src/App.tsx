@@ -8,7 +8,7 @@ import AppShell from "@/components/layout/AppShell";
 import GenerateConcept from "@/pages/generate-concept";
 import ValidateStudyIdea from "@/pages/validate-study-idea";
 import Reports from "@/pages/reports";
-import SavedProposalsPage from "@/pages/SavedProposalsPage";
+
 import ConceptDetailPage from "@/pages/ConceptDetailPage";
 import TournamentList from "@/pages/TournamentList";
 import TournamentView from "@/pages/TournamentView";
@@ -39,7 +39,6 @@ function Router() {
           }}
         </Route>
         <Route path="/reports" component={Reports} />
-        <Route path="/saved-proposals" component={SavedProposalsPage} />
         <Route path="/concept/:id" component={ConceptDetailPage} />
         <Route path="/tournaments">
           <TournamentList />

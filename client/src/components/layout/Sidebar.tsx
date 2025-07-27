@@ -11,8 +11,7 @@ import {
   PlusCircleIcon,
   CheckCircle2,
   CircleDashed,
-  InfoIcon,
-  BookmarkIcon
+  InfoIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -240,7 +239,6 @@ const Sidebar: React.FC = () => {
   const navItems = [
     { path: "/generate-concept", icon: FilePlus2Icon, label: "New Concept" },
     { path: "/validate-study-idea", icon: FileTextIcon, label: "Validate Study Idea" },
-    { path: "/saved-proposals", icon: BookmarkIcon, label: "Saved Proposals" },
     { path: "/tournaments", icon: TrophyIcon, label: "Multi-Agent Tournament" },
     { path: "/reports", icon: BarChartIcon, label: "Reports" },
     { path: "/help", icon: HelpCircleIcon, label: "Help" },
