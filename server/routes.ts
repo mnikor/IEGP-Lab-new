@@ -497,7 +497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         6. Common inclusion/exclusion criteria 
         7. Geographic patterns/differences in conducting these trials`;
         
-        // Use the same comprehensive domain list as concept generation
+        // Use the same comprehensive domain list as concept generation with deep research
         searchResults = await perplexityWebSearch(searchQuery, [
           "pubmed.ncbi.nlm.nih.gov",
           "clinicaltrials.gov", 
@@ -505,7 +505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "accessdata.fda.gov",
           "ema.europa.eu",
           "nature.com"
-        ]);
+        ], true); // Enable deep research mode for comprehensive validation
       }
       
       // Include additional context in analysis if provided
@@ -563,25 +563,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
       
-      // Always override the current evidence field with the detailed multi-round search results
-      // This ensures all search rounds are properly displayed
+      // Set the current evidence with clean content and proper citations
       console.log("Setting detailed evidence with search results length:", searchResults.content.length);
-      
-      // Extract sections from the content for better formatting
-      const sections = searchResults.content.split('## Search Round');
-      const formattedSummary = sections.length > 1 
-        ? sections.map(section => {
-            // For the first section (which doesn't have the prefix)
-            if (!section.includes('Clinical Evidence') && !section.includes('Regulatory Status')) {
-              return section;
-            }
-            // Make the section titles more prominent
-            return section.replace(/(\d+): (.*?)$/m, '**$1: $2**');
-          }).join('\n\n## Search Round')
-        : searchResults.content;
+      console.log("Citations received:", searchResults.citations.length);
       
       validationResults.currentEvidence = {
-        summary: formattedSummary,
+        summary: searchResults.content, // Use clean content directly
         citations: searchResults.citations.map((citation, index) => ({
           id: `${index + 1}`,
           title: citation,

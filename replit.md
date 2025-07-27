@@ -38,6 +38,10 @@ A comprehensive clinical study concept generation and validation application fea
 - ✓ **Adaptive Guidelines Integration**: Guidelines searches focus on indication-only with relevant medical societies (NCCN, ESMO, AHA, etc.)
 - ✓ **Flexible Competitive Landscape**: Captures all therapeutic classes and mechanisms, not limited to specific drugs or classes
 - ✓ **Enhanced NCT Verification**: Real-time validation via ClinicalTrials.gov API prevents hallucinated trial numbers
+- ✓ **Fixed Perplexity API Integration**: Updated deprecated model names to current "sonar" and "sonar-deep-research" models for authentic web search
+- ✓ **Unified Research Approach**: Validation research now uses the same proven Perplexity implementation as New Concept component
+- ✓ **Real Citation Integration**: Both validation and research intelligence provide authentic citations from FDA, EMA, ClinicalTrials.gov, PubMed
+- ✓ **Enhanced Content Quality**: Deep research mode provides comprehensive clinical evidence with proper formatting and structured analysis
 
 ## Project Architecture
 
