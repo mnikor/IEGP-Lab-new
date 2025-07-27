@@ -655,15 +655,36 @@ ${citationSection}
    * Execute validation-focused research with risk assessment
    */
   async executeValidationResearch(searches: any[], context: any): Promise<any> {
-    console.log(`Executing ${searches.length} validation research searches`);
+    console.log(`Executing ${searches.length} validation research searches sequentially`);
 
-    // Execute searches in parallel
-    const searchPromises = searches.map(search => 
-      this.executeValidationSearch(search, context)
-    );
+    // Execute searches sequentially with delays to prevent rate limiting
+    const results: any[] = [];
+    
+    for (let i = 0; i < searches.length; i++) {
+      const search = searches[i];
+      console.log(`Starting validation search ${i + 1}/${searches.length}: ${search.query}`);
+      
+      try {
+        const result = await this.executeValidationSearch(search, context);
+        results.push(result);
+        
+        // Add delay between searches to prevent rate limiting
+        if (i < searches.length - 1) {
+          console.log(`Waiting 1.5 seconds before next search...`);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+      } catch (error) {
+        console.error(`Failed validation search ${i + 1}: ${search.query}`, error);
+        results.push({
+          search,
+          result: { error: error instanceof Error ? error.message : 'Unknown error' },
+          riskLevel: 'high',
+          insights: [`Failed to execute search: ${error instanceof Error ? error.message : 'Unknown error'}`]
+        });
+      }
+    }
 
     try {
-      const results = await Promise.all(searchPromises);
       
       // Synthesize validation-specific insights
       const synthesizedInsights = await this.synthesizeValidationResults(results, context);
@@ -675,7 +696,7 @@ ${citationSection}
         synthesizedInsights,
         riskAssessment,
         recommendations,
-        analysisHtml: this.formatValidationAnalysis(synthesizedInsights, riskAssessment, recommendations)
+        analysisHtml: this.formatValidationAnalysisFromResults(results, synthesizedInsights, riskAssessment, recommendations)
       };
       
     } catch (error: any) {
@@ -688,7 +709,7 @@ ${citationSection}
     try {
       console.log(`Executing validation search: ${search.query}`);
       
-      // Use Perplexity for search execution
+      // Use cost-effective Perplexity search (not deep research)
       const searchResult = await perplexityWebSearch(search.query, [
         "clinicaltrials.gov",
         "pubmed.ncbi.nlm.nih.gov", 
@@ -696,7 +717,7 @@ ${citationSection}
         "ema.europa.eu",
         "nice.org.uk",
         "icer.org"
-      ]);
+      ], false); // false = regular sonar, not expensive deep research
 
       return {
         search,
@@ -710,8 +731,8 @@ ${citationSection}
       return {
         search,
         result: { error: error instanceof Error ? error.message : 'Unknown error' },
-        riskLevel: 'unknown',
-        insights: []
+        riskLevel: 'high',
+        insights: [`Failed to execute search: ${error instanceof Error ? error.message : 'Unknown error'}`]
       };
     }
   }
@@ -765,8 +786,9 @@ Use markdown formatting with bold headers and clear bullet points.`
       return response.choices[0].message.content || "Validation analysis could not be generated.";
       
     } catch (error) {
-      console.error('Error synthesizing validation results:', error);
-      return this.createBasicValidationSynthesis(results, context);
+      console.error('Error synthesizing validation results with AI, using direct results:', error);
+      // Don't use fallback - show actual search results even when AI synthesis fails
+      return this.createDirectValidationResults(results, context);
     }
   }
 
@@ -880,7 +902,74 @@ Use markdown formatting with bold headers and clear bullet points.`
     return recommendations;
   }
 
-  private formatValidationAnalysis(synthesis: string, risks: any, recommendations: any): string {
+  private formatValidationAnalysisFromResults(results: any[], synthesis: string, risks: any, recommendations: any): string {
+    const successfulResults = results.filter(r => !r.result?.error);
+    const failedResults = results.filter(r => r.result?.error);
+    
+    let html = `<div class="validation-analysis">`;
+    
+    // Show actual search results first, not just synthesis
+    if (successfulResults.length > 0) {
+      html += `<div class="search-results mb-6">
+        <h3 class="font-bold text-lg mb-4">Research Results (${successfulResults.length}/${results.length} searches successful)</h3>`;
+      
+      successfulResults.forEach((result, index) => {
+        const content = result.result?.content || '';
+        const citations = result.result?.citations || [];
+        
+        html += `
+          <div class="search-result mb-6 p-4 border border-gray-200 rounded-lg">
+            <h4 class="font-semibold text-md mb-2">${index + 1}. ${result.search?.query}</h4>
+            <div class="mb-2">
+              <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">${result.search?.category || 'General'}</span>
+              <span class="px-2 py-1 ml-2 text-xs rounded ${
+                result.riskLevel === 'high' ? 'bg-red-100 text-red-800' :
+                result.riskLevel === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                'bg-green-100 text-green-800'
+              }">Risk: ${result.riskLevel}</span>
+            </div>`;
+        
+        if (content) {
+          // Show actual Perplexity content
+          html += `<div class="content mb-3 text-sm leading-relaxed">${content.replace(/\n/g, '<br>')}</div>`;
+          
+          if (citations.length > 0) {
+            html += `<div class="citations">
+              <h5 class="font-medium text-sm mb-2">Sources:</h5>
+              <ul class="list-none space-y-1">`;
+            citations.slice(0, 3).forEach((citation: string, idx: number) => {
+              html += `<li class="text-xs"><strong>[${idx + 1}]</strong> <a href="${citation}" target="_blank" class="text-blue-600 hover:underline">${citation}</a></li>`;
+            });
+            html += `</ul></div>`;
+          }
+        }
+        
+        html += `</div>`;
+      });
+      
+      html += `</div>`;
+    }
+    
+    // Show failed searches with errors
+    if (failedResults.length > 0) {
+      html += `<div class="failed-searches mb-6">
+        <h3 class="font-bold text-lg mb-3">Failed Searches (${failedResults.length})</h3>`;
+      
+      failedResults.forEach((result, index) => {
+        html += `
+          <div class="failed-result mb-3 p-3 border border-red-200 bg-red-50 rounded">
+            <h4 class="font-medium text-red-800">${index + 1}. ${result.search?.query}</h4>
+            <p class="text-red-600 text-sm">Error: ${result.result?.error || 'Unknown error'}</p>
+          </div>`;
+      });
+      
+      html += `</div>`;
+    }
+    
+    return html + `</div>`;
+  }
+
+  private formatValidationAnalysisOld(synthesis: string, risks: any, recommendations: any): string {
     return `
       <div class="validation-analysis">
         <div class="synthesis-content">
@@ -936,23 +1025,81 @@ Use markdown formatting with bold headers and clear bullet points.`
   }
 
   private createBasicValidationSynthesis(results: any[], context: any): string {
-    return `# Validation Research Analysis
+    const successfulResults = results.filter(r => !r.result?.error);
+    const failedResults = results.filter(r => r.result?.error);
+    
+    let synthesis = `# Validation Research Analysis for ${context.drugName} in ${context.indication}\n\n`;
+    
+    // Show actual search results, not generic summaries
+    if (successfulResults.length > 0) {
+      synthesis += `## Successful Research Results (${successfulResults.length}/${results.length})\n\n`;
+      
+      successfulResults.forEach((result, index) => {
+        const content = result.result?.content || '';
+        const citations = result.result?.citations || [];
+        
+        synthesis += `### ${index + 1}. ${result.search?.query}\n`;
+        synthesis += `**Category:** ${result.search?.category || 'General'} | **Risk Level:** ${result.riskLevel}\n\n`;
+        
+        if (content) {
+          // Show actual content, not placeholder text
+          synthesis += `${content.substring(0, 800)}${content.length > 800 ? '...' : ''}\n\n`;
+          
+          if (citations.length > 0) {
+            synthesis += `**Sources:**\n`;
+            citations.slice(0, 3).forEach((citation: string, idx: number) => {
+              synthesis += `- [${idx + 1}] ${citation}\n`;
+            });
+            synthesis += '\n';
+          }
+        }
+        
+        synthesis += '---\n\n';
+      });
+    }
+    
+    // Show failed searches with clear error messages
+    if (failedResults.length > 0) {
+      synthesis += `## Failed Searches (${failedResults.length})\n\n`;
+      
+      failedResults.forEach((result, index) => {
+        synthesis += `### ${index + 1}. ${result.search?.query}\n`;
+        synthesis += `**Error:** ${result.result?.error || 'Unknown error'}\n`;
+        synthesis += `**Recommendation:** Try running this search manually or check API connectivity\n\n`;
+      });
+    }
+    
+    return synthesis;
+  }
 
-**Study:** ${context.drugName} for ${context.indication}
-
-## Research Summary
-- **Searches Executed:** ${results.length}
-- **Successful:** ${results.filter(r => !r.result?.error).length}
-- **High Risk Findings:** ${results.filter(r => r.riskLevel === 'high').length}
-
-## Key Findings
-${results.map(result => `
-**${result.search?.category?.toUpperCase()}**: ${result.search?.query}
-- Risk Level: ${result.riskLevel}
-- Insights: ${result.insights.join(', ') || 'No specific insights extracted'}
-`).join('')}
-
-## Recommendation
-Based on the research findings, further analysis is recommended before proceeding with study development.`;
+  private createDirectValidationResults(results: any[], context: any): string {
+    const successfulResults = results.filter(r => !r.result?.error);
+    
+    let analysis = `# Validation Research Results: ${context.drugName} for ${context.indication}\n\n`;
+    analysis += `**Research Execution Summary:** ${successfulResults.length} of ${results.length} searches completed successfully\n\n`;
+    
+    successfulResults.forEach((result, index) => {
+      const content = result.result?.content || '';
+      const citations = result.result?.citations || [];
+      
+      analysis += `## ${index + 1}. ${result.search?.query}\n\n`;
+      
+      if (content) {
+        // Show the actual Perplexity content
+        analysis += `${content}\n\n`;
+        
+        if (citations.length > 0) {
+          analysis += `### Sources:\n`;
+          citations.forEach((citation: string, idx: number) => {
+            analysis += `[${idx + 1}] ${citation}\n`;
+          });
+          analysis += '\n';
+        }
+      }
+      
+      analysis += '---\n\n';
+    });
+    
+    return analysis;
   }
 }
