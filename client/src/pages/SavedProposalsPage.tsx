@@ -16,13 +16,13 @@ interface SavedStudyProposal {
   title: string;
   drugName: string;
   indication: string;
-  studyPhase: string;
   strategicGoals: string[];
   geography: string[];
   researchStrategyId?: number;
-  conceptIds: number[];
   generatedConcepts: any[];
-  requestParameters: any;
+  conceptCount: number;
+  userInputs?: any;
+  researchResults?: any;
   createdAt: string;
   updatedAt: string;
 }
@@ -166,7 +166,7 @@ export default function SavedProposalsPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Target className="h-4 w-4" />
-                    {proposal.conceptIds.length} Concepts Generated
+                    {proposal.generatedConcepts.length} Concepts Generated
                   </div>
                 </div>
                 

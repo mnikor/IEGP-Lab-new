@@ -376,16 +376,7 @@ const ConceptDetailPage: React.FC = () => {
           onClose={() => setShowSituationalAnalysis(false)}
           drugName={concept.drugName}
           indication={concept.indication}
-          researchResults={(() => {
-            try {
-              // Parse the JSON string back to structured data
-              const parsed = JSON.parse(relatedProposal.researchResults);
-              return Array.isArray(parsed) ? parsed : [];
-            } catch (error) {
-              console.error('Error parsing research results:', error);
-              return [];
-            }
-          })()}
+          researchResults={Array.isArray(relatedProposal.researchResults) ? relatedProposal.researchResults : []}
           isLoading={false}
         />
       )}
