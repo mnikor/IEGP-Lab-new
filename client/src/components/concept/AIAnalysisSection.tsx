@@ -10,7 +10,9 @@ interface AIAnalysisSectionProps {
 }
 
 export default function AIAnalysisSection({ concept }: AIAnalysisSectionProps) {
-  const aiAnalysis = concept.aiAnalysis;
+  const aiAnalysis = concept.aiAnalysis as any;
+  
+  console.log('AI Analysis data:', aiAnalysis); // Debug log
   
   if (!aiAnalysis) {
     return (
@@ -58,33 +60,61 @@ export default function AIAnalysisSection({ concept }: AIAnalysisSectionProps) {
           </TabsList>
 
           <TabsContent value="sample-size" className="mt-4">
-            <SampleSizeJustification 
-              justification={aiAnalysis.justification} 
-              statisticalPlan={aiAnalysis.statisticalPlan}
-              totalPatients={aiAnalysis.totalPatients}
-            />
+            {aiAnalysis.justification && aiAnalysis.statisticalPlan ? (
+              <SampleSizeJustification 
+                justification={aiAnalysis.justification} 
+                statisticalPlan={aiAnalysis.statisticalPlan}
+                totalPatients={aiAnalysis.totalPatients}
+              />
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                <Calculator className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Sample size analysis data not available</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="comparator" className="mt-4">
-            <ComparatorAnalysis 
-              comparatorSelection={aiAnalysis.justification.comparatorSelection}
-              indication={concept.indication}
-              geography={concept.geography}
-            />
+            {aiAnalysis.justification?.comparatorSelection ? (
+              <ComparatorAnalysis 
+                comparatorSelection={aiAnalysis.justification.comparatorSelection}
+                indication={concept.indication}
+                geography={concept.geography}
+              />
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Comparator analysis data not available</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="risk-benefit" className="mt-4">
-            <RiskBenefitAssessment 
-              assessment={aiAnalysis.justification.riskBenefitAssessment}
-              operationalData={concept.feasibilityData}
-            />
+            {aiAnalysis.justification?.riskBenefitAssessment ? (
+              <RiskBenefitAssessment 
+                assessment={aiAnalysis.justification.riskBenefitAssessment}
+                operationalData={concept.feasibilityData}
+              />
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Risk-benefit assessment data not available</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="sensitivity" className="mt-4">
-            <SensitivityAnalysis 
-              scenarios={aiAnalysis.sensitivityAnalysis}
-              baseCase={aiAnalysis.totalPatients}
-            />
+            {aiAnalysis.sensitivityAnalysis && aiAnalysis.sensitivityAnalysis.length > 0 ? (
+              <SensitivityAnalysis 
+                scenarios={aiAnalysis.sensitivityAnalysis}
+                baseCase={aiAnalysis.totalPatients}
+              />
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Sensitivity analysis data not available</p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>
@@ -98,7 +128,16 @@ function SampleSizeJustification({ justification, statisticalPlan, totalPatients
   statisticalPlan: any;
   totalPatients: number;
 }) {
-  const calculation = justification.sampleSizeCalculation;
+  const calculation = justification?.sampleSizeCalculation;
+  
+  if (!calculation) {
+    return (
+      <div className="text-center text-muted-foreground py-8">
+        <Calculator className="h-8 w-8 mx-auto mb-2 opacity-50" />
+        <p>Sample size calculation details not available</p>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -136,7 +175,7 @@ function SampleSizeJustification({ justification, statisticalPlan, totalPatients
         <div>
           <p className="font-medium mb-2">Key Statistical Assumptions:</p>
           <ul className="space-y-1">
-            {calculation.keyAssumptions.map((assumption: string, index: number) => (
+            {(calculation.keyAssumptions || []).map((assumption: string, index: number) => (
               <li key={index} className="flex items-start text-sm">
                 <span className="inline-block w-1 h-1 rounded-full bg-current mt-2 mr-2 flex-shrink-0"></span>
                 {assumption}
@@ -164,7 +203,7 @@ function SampleSizeJustification({ justification, statisticalPlan, totalPatients
       <div>
         <h4 className="font-semibold mb-2">Regulatory Precedents</h4>
         <div className="flex flex-wrap gap-2">
-          {calculation.regulatoryPrecedents.map((precedent: string, index: number) => (
+          {(calculation.regulatoryPrecedents || []).map((precedent: string, index: number) => (
             <Badge key={index} variant="outline" className="text-xs">
               {precedent}
             </Badge>
@@ -197,7 +236,7 @@ function ComparatorAnalysis({ comparatorSelection, indication, geography }: {
           Regulatory Basis
         </h4>
         <div className="space-y-2">
-          {comparatorSelection.regulatoryBasis.map((basis: string, index: number) => (
+          {(comparatorSelection.regulatoryBasis || []).map((basis: string, index: number) => (
             <div key={index} className="flex items-start p-3 bg-gray-50 rounded-lg">
               <div className="w-2 h-2 rounded-full bg-green-500 mt-2 mr-3 flex-shrink-0"></div>
               <span className="text-sm">{basis}</span>
@@ -213,7 +252,7 @@ function ComparatorAnalysis({ comparatorSelection, indication, geography }: {
           HTA Body Recommendations
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {comparatorSelection.htaRecommendations.map((recommendation: string, index: number) => (
+          {(comparatorSelection.htaRecommendations || []).map((recommendation: string, index: number) => (
             <div key={index} className="p-3 border border-amber-200 bg-amber-50 rounded-lg">
               <span className="text-sm font-medium text-amber-900">{recommendation}</span>
             </div>
@@ -225,7 +264,7 @@ function ComparatorAnalysis({ comparatorSelection, indication, geography }: {
       <div>
         <h4 className="font-semibold mb-3">Clinical Practice Guidelines</h4>
         <div className="flex flex-wrap gap-2">
-          {comparatorSelection.standardOfCareEvidence.map((evidence: string, index: number) => (
+          {(comparatorSelection.standardOfCareEvidence || []).map((evidence: string, index: number) => (
             <Badge key={index} variant="outline" className="text-xs">
               {evidence}
             </Badge>
@@ -237,7 +276,7 @@ function ComparatorAnalysis({ comparatorSelection, indication, geography }: {
       <div>
         <h4 className="font-semibold mb-3">Regional Considerations</h4>
         <div className="space-y-2">
-          {comparatorSelection.regionalVariations.map((variation: any, index: number) => (
+          {(comparatorSelection.regionalVariations || []).map((variation: any, index: number) => (
             <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
               <span className="font-medium text-sm">{variation.region}</span>
               <span className="text-sm text-muted-foreground">{variation.recommendation}</span>
