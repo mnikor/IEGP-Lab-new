@@ -1,6 +1,17 @@
 import { StudyConcept } from "@shared/schema";
 
 /**
+ * Study design characteristics
+ */
+interface StudyDesign {
+  numberOfArms: number;   // Total number of study arms
+  armRatio: number[];     // Allocation ratio (e.g. [1,1] for 1:1, [2,1] for 2:1)
+  isBlinded: boolean;     // Whether study is blinded
+  isRandomized: boolean;  // Whether study is randomized
+  comparatorType: 'placebo' | 'active' | 'historical' | 'none';
+}
+
+/**
  * Statistical parameters for sample size calculations
  */
 interface StatisticalParameters {
@@ -9,7 +20,8 @@ interface StatisticalParameters {
   power: number;          // Statistical power (1 - beta)
   effectSize: number;     // Expected effect size
   dropoutRate: number;    // Expected dropout rate
-  allocation: number;     // Allocation ratio (1:1 = 1, 2:1 = 2, etc.)
+  allocation: number;     // Allocation ratio for calculations
+  studyDesign: StudyDesign; // Study design characteristics
 }
 
 /**
@@ -21,6 +33,99 @@ interface EndpointParameters {
   target: number;         // Target improvement
   standardDeviation?: number; // For continuous endpoints
   hazardRatio?: number;   // For survival endpoints
+}
+
+/**
+ * Dynamically determines study design based on concept parameters
+ */
+function determineStudyDesign(concept: Partial<StudyConcept>, studyPhase: string): StudyDesign {
+  const title = concept.title || '';
+  const picoData = concept.picoData as any;
+  const comparatorDrugs = concept.comparatorDrugs || [];
+  const strategicGoals = concept.strategicGoals || [];
+  
+  // Determine number of arms and comparator type
+  let numberOfArms = 1;
+  let comparatorType: 'placebo' | 'active' | 'historical' | 'none' = 'none';
+  let armRatio: number[] = [1];
+  
+  // Check for comparator information in title and PICO data
+  const titleLower = title.toLowerCase();
+  const comparatorText = picoData?.comparator || '';
+  const comparatorLower = comparatorText.toLowerCase();
+  
+  // Detect study design from title patterns
+  if (titleLower.includes('versus') || titleLower.includes(' vs ') || titleLower.includes(' vs.')) {
+    numberOfArms = 2;
+    armRatio = [1, 1]; // 1:1 randomization
+    comparatorType = titleLower.includes('placebo') ? 'placebo' : 'active';
+  } else if (titleLower.includes('three-arm') || titleLower.includes('3-arm')) {
+    numberOfArms = 3;
+    armRatio = [1, 1, 1]; // 1:1:1 randomization
+    comparatorType = 'active';
+  } else if (comparatorDrugs.length > 0) {
+    numberOfArms = 2 + comparatorDrugs.length;
+    armRatio = Array(numberOfArms).fill(1);
+    comparatorType = 'active';
+  }
+  
+  // Check comparator description for design clues
+  if (comparatorLower.includes('placebo') || comparatorLower.includes('sham')) {
+    comparatorType = 'placebo';
+    if (numberOfArms === 1) numberOfArms = 2;
+  } else if (comparatorLower.includes('standard of care') || comparatorLower.includes('best supportive care')) {
+    comparatorType = 'active';
+    if (numberOfArms === 1) numberOfArms = 2;
+  } else if (comparatorLower.includes('historical') || comparatorLower.includes('retrospective')) {
+    comparatorType = 'historical';
+    numberOfArms = 1;
+  }
+  
+  // Phase-specific design adjustments
+  switch (studyPhase) {
+    case 'I':
+      // Phase I studies are typically single-arm dose escalation
+      numberOfArms = 1;
+      comparatorType = 'historical';
+      armRatio = [1];
+      break;
+    
+    case 'II':
+      // Phase II can be single or two-arm
+      if (numberOfArms === 1 && comparatorType === 'none') {
+        // Default to single-arm for Phase II unless comparator specified
+        comparatorType = 'historical';
+      }
+      break;
+    
+    case 'III':
+      // Phase III should be randomized controlled trials
+      if (numberOfArms === 1) {
+        numberOfArms = 2;
+        armRatio = [1, 1];
+        comparatorType = comparatorType === 'none' ? 'active' : comparatorType;
+      }
+      break;
+    
+    case 'IV':
+      // Phase IV post-marketing studies often single-arm
+      if (numberOfArms === 1) {
+        comparatorType = 'historical';
+      }
+      break;
+  }
+  
+  // Determine if study is blinded and randomized
+  const isBlinded = studyPhase === 'III' && comparatorType === 'placebo';
+  const isRandomized = numberOfArms > 1 && comparatorType !== 'historical';
+  
+  return {
+    numberOfArms,
+    armRatio,
+    isBlinded,
+    isRandomized,
+    comparatorType
+  };
 }
 
 /**
@@ -38,11 +143,14 @@ export function calculateSampleSize(concept: Partial<StudyConcept>, requestData:
   const isOncology = isOncologyIndication(indication);
   const strategicGoals = concept.strategicGoals || [];
   
+  // Dynamically determine study design
+  const studyDesign = determineStudyDesign(concept, studyPhase);
+  
   // Determine primary endpoint type based on phase and indication
   const endpoint = determineEndpoint(studyPhase, isOncology, strategicGoals, concept);
   
-  // Set statistical parameters based on phase
-  const parameters = getStatisticalParameters(studyPhase, isOncology);
+  // Set statistical parameters based on phase and study design
+  const parameters = getStatisticalParameters(studyPhase, isOncology, studyDesign);
   
   // Calculate sample size based on endpoint type
   let sampleSize: number;
@@ -233,13 +341,18 @@ function determineEndpoint(
   };
 }
 
-function getStatisticalParameters(studyPhase: string, isOncology: boolean): StatisticalParameters {
+function getStatisticalParameters(studyPhase: string, isOncology: boolean, studyDesign: StudyDesign): StatisticalParameters {
+  // Calculate allocation ratio for statistical calculations
+  const totalRatio = studyDesign.armRatio.reduce((sum, ratio) => sum + ratio, 0);
+  const allocationRatio = studyDesign.numberOfArms > 1 ? totalRatio / studyDesign.numberOfArms : 1;
+  
   const baseParams = {
     alpha: 0.05,
     beta: 0.20,
     power: 0.80,
-    allocation: 1,
-    dropoutRate: 0.15
+    allocation: allocationRatio,
+    dropoutRate: 0.15,
+    studyDesign: studyDesign
   };
   
   switch (studyPhase) {
@@ -266,9 +379,10 @@ function getStatisticalParameters(studyPhase: string, isOncology: boolean): Stat
         ...baseParams,
         beta: 0.10,
         power: 0.90,
-        allocation: 2.0, // Two-arm randomized study for Phase III
         dropoutRate: isOncology ? 0.25 : 0.20,
-        effectSize: isOncology ? 0.25 : 0.4 // Smaller effect size for Phase III confirmatory studies
+        effectSize: studyDesign.comparatorType === 'placebo' ? 
+          (isOncology ? 0.4 : 0.5) : // Larger effect vs placebo
+          (isOncology ? 0.25 : 0.3) // Smaller effect vs active comparator
       };
     
     case 'IV':
@@ -336,20 +450,29 @@ function calculateResponseRateSampleSize(
   
   let sampleSize = numerator / denominator;
   
-  // For single-arm studies (common in phase II), use different formula
-  if (params.allocation === 1) {
+  // Adjust sample size based on study design
+  const studyDesign = params.studyDesign;
+  
+  if (studyDesign.numberOfArms === 1) {
+    // Single-arm study (historical comparison)
     const singleArmNum = Math.pow(zAlpha * Math.sqrt(p1 * (1 - p1)) + 
                                  zBeta * Math.sqrt(p2 * (1 - p2)), 2);
     sampleSize = singleArmNum / Math.pow(p2 - p1, 2);
   } else {
-    // For two-arm studies, multiply by allocation factor
-    sampleSize = sampleSize * params.allocation;
+    // Multi-arm randomized study
+    const totalArms = studyDesign.numberOfArms;
+    const armRatioSum = studyDesign.armRatio.reduce((sum, ratio) => sum + ratio, 0);
+    sampleSize = sampleSize * (armRatioSum / 2); // Adjust for total sample across all arms
   }
   
   // Adjust for dropout
   sampleSize = sampleSize / (1 - params.dropoutRate);
   
-  const analysis = `Response rate comparison: ${(p1 * 100).toFixed(0)}% baseline vs ${(p2 * 100).toFixed(0)}% target. Power ${(params.power * 100).toFixed(0)}%, α=${params.alpha.toFixed(2)}. ${params.allocation === 1 ? 'Single-arm' : 'Two-arm'} design.`;
+  const designType = studyDesign.numberOfArms === 1 ? 
+    `Single-arm (${studyDesign.comparatorType} control)` : 
+    `${studyDesign.numberOfArms}-arm randomized (${studyDesign.armRatio.join(':')} allocation)`;
+  
+  const analysis = `Response rate comparison: ${(p1 * 100).toFixed(0)}% baseline vs ${(p2 * 100).toFixed(0)}% target. Power ${(params.power * 100).toFixed(0)}%, α=${params.alpha.toFixed(2)}. ${designType} design with ${studyDesign.comparatorType} comparator.`;
   
   return { sampleSize, analysis };
 }
@@ -368,9 +491,13 @@ function calculateContinuousSampleSize(
   
   let sampleSize = 2 * Math.pow((zAlpha + zBeta) * sd / (effectSize * sd), 2);
   
-  // Adjust for allocation ratio - for two-arm studies
-  if (params.allocation > 1) {
-    sampleSize = sampleSize * params.allocation / 2; // Total sample size for both arms
+  // Adjust for study design
+  const studyDesign = params.studyDesign;
+  
+  if (studyDesign.numberOfArms > 1) {
+    // Multi-arm study - calculate total sample across all arms
+    const armRatioSum = studyDesign.armRatio.reduce((sum, ratio) => sum + ratio, 0);
+    sampleSize = sampleSize * armRatioSum / 2; // Adjust for all arms in the study
   }
   
   // Adjust for dropout
