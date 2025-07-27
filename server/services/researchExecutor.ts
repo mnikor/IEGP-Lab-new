@@ -37,13 +37,28 @@ export class ResearchExecutor {
 
     console.log(`Executing ${enabledSearches.length} research searches for strategy ${strategyId}`);
 
-    // Execute searches with intelligent batching to avoid rate limits
-    const searchPromises = enabledSearches.map((search, index) => 
-      this.executeSearchWithDelay(strategyId, search, index * 2000) // 2-second stagger
-    );
-
+    // Execute searches sequentially to avoid overwhelming API
+    console.log('Executing searches sequentially with 3-second delays to prevent timeouts...');
+    const results: ResearchResult[] = [];
+    
     try {
-      const results = await Promise.all(searchPromises);
+      for (let i = 0; i < enabledSearches.length; i++) {
+        const search = enabledSearches[i];
+        console.log(`Executing search ${i + 1}/${enabledSearches.length}: ${search.query}`);
+        
+        // Add delay between searches (except for first one)
+        if (i > 0) {
+          console.log(`Waiting 3 seconds before next search (${i + 1}/${enabledSearches.length})...`);
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+        
+        const result = await this.executeSearch(strategyId, search);
+        results.push(result);
+        
+        // Log progress
+        const isSuccess = !(result.rawResults as any)?.error;
+        console.log(`Search ${i + 1} ${isSuccess ? 'completed successfully' : 'failed'}: ${search.query}`);
+      }
       
       // Step 1: Verify NCT numbers found in all results
       const allContent = results.map(r => r.synthesizedInsights).join('\n');
@@ -151,12 +166,7 @@ export class ResearchExecutor {
     }
   }
 
-  private async executeSearchWithDelay(strategyId: number, search: SearchItem, delay: number): Promise<ResearchResult> {
-    if (delay > 0) {
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-    return this.executeSearch(strategyId, search);
-  }
+  // Removed executeSearchWithDelay - now using sequential processing
 
   private async executeSearch(strategyId: number, search: SearchItem): Promise<ResearchResult> {
     console.log(`Executing search: ${search.query}`);
@@ -168,7 +178,26 @@ export class ResearchExecutor {
       
       const targetDomains = this.getSearchDomains(search.type);
       const useDeepResearch = search.priority >= 8; // Use deep research for high priority searches
-      const perplexityResult = await perplexityWebSearch(enhancedQuery, targetDomains, useDeepResearch);
+      
+      // Add explicit timeout and retry logic for individual searches
+      let perplexityResult: any;
+      try {
+        perplexityResult = await Promise.race([
+          perplexityWebSearch(enhancedQuery, targetDomains, useDeepResearch),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Search timeout after 40 seconds')), 40000)
+          )
+        ]);
+      } catch (timeoutError) {
+        console.log(`Search timed out after 40s, will retry once: ${search.query}`);
+        // Single retry with shorter timeout for failed searches
+        perplexityResult = await Promise.race([
+          perplexityWebSearch(enhancedQuery, targetDomains, false), // Use faster mode for retry
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Retry timeout after 30 seconds')), 30000)
+          )
+        ]) as any;
+      }
       console.log(`Perplexity search completed for: "${search.query}". Content length: ${perplexityResult.content?.length || 0}, Citations: ${perplexityResult.citations?.length || 0}`);
       
       // Process and structure the results
@@ -396,7 +425,7 @@ CRITICAL FORMATTING RULES:
     });
     
     // Remove duplicates and return unique authentic citations
-    return [...new Set(allCitations)];
+    return Array.from(new Set(allCitations));
   }
 
   private async synthesizeResults(results: ResearchResult[], nctVerification?: any, allCitations: string[] = []): Promise<string> {
