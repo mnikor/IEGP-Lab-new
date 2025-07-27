@@ -13,6 +13,8 @@ export interface IStorage {
   getAllStudyConcepts(): Promise<StudyConcept[]>;
   getStudyConcept(id: number): Promise<StudyConcept | undefined>;
   createStudyConcept(concept: InsertStudyConcept): Promise<StudyConcept>;
+  deleteStudyConcept(id: number): Promise<boolean>;
+  getRecentStudyConcepts(limit: number): Promise<StudyConcept[]>;
   
   // Synopsis validation methods
   getAllSynopsisValidations(): Promise<SynopsisValidation[]>;
@@ -96,6 +98,11 @@ export class DatabaseStorage implements IStorage {
 
   async getRecentStudyConcepts(limit: number = 10): Promise<StudyConcept[]> {
     return await db.select().from(studyConcepts).orderBy(desc(studyConcepts.createdAt)).limit(limit);
+  }
+
+  async deleteStudyConcept(id: number): Promise<boolean> {
+    const result = await db.delete(studyConcepts).where(eq(studyConcepts.id, id));
+    return result.rowCount > 0;
   }
 
   // Synopsis validation methods

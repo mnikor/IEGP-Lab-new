@@ -91,6 +91,77 @@ const Reports: React.FC = () => {
     return concepts.filter(concept => !conceptsInProposals.has(concept.id));
   }, [concepts, conceptsInProposals]);
 
+  const handleDownloadConceptPDF = async (concept: StudyConcept) => {
+    try {
+      console.log('Starting concept PDF download for:', concept.id);
+      const response = await fetch(`/api/study-concepts/${concept.id}/pdf`);
+      console.log('Concept PDF response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Concept PDF generation failed:', errorText);
+        throw new Error(`Failed to generate PDF: ${response.status} ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      console.log('Concept PDF blob size:', blob.size);
+      
+      if (blob.size === 0) {
+        throw new Error('Generated PDF is empty');
+      }
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      const cleanFilename = `${concept.title.replace(/[^a-zA-Z0-9]/g, '_')}_concept.pdf`;
+      a.download = cleanFilename;
+      document.body.appendChild(a);
+      a.click();
+      
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 100);
+      
+      toast({
+        title: "Success",
+        description: "Concept PDF downloaded successfully"
+      });
+    } catch (error) {
+      console.error('Concept PDF download error:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to download concept PDF",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteConcept = async (conceptId: number) => {
+    try {
+      const response = await fetch(`/api/study-concepts/${conceptId}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete concept');
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/study-concepts'] });
+      toast({
+        title: "Success",
+        description: "Study concept deleted successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete concept",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleDownloadPDF = async (proposal: SavedStudyProposal) => {
     try {
       console.log('Starting PDF download for proposal:', proposal.id);
@@ -287,8 +358,19 @@ const Reports: React.FC = () => {
                         <Button variant="ghost" size="sm"><Eye className="mr-1 h-4 w-4" /> View</Button>
                       </Link>
                       <div className="flex space-x-1">
-                        <Button variant="ghost" size="sm"><Download className="mr-1 h-4 w-4" /> PDF</Button>
-                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDownloadConceptPDF(concept)}
+                        >
+                          <Download className="mr-1 h-4 w-4" /> PDF
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteConcept(concept.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

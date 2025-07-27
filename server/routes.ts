@@ -311,6 +311,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DELETE endpoint for study concepts
+  app.delete("/api/study-concepts/:id", async (req, res) => {
+    try {
+      const conceptId = parseInt(req.params.id);
+      const concept = await storage.getStudyConcept(conceptId);
+      
+      if (!concept) {
+        return res.status(404).json({ message: "Study concept not found" });
+      }
+      
+      await storage.deleteStudyConcept(conceptId);
+      res.json({ message: "Study concept deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting study concept:", error);
+      res.status(500).json({ message: "Failed to delete study concept" });
+    }
+  });
+
+  // PDF generation endpoint for study concepts
+  app.get("/api/study-concepts/:id/pdf", async (req, res) => {
+    try {
+      const conceptId = parseInt(req.params.id);
+      const concept = await storage.getStudyConcept(conceptId);
+      
+      if (!concept) {
+        return res.status(404).json({ message: "Study concept not found" });
+      }
+      
+      console.log('Generating PDF for concept:', conceptId);
+      const pdfBuffer = await generatePdfReport(concept);
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${concept.title.replace(/[^a-zA-Z0-9]/g, '_')}_concept.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error('Error generating concept PDF:', error);
+      res.status(500).json({ message: 'Failed to generate PDF' });
+    }
+  });
+
   // API Endpoints for study idea validations
   app.get("/api/study-idea-validations", async (req, res) => {
     try {
