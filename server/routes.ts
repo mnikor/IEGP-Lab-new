@@ -564,6 +564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Step 5: Save the validation to the database
       const savedValidation = await storage.createSynopsisValidation({
         ...validationResults,
+        strategicGoals: data.strategicGoals, // Ensure strategic goals are included
         drugName: data.drugName,
         indication: data.indication,
         originalFileName: originalFileName,
