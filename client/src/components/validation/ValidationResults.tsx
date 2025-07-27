@@ -25,6 +25,34 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
   const [showRiskInfo, setShowRiskInfo] = React.useState(false);
   const [showSituationalAnalysis, setShowSituationalAnalysis] = React.useState(false);
 
+  // Handle research results from multiple sources - props, results data, or none
+  const getResearchResults = () => {
+    // First check props (from validate-synopsis page)
+    if (researchResults && Array.isArray(researchResults) && researchResults.length > 0) {
+      return researchResults;
+    }
+    
+    // Then check if research results are stored in the validation results
+    if (results.researchResults) {
+      try {
+        const parsedResults = typeof results.researchResults === 'string' 
+          ? JSON.parse(results.researchResults) 
+          : results.researchResults;
+        
+        if (Array.isArray(parsedResults) && parsedResults.length > 0) {
+          return parsedResults;
+        }
+      } catch (error) {
+        console.log('Could not parse stored research results:', error);
+      }
+    }
+    
+    return null;
+  };
+
+  const finalResearchResults = getResearchResults();
+  const hasValidResearch = finalResearchResults && finalResearchResults.length > 0;
+
   const exportPDF = async () => {
     try {
       if (!results.id) {
@@ -69,12 +97,11 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
         <h2 className="text-xl font-semibold text-neutral-dark">Validation Results</h2>
         <div className="flex items-center space-x-3">
           {/* Situational Analysis Button - show if research data available */}
-          {(researchResults || results.usedExistingResearch) && (
+          {hasValidResearch && (
             <Button 
               variant="outline" 
               onClick={() => {
-                console.log('Situational Analysis clicked, researchResults:', researchResults);
-                console.log('Results used existing research:', results.usedExistingResearch);
+                console.log('Situational Analysis clicked, finalResearchResults:', finalResearchResults);
                 setShowSituationalAnalysis(true);
               }}
               className="flex items-center space-x-2"
@@ -399,13 +426,13 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
       </CardContent>
       
       {/* Situational Analysis Modal */}
-      {showSituationalAnalysis && (researchResults || results.usedExistingResearch) && (
+      {showSituationalAnalysis && hasValidResearch && (
         <SituationalAnalysisModal
           isOpen={showSituationalAnalysis}
           onClose={() => setShowSituationalAnalysis(false)}
-          drugName={(researchResults?.drugName || results.existingResearchData?.drugName || results.drugName || "Study Drug")}
-          indication={(researchResults?.indication || results.existingResearchData?.indication || results.indication || "Study Indication")}
-          researchResults={(researchResults?.results || results.existingResearchData?.results || [])}
+          drugName={results.drugName || "Study Drug"}
+          indication={results.indication || "Study Indication"}
+          researchResults={finalResearchResults || []}
           isLoading={false}
         />
       )}

@@ -13,7 +13,7 @@ const ValidationDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
 
-  const { data: validation, isLoading, error } = useQuery({
+  const { data: validation, isLoading, error } = useQuery<ValidationResultsType>({
     queryKey: ['/api/study-idea-validations', id],
     enabled: !!id,
   });
@@ -110,7 +110,7 @@ const ValidationDetailPage: React.FC = () => {
       </div>
 
       {/* Validation Results */}
-      <ValidationResults results={validation as ValidationResultsType} />
+      <ValidationResults results={validation} />
     </div>
   );
 };
