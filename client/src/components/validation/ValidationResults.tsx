@@ -388,37 +388,11 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
             </div>
           )}
           
-          {/* Current Evidence Section - only show when no research results exist */}
-          {!researchResults && (
-          <div className="mb-6">
-            <h3 className="text-md font-medium text-neutral-dark mb-3">Current Evidence Summary</h3>
-            {results.currentEvidence ? (
+          {/* Current Evidence Section - always show when available */}
+          {results.currentEvidence && (
+            <div className="mb-6">
               <CurrentEvidence currentEvidence={results.currentEvidence} />
-            ) : researchResults ? (
-              <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                  <h4 className="font-medium text-blue-900 mb-2">Research Evidence from Multiple Search Rounds</h4>
-                  <div className="grid grid-cols-1 gap-2">
-                    {researchResults.results && researchResults.results.map((result: any, index: number) => (
-                      <div key={index} className="text-sm">
-                        <div className="font-medium text-blue-800">{result.search?.query}</div>
-                        <div className="text-blue-700 mt-1">{result.riskLevel && `Risk Level: ${result.riskLevel}`}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {!results.currentEvidence && (
-                  <div className="text-sm text-neutral-medium italic">
-                    Evidence analysis based on research intelligence data above
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-sm text-neutral-medium italic">
-                No current evidence summary available
-              </div>
-            )}
-          </div>
+            </div>
           )}
         </div>
       </CardContent>
