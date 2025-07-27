@@ -28,9 +28,6 @@ const ValidateSynopsis: React.FC = () => {
               <a href="/generate-concept">Generate Concept</a>
             </TabsTrigger>
             <TabsTrigger value="upload">Validate Study Idea</TabsTrigger>
-            <TabsTrigger value="reports" asChild>
-              <a href="/reports">Reports</a>
-            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="upload" forceMount className={activeTab !== "upload" ? "hidden" : ""}>

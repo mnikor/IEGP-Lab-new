@@ -30,9 +30,6 @@ const GenerateConcept: React.FC = () => {
             <TabsTrigger value="validate" asChild>
               <a href="/validate-study-idea">Validate Study Idea</a>
             </TabsTrigger>
-            <TabsTrigger value="reports" asChild>
-              <a href="/reports">Reports</a>
-            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="generate" forceMount className={activeTab !== "generate" ? "hidden" : ""}>

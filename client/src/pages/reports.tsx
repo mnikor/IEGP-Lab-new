@@ -74,28 +74,48 @@ const Reports: React.FC = () => {
 
   const handleDownloadPDF = async (proposal: SavedStudyProposal) => {
     try {
+      console.log('Starting PDF download for proposal:', proposal.id);
       const response = await fetch(`/api/saved-proposals/${proposal.id}/pdf`);
-      if (!response.ok) throw new Error('Failed to generate PDF');
+      console.log('PDF response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('PDF generation failed:', errorText);
+        throw new Error(`Failed to generate PDF: ${response.status} ${response.statusText}`);
+      }
       
       const blob = await response.blob();
+      console.log('PDF blob size:', blob.size);
+      
+      if (blob.size === 0) {
+        throw new Error('Generated PDF is empty');
+      }
+      
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = `${proposal.drugName}_${proposal.indication}_study_proposal.pdf`;
+      // Clean filename to avoid special characters
+      const cleanFilename = `${proposal.drugName.replace(/[^a-zA-Z0-9]/g, '_')}_${proposal.indication.replace(/[^a-zA-Z0-9]/g, '_')}_study_proposal.pdf`;
+      a.download = cleanFilename;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      
+      // Clean up
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 100);
       
       toast({
         title: "Success",
         description: "PDF downloaded successfully"
       });
     } catch (error) {
+      console.error('PDF download error:', error);
       toast({
         title: "Error",
-        description: "Failed to download PDF",
+        description: error instanceof Error ? error.message : "Failed to download PDF",
         variant: "destructive"
       });
     }
