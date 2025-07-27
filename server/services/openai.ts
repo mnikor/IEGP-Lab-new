@@ -161,7 +161,18 @@ export async function extractPicoFromText(text: string): Promise<PicoData> {
         },
         {
           role: "user",
-          content: `Extract the PICO framework from the following clinical study document text. Respond in JSON format with 'population', 'intervention', 'comparator', and 'outcomes' fields. Be as detailed and accurate as possible.\n\n${text.substring(0, 15000)}` // Limit text length to avoid token limits
+          content: `Extract the PICO framework from the following clinical study document text. Be comprehensive and extract ALL available information for each component.
+
+EXTRACTION GUIDELINES:
+- Population: Include age range, disease type/stage, inclusion criteria, exclusion criteria, sample size if mentioned, performance status, biomarker requirements
+- Intervention: Include drug name, dosing regimen, route of administration, schedule, combination therapies, treatment duration
+- Comparator: Include control arm details, standard of care specifics, placebo information, active comparator drugs with dosing
+- Outcomes: Include primary endpoints, secondary endpoints, safety measures, biomarker assessments, quality of life measures, statistical analysis plans
+
+Respond in JSON format with 'population', 'intervention', 'comparator', and 'outcomes' fields. Extract as much detail as possible from the text.
+
+DOCUMENT TEXT:
+${text.substring(0, 15000)}` // Limit text length to avoid token limits
         }
       ],
       response_format: { type: "json_object" },

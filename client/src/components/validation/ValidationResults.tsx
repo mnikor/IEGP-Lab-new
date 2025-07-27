@@ -267,7 +267,9 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
                   <span className="text-lg font-medium text-primary">
                     {typeof results.revisedEconomics.revisedCost === 'number'
                       ? `€${(results.revisedEconomics.revisedCost / 1000000).toFixed(1)}M`
-                      : `€${results.revisedEconomics.revisedCost}M`}
+                      : results.revisedEconomics.revisedCost && results.revisedEconomics.revisedCost !== 'undefined'
+                      ? `€${results.revisedEconomics.revisedCost}M`
+                      : 'Cost analysis in progress'}
                   </span>
                 </div>
               </div>
@@ -313,13 +315,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
             <SwotAnalysis swotAnalysis={results.swotAnalysis} />
           </div>
 
-          {/* Current Evidence (if available) */}
-          {results.currentEvidence && (
-            <div>
-              <h3 className="text-md font-medium text-neutral-dark mb-3">Current Evidence</h3>
-              <CurrentEvidence currentEvidence={results.currentEvidence} />
-            </div>
-          )}
+
 
           {/* MCDA Scores Breakdown (if available) */}
           {results.mcdaScores && (
@@ -422,8 +418,8 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
         <SituationalAnalysisModal
           isOpen={showSituationalAnalysis}
           onClose={() => setShowSituationalAnalysis(false)}
-          drugName={results.drugName || "Study Drug"}
-          indication={results.indication || "Study Indication"}
+          drugName={researchResults.drugName || "Study Drug"}
+          indication={researchResults.indication || "Study Indication"}
           researchResults={researchResults.results || []}
           isLoading={false}
         />

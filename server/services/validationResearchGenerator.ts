@@ -168,21 +168,21 @@ Respond in JSON format:
       searches: [
         {
           id: uuidv4(),
-          query: `${drugName} patent expiration competition timeline`,
-          type: "strategic",
-          priority: 8,
-          rationale: "Assess intellectual property landscape and competitive timeline",
+          query: `${drugName} FDA EMA approval history ${indication} EGFR exon 20 insertion mutations approved indications`,
+          type: "regulatory",
+          priority: 1,
+          rationale: "Verify current regulatory approval status including all approved indications for EGFR mutations",
           enabled: true,
           userModified: false,
-          category: "patent",
-          riskType: "showstopper"
+          category: "regulatory_approval",
+          riskType: "high"
         },
         {
           id: uuidv4(),
-          query: `${indication} clinical trials ongoing recruiting competitive landscape`,
+          query: `competitive landscape ${indication} ongoing clinical trials recruiting site:clinicaltrials.gov`,
           type: "competitive",
-          priority: 8,
-          rationale: "Evaluate competitive study environment and recruitment challenges", 
+          priority: 2,
+          rationale: "Assess competitive recruitment challenges and similar studies",
           enabled: true,
           userModified: false,
           category: "competitive",
@@ -190,18 +190,18 @@ Respond in JSON format:
         },
         {
           id: uuidv4(),
-          query: `${indication} FDA EMA regulatory guidance precedents`,
-          type: "regulatory",
-          priority: 6,
-          rationale: "Understand regulatory pathway and approval precedents",
+          query: `${drugName} patent expiration biosimilar competition timeline`,
+          type: "strategic",
+          priority: 3,
+          rationale: "Evaluate commercial timeline and competitive threats",
           enabled: true,
           userModified: false,
-          category: "regulatory", 
-          riskType: "informational"
+          category: "patent",
+          riskType: "high"
         }
       ],
-      rationale: "Fallback validation strategy focusing on core risk assessment areas",
-      riskCategories: ["competitive", "regulatory", "commercial"]
+      rationale: 'Comprehensive validation research focusing on regulatory status, competitive landscape, and commercial viability',
+      riskCategories: ['regulatory', 'competitive', 'commercial']
     };
   }
 
