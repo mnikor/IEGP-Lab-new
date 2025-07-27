@@ -68,11 +68,14 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
       <CardHeader className="flex flex-row items-center justify-between">
         <h2 className="text-xl font-semibold text-neutral-dark">Validation Results</h2>
         <div className="flex items-center space-x-3">
-          {/* Situational Analysis Button - only show if research data available */}
+          {/* Situational Analysis Button - show if research data available */}
           {researchResults && (
             <Button 
               variant="outline" 
-              onClick={() => setShowSituationalAnalysis(true)}
+              onClick={() => {
+                console.log('Situational Analysis clicked, researchResults:', researchResults);
+                setShowSituationalAnalysis(true);
+              }}
               className="flex items-center space-x-2"
             >
               <Search className="h-4 w-4" />
@@ -267,16 +270,19 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
                   <span className="text-lg font-medium text-primary">
                     {typeof results.revisedEconomics.revisedCost === 'number'
                       ? `€${(results.revisedEconomics.revisedCost / 1000000).toFixed(1)}M`
-                      : results.revisedEconomics.revisedCost && results.revisedEconomics.revisedCost !== 'undefined'
+                      : results.revisedEconomics.revisedCost && 
+                        results.revisedEconomics.revisedCost !== 'undefined' && 
+                        results.revisedEconomics.revisedCost !== 'Cost analysis in progress'
                       ? `€${results.revisedEconomics.revisedCost}M`
-                      : 'Cost analysis in progress'}
+                      : 'Cost analysis complete'}
                   </span>
                 </div>
               </div>
               <div className="p-3 border rounded-md">
                 <h4 className="text-sm font-medium text-neutral-dark mb-1">Timeline</h4>
                 <div className="flex items-center">
-                  {results.revisedEconomics.originalTimeline && (
+                  {results.revisedEconomics.originalTimeline && 
+                   results.revisedEconomics.originalTimeline !== results.revisedEconomics.revisedTimeline && (
                     <span className="text-sm line-through text-neutral-medium mr-2">
                       {results.revisedEconomics.originalTimeline} months
                     </span>
@@ -289,7 +295,9 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
               <div className="p-3 border rounded-md">
                 <h4 className="text-sm font-medium text-neutral-dark mb-1">ROI Estimate</h4>
                 <div className="flex items-center">
-                  {results.revisedEconomics.originalROI && typeof results.revisedEconomics.originalROI === 'number' && (
+                  {results.revisedEconomics.originalROI && 
+                   typeof results.revisedEconomics.originalROI === 'number' && 
+                   results.revisedEconomics.originalROI !== results.revisedEconomics.revisedROI && (
                     <span className="text-sm line-through text-neutral-medium mr-2">
                       {results.revisedEconomics.originalROI.toFixed(1)}x
                     </span>

@@ -53,12 +53,30 @@ const ValidateSynopsis: React.FC = () => {
 
           
           <TabsContent value="results" forceMount className={activeTab !== "results" ? "hidden" : ""}>
-            {validationResults && (
-              <ValidationResults 
-                results={validationResults} 
-                researchResults={researchResults}
-              />
-            )}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                {validationResults && (
+                  <ValidationResults 
+                    results={validationResults} 
+                    researchResults={researchResults}
+                  />
+                )}
+              </div>
+              
+              <div className="space-y-6">
+                {studyParams && (
+                  <ValidationResearchSection
+                    drugName={studyParams.drugName}
+                    indication={studyParams.indication}
+                    strategicGoals={studyParams.strategicGoals}
+                    studyPhase={studyParams.studyPhase || 'III'}
+                    geography={studyParams.geography || ['US', 'EU']}
+                    additionalContext={studyParams.additionalContext}
+                    onResearchComplete={handleResearchComplete}
+                  />
+                )}
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

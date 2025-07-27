@@ -88,17 +88,19 @@ ${context.additionalContext ? `Additional Context: ${context.additionalContext}`
 
 Generate 6-8 targeted research queries to validate this study concept and identify key risks. Focus on:
 
-1. **Patent Intelligence**: Patent expiration timelines, freedom-to-operate, biosimilar competition
-2. **Competitive Landscape**: Similar ongoing studies, competitive threats, recruitment challenges
-3. **Regulatory Precedents**: Similar approvals, FDA/EMA guidance, breakthrough designations
+1. **Comprehensive Regulatory Intelligence**: ALL approved indications, formulations (IV, subcutaneous, oral), regulatory status across regions, breakthrough designations
+2. **Patent Intelligence**: Patent expiration timelines, freedom-to-operate, biosimilar competition
+3. **Competitive Landscape**: Similar ongoing studies, competitive threats, recruitment challenges
 4. **Market Access Risks**: HTA decisions, reimbursement challenges, cost-effectiveness concerns
 5. **Execution Feasibility**: Site availability, patient population, recruitment timelines
+
+CRITICAL: For regulatory searches, always include ALL formulations and indications of the drug, not just those mentioned in the study.
 
 Respond in JSON format:
 {
   "searches": [
     {
-      "query": "specific search query",
+      "query": "specific search query including ALL drug formulations and indications",
       "rationale": "why this search is important for validation",
       "category": "patent|competitive|regulatory|market_access|execution",
       "priority": "high|medium|low",
@@ -168,10 +170,10 @@ Respond in JSON format:
       searches: [
         {
           id: uuidv4(),
-          query: `${drugName} FDA EMA approval history ${indication} EGFR exon 20 insertion mutations approved indications`,
+          query: `${drugName} FDA EMA approval all indications formulations subcutaneous intravenous oral pending approvals regulatory status`,
           type: "regulatory",
           priority: 1,
-          rationale: "Verify current regulatory approval status including all approved indications for EGFR mutations",
+          rationale: "Comprehensive regulatory status including ALL approved indications and formulations (IV, subcutaneous, oral, pending)",
           enabled: true,
           userModified: false,
           category: "regulatory_approval",
@@ -179,9 +181,20 @@ Respond in JSON format:
         },
         {
           id: uuidv4(),
+          query: `${drugName} alternative formulations development pipeline subcutaneous oral inhalation pending approvals`,
+          type: "regulatory",
+          priority: 2,
+          rationale: "Identify all alternative formulations in development that could impact study design and competitiveness",
+          enabled: true,
+          userModified: false,
+          category: "formulation_intelligence",
+          riskType: "moderate"
+        },
+        {
+          id: uuidv4(),
           query: `competitive landscape ${indication} ongoing clinical trials recruiting site:clinicaltrials.gov`,
           type: "competitive",
-          priority: 2,
+          priority: 3,
           rationale: "Assess competitive recruitment challenges and similar studies",
           enabled: true,
           userModified: false,
