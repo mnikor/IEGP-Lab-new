@@ -514,15 +514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         enrichedText += "\n\nAdditional Context:\n" + data.additionalContext;
       }
       
-      // Step 4: Analyze the document against the evidence with selected model
-      const validationResults = await analyzeWithOpenAI(searchResults, { 
-        ...data,
-        documentText: enrichedText,
-        extractedPico
-      }, true, data.aiModel || "gpt-4o");
-      
-      // Step 5: Calculate feasibility data for the validation results
-      // Create a temporary concept-like object for feasibility calculation
+      // Step 4: Calculate feasibility data first using the same method as concept generation
       const tempConcept = {
         drugName: data.drugName,
         indication: data.indication,
@@ -537,11 +529,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasPatentExtensionPotential: req.body.hasPatentExtensionPotential === 'true'
       };
       
-      // Calculate feasibility data using the same method as concept generation
       const feasibilityData = await calculateFeasibility(tempConcept, data);
       
-      // Add feasibility data to validation results
+      // Step 5: Analyze the document against evidence with feasibility context
+      const validationResults = await analyzeWithOpenAI(searchResults, { 
+        ...data,
+        documentText: enrichedText,
+        extractedPico,
+        calculatedFeasibility: feasibilityData // Pass calculated feasibility to AI for consistent analysis
+      }, true, data.aiModel || "gpt-4o");
+      
+      // Override AI feasibility data with calculated values for consistency
       validationResults.feasibilityData = feasibilityData;
+      
+      // Ensure revised economics uses the calculated feasibility cost
+      if (validationResults.revisedEconomics) {
+        validationResults.revisedEconomics.revisedCost = feasibilityData.totalCost;
+        validationResults.revisedEconomics.revisedTimeline = feasibilityData.timeline;
+        validationResults.revisedEconomics.revisedROI = feasibilityData.projectedROI;
+        validationResults.revisedEconomics.notes = `Costs account for increased sample size and extended recruitment. ${validationResults.revisedEconomics.notes || ''}`.trim();
+      }
       
       // Fix PICO population field to reflect actual calculated sample size (same as concept generation)
       if (validationResults.extractedPico && feasibilityData.sampleSize) {

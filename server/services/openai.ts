@@ -357,6 +357,15 @@ function buildValidationPrompt(data: any, searchResults: { content: string; cita
   ## Citations:
   ${searchResults.citations.map((citation, index) => `${index + 1}. ${citation}`).join('\n')}
 
+  ${data.calculatedFeasibility ? `
+  # Pre-Calculated Feasibility Analysis:
+  - Total Cost: €${(data.calculatedFeasibility.totalCost / 1000000).toFixed(1)}M
+  - Sample Size: ${data.calculatedFeasibility.sampleSize}
+  - Timeline: ${data.calculatedFeasibility.timeline} months
+  - Sites: ${data.calculatedFeasibility.numberOfSites}
+  - Projected ROI: ${data.calculatedFeasibility.projectedROI}x
+  ` : ''}
+
   ## CRITICAL ANALYSIS INSTRUCTIONS:
   1. FIRST, thoroughly analyze ALL search rounds, with particular focus on:
      - Competitive landscape: Clearly identify current standard of care, direct competitors, emerging alternatives, and key differentiators
@@ -366,6 +375,7 @@ function buildValidationPrompt(data: any, searchResults: { content: string; cita
      - Recent clinical trials and emerging evidence
   2. SECOND, identify any critical discrepancies between the synopsis and current evidence
   3. THIRD, ensure validation leverages ALL available evidence, especially regulatory status
+  4. FOURTH, use the pre-calculated feasibility data as the authoritative source for cost/timeline/sample size analysis
 
   ## Validation Guidelines:
   1. Assess the study's METHODOLOGICAL RIGOR using evidence-based criteria
@@ -385,12 +395,16 @@ function buildValidationPrompt(data: any, searchResults: { content: string; cita
   2. "extractedPico": The PICO framework that was extracted (confirm or refine it)
   3. "benchmarkDeltas": Array of objects comparing current vs. suggested changes, each with "aspect", "current", "suggested", and "impact" ("positive", "negative", or "neutral") fields
   4. "riskFlags": Array of identified risks, each with "category", "description", "severity" ("high", "medium", "low"), and "mitigation" fields
-  5. "revisedEconomics": Object with "originalCost" (if found, otherwise null), "revisedCost", "originalTimeline" (if found, otherwise null), "revisedTimeline", "originalROI" (if found, otherwise null), "revisedROI", and "notes" fields
-  6. "swotAnalysis": Object with "strengths", "weaknesses", "opportunities", and "threats" arrays
+  5. "revisedEconomics": Object with "originalCost" (if found, otherwise null), "revisedCost", "originalTimeline" (if found, otherwise null), "revisedTimeline", "originalROI" (if found, otherwise null), "revisedROI", and "notes" fields explaining cost drivers and differences
+  6. "swotAnalysis": Object with drug/indication-specific analysis:
+     - "strengths": Array of specific advantages for ${data.drugName} in ${data.indication} (e.g., mechanism of action, clinical efficacy, safety profile)
+     - "weaknesses": Array of current limitations specific to this therapy (e.g., resistance mechanisms, side effects, manufacturing complexity)
+     - "opportunities": Array of market opportunities specific to ${data.indication} (e.g., unmet medical needs, regulatory pathways, combination potential)
+     - "threats": Array of competitive and market threats (e.g., direct competitors, biosimilars, pricing pressures, alternative therapies)
   7. "mcdaScores": Object with "scientificValidity", "clinicalImpact", "commercialValue", "feasibility", and "overall" numeric scores (1-5 scale)
   8. "feasibilityData": Object containing detailed feasibility metrics similar to the concept generation output, including:
-     - "sampleSize": Recommended sample size (number)
-     - "sampleSizeJustification": Text explaining the sample size recommendation
+     - "sampleSize": AI-recommended sample size based on clinical evidence and statistical power (number)
+     - "sampleSizeJustification": Detailed text explaining: (1) Original synopsis sample size if found, (2) AI-recommended sample size, (3) Statistical rationale and therapeutic area considerations, (4) Clear statement of which should be used and why
      - "numberOfSites": Recommended number of sites (number)
      - "numberOfCountries": Recommended number of countries (number)
      - "recruitmentPeriodMonths": Expected recruitment period in months (number)

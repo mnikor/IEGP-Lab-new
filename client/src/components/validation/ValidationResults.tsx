@@ -8,10 +8,11 @@ import FeasibilityDashboard from "@/components/shared/FeasibilityDashboard";
 import CurrentEvidence from "@/components/shared/CurrentEvidence";
 import LoeDetails from "@/components/shared/LoeDetails";
 import { Badge } from "@/components/ui/badge";
-import { Star } from "lucide-react";
+import { Star, Search } from "lucide-react";
 import { AlertTriangle, ArrowRight, CheckCircle, Download, FileDown, Info as InfoIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { SituationalAnalysisModal } from "@/components/concept/SituationalAnalysisModal";
 
 interface ValidationResultsProps {
   results: ValidationResultsType;
@@ -22,6 +23,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
   const { toast } = useToast();
   const [showDeltasInfo, setShowDeltasInfo] = React.useState(true);
   const [showRiskInfo, setShowRiskInfo] = React.useState(false);
+  const [showSituationalAnalysis, setShowSituationalAnalysis] = React.useState(false);
 
   const exportPDF = async () => {
     try {
@@ -66,6 +68,18 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
       <CardHeader className="flex flex-row items-center justify-between">
         <h2 className="text-xl font-semibold text-neutral-dark">Validation Results</h2>
         <div className="flex items-center space-x-3">
+          {/* Situational Analysis Button - only show if research data available */}
+          {researchResults && (
+            <Button 
+              variant="outline" 
+              onClick={() => setShowSituationalAnalysis(true)}
+              className="flex items-center space-x-2"
+            >
+              <Search className="h-4 w-4" />
+              <span>Situational Analysis</span>
+            </Button>
+          )}
+          
           {/* Display MCDA Score if it exists */}
           {results.mcdaScores && results.mcdaScores.overall && (
             <div className="flex items-center">
@@ -370,15 +384,50 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
             </div>
           )}
           
-          {/* Current Evidence (if available) */}
-          {results.currentEvidence && (
-            <div className="mb-6">
-              <h3 className="text-md font-medium text-neutral-dark mb-3">Current Evidence</h3>
+          {/* Current Evidence Section - enhanced to show research intelligence data */}
+          <div className="mb-6">
+            <h3 className="text-md font-medium text-neutral-dark mb-3">Current Evidence Summary</h3>
+            {results.currentEvidence ? (
               <CurrentEvidence currentEvidence={results.currentEvidence} />
-            </div>
-          )}
+            ) : researchResults ? (
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                  <h4 className="font-medium text-blue-900 mb-2">Research Evidence from Multiple Search Rounds</h4>
+                  <div className="grid grid-cols-1 gap-2">
+                    {researchResults.results && researchResults.results.map((result: any, index: number) => (
+                      <div key={index} className="text-sm">
+                        <div className="font-medium text-blue-800">{result.search?.query}</div>
+                        <div className="text-blue-700 mt-1">{result.riskLevel && `Risk Level: ${result.riskLevel}`}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {!results.currentEvidence && (
+                  <div className="text-sm text-neutral-medium italic">
+                    Evidence analysis based on research intelligence data above
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-neutral-medium italic">
+                No current evidence summary available
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
+      
+      {/* Situational Analysis Modal */}
+      {showSituationalAnalysis && researchResults && (
+        <SituationalAnalysisModal
+          isOpen={showSituationalAnalysis}
+          onClose={() => setShowSituationalAnalysis(false)}
+          drugName={results.drugName || "Study Drug"}
+          indication={results.indication || "Study Indication"}
+          researchResults={researchResults.results || []}
+          isLoading={false}
+        />
+      )}
     </Card>
   );
 };
