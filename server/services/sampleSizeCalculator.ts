@@ -688,31 +688,33 @@ function calculateRWEEffectivenessSampleSize(
   params: StatisticalParameters
 ): { sampleSize: number; analysis: string } {
   
-  // For RWE effectiveness studies using time-to-event endpoints
+  // For RWE effectiveness studies - simplified approach for real-world settings
   const hazardRatio = endpoint.hazardRatio || 0.80; // More conservative than RCT
   const precision = endpoint.precision || 0.1; // ±10% precision
   
-  // Precision-based sample size for survival estimation
-  // N = (Z_α/2 / precision)² × (1-S(t)) / S(t)
-  // Where S(t) is survival probability at analysis time
-  
+  // For RWE studies, use simple logrank-based calculation
+  // but with more conservative parameters
   const zAlpha = 1.96; // 95% confidence interval
-  const analysisTime = endpoint.baseline; // months
-  const targetTime = endpoint.target;
+  const zBeta = params.power === 0.70 ? 0.52 : 0.84; // Lower power for RWE
   
-  // Estimate survival probability at analysis time (assuming exponential)
-  const survivalProb = Math.exp(-Math.log(2) * analysisTime / endpoint.baseline);
+  // Simplified event-based calculation for RWE
+  const logHR = Math.log(hazardRatio);
+  const requiredEvents = Math.pow(zAlpha + zBeta, 2) * 4 / Math.pow(logHR, 2);
   
-  let sampleSize = Math.pow(zAlpha / precision, 2) * (1 - survivalProb) / survivalProb;
+  // In RWE studies, assume 50% event rate (more conservative)
+  const eventRate = 0.50;
+  let sampleSize = requiredEvents / eventRate;
   
-  // Adjust for expected follow-up and loss to follow-up (higher in RWE)
-  const lossToFollowUp = 0.30; // 30% higher loss in real-world settings
+  // Adjust for real-world loss to follow-up (40%)
+  const lossToFollowUp = 0.40;
   sampleSize = sampleSize / (1 - lossToFollowUp);
   
-  // Minimum sample size for real-world studies
-  sampleSize = Math.max(sampleSize, 500);
+  // Reasonable range for RWE effectiveness studies
+  sampleSize = Math.max(500, Math.min(sampleSize, 2000));
   
-  const analysis = `Real-world effectiveness study targeting ${targetTime}-month outcomes vs ${analysisTime}-month baseline. HR≤${hazardRatio.toFixed(2)} with ±${(precision*100).toFixed(0)}% precision. Accounts for ${(lossToFollowUp*100).toFixed(0)}% loss to follow-up.`;
+  const analysisTime = endpoint.baseline;
+  const targetTime = endpoint.target;
+  const analysis = `Real-world effectiveness study comparing ${targetTime}-month vs ${analysisTime}-month outcomes. Target HR≤${hazardRatio.toFixed(2)}, ${Math.round(requiredEvents)} events needed, ${(eventRate*100).toFixed(0)}% event rate assumed. Accounts for ${(lossToFollowUp*100).toFixed(0)}% real-world loss to follow-up.`;
   
   return { sampleSize, analysis };
 }
@@ -792,32 +794,27 @@ function calculateRealWorldOutcomesSampleSize(
   params: StatisticalParameters
 ): { sampleSize: number; analysis: string } {
   
-  const effectSize = params.effectSize;
+  const effectSize = params.effectSize || 0.3; // Reasonable RWE effect size
   const sd = endpoint.standardDeviation || 1.2; // Higher variability in real-world
   const precision = endpoint.precision || 0.15;
   
-  // Real-world outcomes - typically continuous measures (QoL, functional scores)
-  // For precision around mean: N = (Z_α/2 × σ / precision)²
+  // Simplified calculation for RWE continuous outcomes
   const zAlpha = 1.96;
-  let precisionSampleSize = Math.pow(zAlpha * sd / (precision * sd), 2);
+  const zBeta = params.power === 0.70 ? 0.52 : 0.84; // Lower power for RWE
   
-  // For detecting clinically meaningful differences
-  const zBeta = params.power === 0.80 ? 0.84 : 1.28;
-  let effectSampleSize = 2 * Math.pow((zAlpha + zBeta) * sd / (effectSize * sd), 2);
+  // Standard two-sample t-test calculation
+  let sampleSize = 2 * Math.pow((zAlpha + zBeta) * sd / effectSize, 2);
   
-  // Use larger of the two
-  let sampleSize = Math.max(precisionSampleSize, effectSampleSize);
-  
-  // Adjust for real-world data challenges
+  // Adjust for real-world data challenges (conservative)
   const dataCompletenessRate = 0.75; // 75% complete data in real-world
-  const confoundingAdjustment = 1.25; // 25% increase for confounding adjustment
+  const confoundingAdjustment = 1.20; // 20% increase for confounding adjustment
   
   sampleSize = sampleSize / dataCompletenessRate * confoundingAdjustment;
   
-  // Minimum for meaningful real-world analysis
-  sampleSize = Math.max(sampleSize, 800);
+  // Cap at reasonable range for RWE studies
+  sampleSize = Math.max(500, Math.min(sampleSize, 1500));
   
-  const analysis = `Real-world outcomes study with ${effectSize.toFixed(2)} effect size and SD=${sd.toFixed(1)}. Precision ±${(precision*100).toFixed(0)}% around estimates. Adjusted for ${(dataCompletenessRate*100).toFixed(0)}% data completeness and confounding (${((confoundingAdjustment-1)*100).toFixed(0)}% increase).`;
+  const analysis = `Real-world outcomes study targeting ${effectSize.toFixed(2)} effect size (SD=${sd.toFixed(1)}). Power ${(params.power*100).toFixed(0)}%, adjusted for ${(dataCompletenessRate*100).toFixed(0)}% data completeness and ${((confoundingAdjustment-1)*100).toFixed(0)}% confounding buffer.`;
   
   return { sampleSize, analysis };
 }
