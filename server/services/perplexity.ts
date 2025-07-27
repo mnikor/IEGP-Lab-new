@@ -132,7 +132,9 @@ export async function perplexityWebSearch(baseQuery: string, domains: string[] |
     console.error("Error in Perplexity search:", error);
     
     // Return enhanced fallback response with citations when Perplexity API fails
-    const isTimeout = error.message?.includes('timed out') || error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT';
+    const errorMessage = error instanceof Error ? error.message : '';
+    const errorCode = (error as any)?.code;
+    const isTimeout = errorMessage.includes('timed out') || errorCode === 'ECONNABORTED' || errorCode === 'ETIMEDOUT';
     console.log(`Providing fallback response. Is timeout: ${isTimeout}`);
     
     return {

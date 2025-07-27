@@ -901,6 +901,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Saved Study Proposal management routes
+  // Test Perplexity API endpoint for debugging
+  app.post("/api/test-perplexity", async (req, res) => {
+    try {
+      const apiKey = process.env.PERPLEXITY_API_KEY;
+      if (!apiKey) {
+        return res.status(400).json({ error: "PERPLEXITY_API_KEY not found" });
+      }
+      
+      const response = await fetch("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "sonar",
+          messages: [{ role: "user", content: "test query about amivantamab NSCLC" }],
+          max_tokens: 100
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        res.json({ success: true, message: "API key is valid", response: data });
+      } else {
+        const errorText = await response.text();
+        res.status(response.status).json({ 
+          success: false, 
+          status: response.status,
+          error: errorText.substring(0, 500) 
+        });
+      }
+    } catch (error) {
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
   app.get("/api/saved-proposals", async (req, res) => {
     try {
       const proposals = await storage.getAllSavedStudyProposals();

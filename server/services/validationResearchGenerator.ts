@@ -60,7 +60,20 @@ export class ValidationResearchGenerator {
       const aiSearches = result.searches || [];
       
       // Combine AI-generated searches with essential validation searches
-      const allSearches = [...validationSearches, ...aiSearches.slice(0, 8)]; // Limit total searches
+      // Ensure all AI-generated searches have required fields
+      const processedAiSearches = aiSearches.slice(0, 8).map((search: any, index: number) => ({
+        id: uuidv4(),
+        query: search.query || '',
+        type: this.mapCategoryToType(search.category || 'strategic'),
+        priority: this.mapPriorityToNumber(search.priority || 'medium'),
+        rationale: search.rationale || 'AI-generated validation search',
+        enabled: true, // Critical: Enable all searches by default
+        userModified: false,
+        category: search.category || 'execution',
+        riskType: search.riskType || 'moderate'
+      }));
+      
+      const allSearches = [...validationSearches, ...processedAiSearches];
       
       return {
         searches: allSearches,
@@ -278,5 +291,25 @@ Respond in JSON format:
       category: "execution",
       riskType: "informational"
     };
+  }
+
+  private mapCategoryToType(category: string): string {
+    const categoryTypeMap: Record<string, string> = {
+      'patent': 'strategic',
+      'competitive': 'competitive',
+      'regulatory': 'regulatory',
+      'market_access': 'strategic',
+      'execution': 'strategic'
+    };
+    return categoryTypeMap[category] || 'strategic';
+  }
+
+  private mapPriorityToNumber(priority: string): number {
+    const priorityMap: Record<string, number> = {
+      'high': 9,
+      'medium': 6,
+      'low': 3
+    };
+    return priorityMap[priority] || 6;
   }
 }
