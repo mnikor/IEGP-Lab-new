@@ -14,6 +14,10 @@ let pptxgenjs: any = null;
  * @param concepts Array of study concepts to include in the report
  * @returns Buffer containing the PDF file
  */
+export async function generateSingleConceptPdfReport(concept: StudyConcept): Promise<Buffer> {
+  return generatePdfReport([concept]);
+}
+
 export async function generatePdfReport(concepts: StudyConcept[]): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {

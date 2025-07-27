@@ -17,7 +17,7 @@ import { calculateFeasibility } from "./services/feasibilityCalculator";
 import type { ConceptWithFeasibility } from "./services/feasibilityCalculator";
 import { scoreMcda } from "./services/mcdaScorer";
 import { generateSwot } from "./services/swotGenerator";
-import { generatePdfReport, generatePptxReport, generateValidationPdfReport, generateProposalPdfReport } from "./services/reportBuilder";
+import { generatePdfReport, generateSingleConceptPdfReport, generatePptxReport, generateValidationPdfReport, generateProposalPdfReport } from "./services/reportBuilder";
 import { ResearchStrategyGenerator } from "./services/researchStrategyGenerator";
 import { ResearchExecutor } from "./services/researchExecutor";
 import { 
@@ -340,7 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log('Generating PDF for concept:', conceptId);
-      const pdfBuffer = await generatePdfReport(concept);
+      const pdfBuffer = await generateSingleConceptPdfReport(concept);
       
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${concept.title.replace(/[^a-zA-Z0-9]/g, '_')}_concept.pdf"`);
