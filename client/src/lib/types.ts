@@ -32,10 +32,10 @@ export const strategicGoalLabels: Record<StrategicGoal, string> = {
 export type StudyPhase = "I" | "II" | "III" | "IV" | "any";
 
 export interface PicoData {
-  population: string;
-  intervention: string;
-  comparator: string;
-  outcomes: string;
+  population?: string;
+  intervention?: string;
+  comparator?: string;
+  outcomes?: string;
 }
 
 export interface McDAScore {

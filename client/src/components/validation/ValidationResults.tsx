@@ -158,10 +158,12 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
           </div>
 
           {/* Extracted PICO */}
+          {results.extractedPico && (
           <div>
             <h3 className="text-md font-medium text-neutral-dark mb-3">Extracted PICO Framework</h3>
-            <PicoFramework picoData={results.extractedPico!} />
+            <PicoFramework picoData={results.extractedPico} />
           </div>
+          )}
 
           {/* Benchmark Deltas */}
           {results.benchmarkDeltas && results.benchmarkDeltas.length > 0 && (
