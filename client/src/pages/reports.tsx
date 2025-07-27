@@ -147,14 +147,12 @@ const Reports: React.FC = () => {
         <p className="text-neutral-medium mt-1">Access and manage your generated reports</p>
       </div>
 
-      {/* Saved Proposals Section */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Saved Proposals</h2>
-        <div className="grid gap-4">
-          {loadingSavedProposals ? (
-            <p>Loading saved proposals...</p>
-          ) : savedProposals && savedProposals.length > 0 ? (
-            savedProposals.map((proposal) => (
+      {/* Saved Proposals Section - Only show if there are saved proposals */}
+      {!loadingSavedProposals && savedProposals && savedProposals.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Saved Proposals</h2>
+          <div className="grid gap-4">
+            {savedProposals.map((proposal) => (
                   <Card key={proposal.id} className="hover:shadow-md transition-shadow">
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -246,20 +244,10 @@ const Reports: React.FC = () => {
                       </div>
                     </CardFooter>
                   </Card>
-                ))
-              ) : (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center h-64">
-                    <Target className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Saved Proposals</h3>
-                    <p className="text-muted-foreground text-center">
-                      Generate study concepts to automatically save proposals here
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+                ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Other Reports Section */}
       <div className="mb-6 border-b border-neutral-light">
