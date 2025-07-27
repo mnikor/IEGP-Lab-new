@@ -266,8 +266,9 @@ function getStatisticalParameters(studyPhase: string, isOncology: boolean): Stat
         ...baseParams,
         beta: 0.10,
         power: 0.90,
+        allocation: 2.0, // Two-arm randomized study for Phase III
         dropoutRate: isOncology ? 0.25 : 0.20,
-        effectSize: isOncology ? 0.3 : 0.3
+        effectSize: isOncology ? 0.25 : 0.4 // Smaller effect size for Phase III confirmatory studies
       };
     
     case 'IV':
@@ -340,6 +341,9 @@ function calculateResponseRateSampleSize(
     const singleArmNum = Math.pow(zAlpha * Math.sqrt(p1 * (1 - p1)) + 
                                  zBeta * Math.sqrt(p2 * (1 - p2)), 2);
     sampleSize = singleArmNum / Math.pow(p2 - p1, 2);
+  } else {
+    // For two-arm studies, multiply by allocation factor
+    sampleSize = sampleSize * params.allocation;
   }
   
   // Adjust for dropout
@@ -364,9 +368,9 @@ function calculateContinuousSampleSize(
   
   let sampleSize = 2 * Math.pow((zAlpha + zBeta) * sd / (effectSize * sd), 2);
   
-  // Adjust for allocation ratio
-  if (params.allocation !== 1) {
-    sampleSize = sampleSize * (1 + 1/params.allocation) * params.allocation / 4;
+  // Adjust for allocation ratio - for two-arm studies
+  if (params.allocation > 1) {
+    sampleSize = sampleSize * params.allocation / 2; // Total sample size for both arms
   }
   
   // Adjust for dropout
