@@ -1,6 +1,6 @@
 import { StudyConcept, GenerateConceptRequest } from "@shared/schema";
 import { FeasibilityData, RegionalLoeData } from "@/lib/types";
-import { calculateSampleSize } from "./sampleSizeCalculator";
+import { calculateSampleSizeWithAI, calculateSampleSizeTraditional } from "./sampleSizeCalculator";
 import { analyzeTherapeuticArea, adjustSampleSizeForTherapeuticArea, getTherapeuticAreaCostMultiplier } from "./therapeuticAreaEngine";
 
 // TypeScript interface for the extended request type including anticipatedFpiDate
@@ -81,7 +81,7 @@ function detectBiologicsOrHighCostTherapy(concept: ConceptWithFeasibility): bool
  * @param requestData The original request data for context
  * @returns Feasibility data object
  */
-export function calculateFeasibility(concept: ConceptWithFeasibility, requestData: Partial<ExtendedGenerateConceptRequest>): FeasibilityData {
+export async function calculateFeasibility(concept: ConceptWithFeasibility, requestData: Partial<ExtendedGenerateConceptRequest>): Promise<FeasibilityData> {
   // Step 1: Determine the study phase and complexity factors
   const studyPhase = concept.studyPhase || 'any';
   const isRealWorldEvidence = concept.strategicGoals?.includes('generate_real_world_evidence') || false;
@@ -111,9 +111,18 @@ export function calculateFeasibility(concept: ConceptWithFeasibility, requestDat
   const hasTargetSubpopulation = !!concept.targetSubpopulation;
   const comparatorCount = concept.comparatorDrugs?.length || 0;
   
-  // Step 2: Calculate patient numbers using statistical power analysis with therapeutic area intelligence
+  // Step 2: Calculate patient numbers using AI-driven statistical analysis with therapeutic area intelligence
   const therapeuticContext = analyzeTherapeuticArea(concept);
-  const sampleSizeCalculation = calculateSampleSize(concept, requestData);
+  let sampleSizeCalculation;
+  
+  try {
+    // Use AI-driven calculation for personalized sample size determination
+    sampleSizeCalculation = await calculateSampleSizeWithAI(concept, requestData);
+    console.log('AI-driven sample size calculation completed successfully');
+  } catch (error) {
+    console.warn('AI calculation failed, using traditional method:', error);
+    sampleSizeCalculation = calculateSampleSizeTraditional(concept, requestData);
+  }
   
   let patientCount = adjustSampleSizeForTherapeuticArea(
     sampleSizeCalculation.sampleSize, 

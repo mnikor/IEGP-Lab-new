@@ -151,7 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Request data - data.anticipatedFpiDate:", data.anticipatedFpiDate);
       console.log("Request data - data.globalLoeDate:", data.globalLoeDate);
       
-      const enrichedConcepts = concepts.map((concept: Partial<StudyConcept>) => {
+      const enrichedConcepts = await Promise.all(concepts.map(async (concept: Partial<StudyConcept>) => {
         // Debug each concept
         console.log("Processing concept:", concept.title);
         console.log("Concept input data:", {
@@ -162,7 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           feasibilityData: concept.feasibilityData
         });
         
-        const feasibilityData = calculateFeasibility(concept, data);
+        const feasibilityData = await calculateFeasibility(concept, data);
         
         // Debug the calculated feasibility data
         console.log("Calculated feasibility data - ROI Debug:", {
@@ -232,7 +232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           swotAnalysis,
           currentEvidence
         };
-      });
+      }));
 
       // Step 4: Save the concepts to the database
       const savedConcepts = await Promise.all(
@@ -514,7 +514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       // Calculate feasibility data using the same method as concept generation
-      const feasibilityData = calculateFeasibility(tempConcept, data);
+      const feasibilityData = await calculateFeasibility(tempConcept, data);
       
       // Add feasibility data to validation results
       validationResults.feasibilityData = feasibilityData;

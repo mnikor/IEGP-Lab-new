@@ -1,4 +1,5 @@
 import { StudyConcept } from "@shared/schema";
+import { AIStatisticalAnalyzer } from './aiStatisticalAnalyzer';
 
 /**
  * Study design characteristics
@@ -132,9 +133,65 @@ function determineStudyDesign(concept: Partial<StudyConcept>, studyPhase: string
 }
 
 /**
- * Calculates sample size based on study phase, indication, and endpoint type
+ * Enhanced AI-driven sample size calculation
  */
-export function calculateSampleSize(concept: Partial<StudyConcept>, requestData: any): {
+export async function calculateSampleSizeWithAI(concept: Partial<StudyConcept>, requestData: any): Promise<{
+  sampleSize: number;
+  justification: string;
+  parameters: StatisticalParameters;
+  endpoint: EndpointParameters;
+  powerAnalysis: string;
+  aiAnalysis?: any;
+}> {
+  const aiAnalyzer = new AIStatisticalAnalyzer();
+  
+  try {
+    // Use AI-driven analysis for comprehensive calculation
+    const aiResult = await aiAnalyzer.analyzeStudyConcept(concept as StudyConcept, requestData);
+    
+    // Convert AI result to expected format
+    const parameters: StatisticalParameters = {
+      alpha: aiResult.statisticalPlan.alpha,
+      beta: 1 - aiResult.statisticalPlan.power,
+      power: aiResult.statisticalPlan.power,
+      effectSize: aiResult.statisticalPlan.effectSize,
+      dropoutRate: aiResult.statisticalPlan.dropoutRate,
+      allocation: 1.0,
+      studyDesign: {
+        numberOfArms: aiResult.numberOfArms,
+        armRatio: aiResult.numberOfArms === 1 ? [1] : [1, 1],
+        isBlinded: aiResult.statisticalPlan.studyDesign === 'randomized_controlled',
+        isRandomized: aiResult.statisticalPlan.studyDesign === 'randomized_controlled',
+        comparatorType: aiResult.statisticalPlan.comparator as any
+      }
+    };
+
+    const endpoint: EndpointParameters = {
+      type: aiResult.statisticalPlan.endpointType,
+      baseline: aiResult.statisticalPlan.effectSize, // Simplified mapping
+      target: aiResult.statisticalPlan.effectSize * 1.5,
+      hazardRatio: aiResult.statisticalPlan.endpointType === 'survival' ? 0.75 : undefined
+    };
+
+    return {
+      sampleSize: aiResult.totalPatients,
+      justification: `${aiResult.justification.endpointSelection} ${aiResult.justification.effectSizeRationale} ${aiResult.justification.powerJustification}`,
+      parameters,
+      endpoint,
+      powerAnalysis: aiResult.justification.precedentAnalysis,
+      aiAnalysis: aiResult
+    };
+  } catch (error) {
+    console.warn('AI analysis failed, falling back to traditional calculation:', error);
+    // Fallback to original calculation method
+    return calculateSampleSizeTraditional(concept, requestData);
+  }
+}
+
+/**
+ * Traditional sample size calculation (fallback method)
+ */
+export function calculateSampleSizeTraditional(concept: Partial<StudyConcept>, requestData: any): {
   sampleSize: number;
   justification: string;
   parameters: StatisticalParameters;
