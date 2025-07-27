@@ -497,7 +497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         6. Common inclusion/exclusion criteria 
         7. Geographic patterns/differences in conducting these trials`;
         
-        // Use the same comprehensive domain list as concept generation with deep research
+        // Use cost-effective regular Sonar with focused domains
         searchResults = await perplexityWebSearch(searchQuery, [
           "pubmed.ncbi.nlm.nih.gov",
           "clinicaltrials.gov", 
