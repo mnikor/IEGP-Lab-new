@@ -43,6 +43,34 @@ interface StatisticalPlan {
   multipleTesting: string;
 }
 
+interface ComparatorJustification {
+  chosen: string;
+  rationale: string;
+  regulatoryBasis: string[];
+  htaRecommendations: string[];
+  standardOfCareEvidence: string[];
+  regionalVariations: { region: string; recommendation: string }[];
+  competitiveLandscape: string;
+  accessConsiderations: string;
+}
+
+interface SampleSizeCalculation {
+  methodology: string;
+  keyAssumptions: string[];
+  clinicalMeaningfulness: string;
+  regulatoryPrecedents: string[];
+  statisticalFormula: string;
+  stepByStepCalculation: string;
+}
+
+interface RiskBenefitAssessment {
+  patientBurden: string;
+  operationalComplexity: string;
+  recruitmentFeasibility: string;
+  costEffectiveness: string;
+  ethicalConsiderations: string;
+}
+
 interface StatisticalJustification {
   endpointSelection: string;
   effectSizeRationale: string;
@@ -52,6 +80,11 @@ interface StatisticalJustification {
   comparatorContext: string;
   regulatoryAlignment: string;
   precedentAnalysis: string;
+  
+  // Enhanced justification fields
+  comparatorSelection: ComparatorJustification;
+  sampleSizeCalculation: SampleSizeCalculation;
+  riskBenefitAssessment: RiskBenefitAssessment;
 }
 
 interface SampleSizeResult {
@@ -267,26 +300,61 @@ Use real statistical formulas, not rough estimates.`;
     plan: StatisticalPlan, 
     sampleSize: any
   ): Promise<StatisticalJustification> {
-    const prompt = `Provide comprehensive statistical justification for this clinical study design:
+    const geography = Array.isArray(concept.geography) ? concept.geography.join(', ') : (concept.geography || 'Global');
+    
+    const prompt = `As a senior biostatistician and regulatory expert, provide comprehensive justification for this clinical study design:
 
-Study: ${concept.title}
-Phase: ${concept.studyPhase}
-Sample Size: ${sampleSize.totalPatients}
-Primary Endpoint: ${plan.primaryEndpoint}
-Design: ${plan.studyDesign}
-Power: ${plan.power}, Alpha: ${plan.alpha}
-Effect Size: ${plan.effectSize}
+STUDY DETAILS:
+- Title: ${concept.title}
+- Drug: ${concept.drugName}
+- Indication: ${concept.indication}
+- Phase: ${concept.studyPhase}
+- Geography: ${geography}
+- Sample Size: ${sampleSize.totalPatients} patients
+- Primary Endpoint: ${plan.primaryEndpoint}
+- Study Design: ${plan.studyDesign}
+- Comparator: ${plan.comparator}
+- Power: ${plan.power}, Alpha: ${plan.alpha}
+- Effect Size: ${plan.effectSize}
 
-Generate detailed justification addressing:
-1. Why this primary endpoint is appropriate
-2. How the effect size was determined (clinical meaningfulness)
-3. Rationale for power and alpha levels
-4. Dropout rate assumptions and basis
-5. Choice of comparator and study design
-6. Regulatory alignment with FDA/EMA guidance
-7. Precedent analysis from similar approved studies
+Provide comprehensive analysis in JSON format with these sections:
 
-Provide as JSON with detailed explanations for each element.`;
+1. BASIC JUSTIFICATION:
+   - endpointSelection: Why this primary endpoint is optimal
+   - effectSizeRationale: How effect size was determined (clinical meaningfulness)
+   - powerJustification: Rationale for power level choice
+   - alphaRationale: Alpha level justification
+   - dropoutAssumptions: Dropout rate basis and assumptions
+   - comparatorContext: Brief comparator overview
+   - regulatoryAlignment: FDA/EMA alignment summary
+   - precedentAnalysis: Similar approved studies
+
+2. COMPARATOR SELECTION (detailed analysis):
+   - chosen: Selected comparator name
+   - rationale: Why this comparator was selected
+   - regulatoryBasis: Array of FDA/EMA guidance documents supporting this choice
+   - htaRecommendations: Array of HTA body recommendations (NICE, HAS, G-BA, CADTH, PBAC)
+   - standardOfCareEvidence: Array of clinical guideline references (NCCN, ESMO, AHA, etc.)
+   - regionalVariations: Array of objects with region and specific recommendations
+   - competitiveLandscape: Analysis of recent approvals and ongoing trials
+   - accessConsiderations: Availability and reimbursement factors
+
+3. SAMPLE SIZE CALCULATION (methodology):
+   - methodology: Statistical method used (e.g., logrank test, two-proportion test)
+   - keyAssumptions: Array of critical assumptions made
+   - clinicalMeaningfulness: What constitutes clinically meaningful benefit
+   - regulatoryPrecedents: Array of regulatory precedents for similar studies
+   - statisticalFormula: Formula or approach used
+   - stepByStepCalculation: Step-by-step calculation explanation
+
+4. RISK-BENEFIT ASSESSMENT:
+   - patientBurden: Assessment of patient burden and participation requirements
+   - operationalComplexity: Complexity of study conduct and management
+   - recruitmentFeasibility: Likelihood of successful patient recruitment
+   - costEffectiveness: Cost consideration relative to evidence value
+   - ethicalConsiderations: Ethical aspects of the study design
+
+Base all recommendations on actual regulatory guidance, published literature, and real clinical precedents. Provide specific references where possible.`;
 
     try {
       const response = await openai.chat.completions.create({
@@ -294,7 +362,7 @@ Provide as JSON with detailed explanations for each element.`;
         messages: [
           {
             role: "system",
-            content: "You are a regulatory affairs expert and biostatistician. Provide thorough scientific justification for clinical trial designs that would satisfy regulatory reviewers. Respond with valid JSON only."
+            content: "You are a world-class biostatistician and regulatory affairs expert with 20+ years experience in clinical trial design. Provide thorough, evidence-based justifications that would satisfy FDA and EMA reviewers. Use real regulatory guidance and clinical precedents. Respond with valid, well-structured JSON only."
           },
           {
             role: "user",
@@ -302,13 +370,57 @@ Provide as JSON with detailed explanations for each element.`;
           }
         ],
         response_format: { type: "json_object" },
-        temperature: 0.3
+        temperature: 0.2
       });
 
-      return JSON.parse(response.choices[0].message.content || '{}');
+      const justification = JSON.parse(response.choices[0].message.content || '{}');
+      return this.validateAndEnhanceJustification(justification, concept, plan, sampleSize);
     } catch (error) {
+      console.warn('AI justification generation failed, using fallback:', error);
       return this.generateFallbackJustification(concept, plan, sampleSize);
     }
+  }
+
+  private validateAndEnhanceJustification(justification: any, concept: StudyConcept, plan: StatisticalPlan, sampleSize: any): StatisticalJustification {
+    // Ensure all required fields are present with fallbacks
+    return {
+      endpointSelection: justification.endpointSelection || `${plan.primaryEndpoint} selected as clinically meaningful endpoint for ${concept.indication}`,
+      effectSizeRationale: justification.effectSizeRationale || `Effect size of ${plan.effectSize} represents clinically meaningful benefit`,
+      powerJustification: justification.powerJustification || `${plan.power * 100}% power provides adequate probability of detecting true effect`,
+      alphaRationale: justification.alphaRationale || `Alpha level of ${plan.alpha} maintains appropriate Type I error control`,
+      dropoutAssumptions: justification.dropoutAssumptions || `${plan.dropoutRate * 100}% dropout rate based on similar studies`,
+      comparatorContext: justification.comparatorContext || `${plan.comparator} comparator appropriate for study objectives`,
+      regulatoryAlignment: justification.regulatoryAlignment || `Design aligns with regulatory expectations for ${concept.studyPhase}`,
+      precedentAnalysis: justification.precedentAnalysis || `Sample size consistent with similar approved studies in this indication`,
+      
+      comparatorSelection: {
+        chosen: justification.comparatorSelection?.chosen || plan.comparator,
+        rationale: justification.comparatorSelection?.rationale || `${plan.comparator} selected as appropriate control for this study`,
+        regulatoryBasis: justification.comparatorSelection?.regulatoryBasis || ['FDA Guidance for Industry', 'ICH E10 Guidelines'],
+        htaRecommendations: justification.comparatorSelection?.htaRecommendations || ['Standard care recommendations'],
+        standardOfCareEvidence: justification.comparatorSelection?.standardOfCareEvidence || ['Current treatment guidelines'],
+        regionalVariations: justification.comparatorSelection?.regionalVariations || [{ region: 'Global', recommendation: 'Standard care as control' }],
+        competitiveLandscape: justification.comparatorSelection?.competitiveLandscape || 'Consistent with recent approvals in this space',
+        accessConsiderations: justification.comparatorSelection?.accessConsiderations || 'Comparator widely available across study regions'
+      },
+      
+      sampleSizeCalculation: {
+        methodology: justification.sampleSizeCalculation?.methodology || `Standard ${plan.endpointType} analysis`,
+        keyAssumptions: justification.sampleSizeCalculation?.keyAssumptions || [`Power: ${plan.power}`, `Alpha: ${plan.alpha}`, `Effect size: ${plan.effectSize}`],
+        clinicalMeaningfulness: justification.sampleSizeCalculation?.clinicalMeaningfulness || 'Based on minimal clinically important difference',
+        regulatoryPrecedents: justification.sampleSizeCalculation?.regulatoryPrecedents || ['Similar Phase III studies in this indication'],
+        statisticalFormula: justification.sampleSizeCalculation?.statisticalFormula || 'Standard sample size formula for primary endpoint',
+        stepByStepCalculation: justification.sampleSizeCalculation?.stepByStepCalculation || `Calculated ${sampleSize.totalPatients} patients based on ${plan.endpointType} endpoint requirements`
+      },
+      
+      riskBenefitAssessment: {
+        patientBurden: justification.riskBenefitAssessment?.patientBurden || 'Reasonable patient burden for Phase III study',
+        operationalComplexity: justification.riskBenefitAssessment?.operationalComplexity || 'Standard operational complexity for this indication',
+        recruitmentFeasibility: justification.riskBenefitAssessment?.recruitmentFeasibility || 'Recruitment feasible based on patient population size',
+        costEffectiveness: justification.riskBenefitAssessment?.costEffectiveness || 'Sample size optimized for statistical power and cost efficiency',
+        ethicalConsiderations: justification.riskBenefitAssessment?.ethicalConsiderations || 'Study design minimizes patient risk while generating necessary evidence'
+      }
+    };
   }
 
   private validateAndSanitizeStatisticalPlan(plan: any): StatisticalPlan {
@@ -451,6 +563,10 @@ Provide as JSON with detailed explanations for each element.`;
   }
 
   private generateFallbackJustification(concept: StudyConcept, plan: StatisticalPlan, sampleSize: any): StatisticalJustification {
+    const isOncology = concept.indication?.toLowerCase().includes('cancer') || 
+                      concept.indication?.toLowerCase().includes('tumor') ||
+                      concept.indication?.toLowerCase().includes('carcinoma');
+    
     return {
       endpointSelection: `${plan.primaryEndpoint} selected as clinically meaningful endpoint for ${concept.indication}`,
       effectSizeRationale: `Effect size of ${plan.effectSize} represents clinically meaningful benefit`,
@@ -459,7 +575,40 @@ Provide as JSON with detailed explanations for each element.`;
       dropoutAssumptions: `${plan.dropoutRate * 100}% dropout rate based on similar studies`,
       comparatorContext: `${plan.comparator} comparator appropriate for study objectives`,
       regulatoryAlignment: `Design aligns with regulatory expectations for ${concept.studyPhase}`,
-      precedentAnalysis: `Sample size consistent with similar approved studies in this indication`
+      precedentAnalysis: `Sample size consistent with similar approved studies in this indication`,
+      
+      comparatorSelection: {
+        chosen: plan.comparator,
+        rationale: `${plan.comparator} selected as appropriate control based on standard of care and regulatory guidance`,
+        regulatoryBasis: ['FDA Guidance for Industry', 'ICH E10 Guidelines on Choice of Control Group'],
+        htaRecommendations: ['NICE Technology Appraisal Guidance', 'G-BA Early Benefit Assessment'],
+        standardOfCareEvidence: isOncology ? ['NCCN Guidelines', 'ESMO Clinical Practice Guidelines'] : ['Relevant clinical practice guidelines'],
+        regionalVariations: [{ region: 'US/EU', recommendation: 'Standard of care as appropriate comparator' }],
+        competitiveLandscape: 'Consistent with recent regulatory approvals in this therapeutic area',
+        accessConsiderations: 'Comparator widely available across intended study regions'
+      },
+      
+      sampleSizeCalculation: {
+        methodology: `${plan.endpointType} endpoint analysis using standard statistical methods`,
+        keyAssumptions: [
+          `Statistical power: ${plan.power * 100}%`,
+          `Type I error rate: ${plan.alpha}`,
+          `Effect size: ${plan.effectSize}`,
+          `Dropout rate: ${plan.dropoutRate * 100}%`
+        ],
+        clinicalMeaningfulness: 'Effect size based on minimal clinically important difference for this indication',
+        regulatoryPrecedents: [`Similar ${concept.studyPhase} studies in ${concept.indication}`],
+        statisticalFormula: `Standard sample size calculation for ${plan.endpointType} endpoints`,
+        stepByStepCalculation: `Base calculation yielded ${sampleSize.totalPatients} patients accounting for power, effect size, and expected dropout`
+      },
+      
+      riskBenefitAssessment: {
+        patientBurden: `Reasonable patient burden for ${concept.studyPhase} study with standard visit schedule`,
+        operationalComplexity: 'Standard operational complexity for this type of clinical trial',
+        recruitmentFeasibility: 'Recruitment feasible based on target patient population and site network',
+        costEffectiveness: 'Sample size optimized to balance statistical power with resource efficiency',
+        ethicalConsiderations: 'Study design minimizes patient exposure while generating necessary regulatory evidence'
+      }
     };
   }
 }

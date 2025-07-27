@@ -40,6 +40,7 @@ export const studyConcepts = pgTable("study_concepts", {
   swotAnalysis: json("swot_analysis").notNull(),
   feasibilityData: json("feasibility_data").notNull(),
   evidenceSources: json("evidence_sources").notNull(),
+  aiAnalysis: json("ai_analysis"), // Enhanced AI analysis data including justification and statistical plan
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

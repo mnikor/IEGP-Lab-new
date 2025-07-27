@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SituationalAnalysisModal } from "@/components/concept/SituationalAnalysisModal";
+import AIAnalysisSection from "@/components/concept/AIAnalysisSection";
 import { ArrowLeft, BookOpen, Search, Calendar, TrendingUp, Star } from "lucide-react";
 import { Link } from "wouter";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
@@ -204,6 +205,9 @@ const ConceptDetailPage: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* AI Analysis Section - Show comprehensive AI-driven justification */}
+          <AIAnalysisSection concept={concept} />
 
           {/* MCDA Scores */}
           {concept.mcdaScores && (

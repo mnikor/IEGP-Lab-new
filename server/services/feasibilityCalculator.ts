@@ -364,6 +364,9 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
   
   // Step 8: Calculate projected ROI
   const projectedROI = calculateProjectedROI(conceptWithFeasibility, requestData);
+  
+  // Extract AI analysis from sample size calculation
+  const aiAnalysis = sampleSizeCalculation.aiAnalysis || null;
 
   // Enforce any budget ceilings by adjusting scope if necessary
   if (requestData.budgetCeilingEur && estimatedCost > requestData.budgetCeilingEur) {
@@ -474,7 +477,10 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
     
     // Risk factors
     dropoutRate: parseFloat(dropoutRate.toFixed(2)),
-    complexityFactor: parseFloat(complexityFactor.toFixed(2))
+    complexityFactor: parseFloat(complexityFactor.toFixed(2)),
+    
+    // AI Analysis - include comprehensive statistical justification data
+    aiAnalysis: aiAnalysis || null
   };
 }
 

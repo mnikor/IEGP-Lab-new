@@ -228,6 +228,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Make sure the globalLoeDate is preserved in the feasibilityData
             globalLoeDate: data.globalLoeDate || feasibilityData.globalLoeDate
           },
+          // Store comprehensive AI analysis data for transparency
+          aiAnalysis: feasibilityData.aiAnalysis || null,
           mcdaScores,
           swotAnalysis,
           currentEvidence
