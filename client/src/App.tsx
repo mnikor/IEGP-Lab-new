@@ -10,6 +10,7 @@ import ValidateStudyIdea from "@/pages/validate-study-idea";
 import Reports from "@/pages/reports";
 
 import ConceptDetailPage from "@/pages/ConceptDetailPage";
+import ValidationDetailPage from "@/pages/ValidationDetailPage";
 import TournamentList from "@/pages/TournamentList";
 import TournamentView from "@/pages/TournamentView";
 import { TournamentProvider } from "@/context/TournamentContext";
@@ -40,6 +41,7 @@ function Router() {
         </Route>
         <Route path="/reports" component={Reports} />
         <Route path="/concept/:id" component={ConceptDetailPage} />
+        <Route path="/validation/:id" component={ValidationDetailPage} />
         <Route path="/tournaments">
           <TournamentList />
         </Route>

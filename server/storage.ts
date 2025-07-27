@@ -21,6 +21,7 @@ export interface IStorage {
   getRecentSynopsisValidations(limit: number): Promise<SynopsisValidation[]>;
   getSynopsisValidation(id: number): Promise<SynopsisValidation | undefined>;
   createSynopsisValidation(validation: InsertSynopsisValidation): Promise<SynopsisValidation>;
+  deleteSynopsisValidation(id: number): Promise<boolean>;
   
   // Tournament methods
   createTournament(tournament: InsertTournament): Promise<Tournament>;
@@ -122,6 +123,11 @@ export class DatabaseStorage implements IStorage {
 
   async getRecentSynopsisValidations(limit: number): Promise<SynopsisValidation[]> {
     return await db.select().from(synopsisValidations).orderBy(desc(synopsisValidations.createdAt)).limit(limit);
+  }
+
+  async deleteSynopsisValidation(id: number): Promise<boolean> {
+    const result = await db.delete(synopsisValidations).where(eq(synopsisValidations.id, id));
+    return result.rowCount > 0;
   }
 
   // Tournament methods

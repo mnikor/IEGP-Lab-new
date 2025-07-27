@@ -388,6 +388,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DELETE endpoint for study idea validations
+  app.delete("/api/study-idea-validations/:id", async (req, res) => {
+    try {
+      const validationId = parseInt(req.params.id);
+      const validation = await storage.getSynopsisValidation(validationId);
+      
+      if (!validation) {
+        return res.status(404).json({ message: "Study idea validation not found" });
+      }
+      
+      await storage.deleteSynopsisValidation(validationId);
+      res.json({ message: "Study idea validation deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting study idea validation:", error);
+      res.status(500).json({ message: "Failed to delete study idea validation" });
+    }
+  });
+
   app.post("/api/study-idea-validations/validate", upload.single('file'), async (req, res) => {
     try {
       console.log("Validating study idea with body:", {

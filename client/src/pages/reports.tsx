@@ -10,6 +10,7 @@ import { StudyConcept, ValidationResults } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { apiRequest } from "@/lib/queryClient";
 
 const Reports: React.FC = () => {
   const { toast } = useToast();
@@ -20,7 +21,7 @@ const Reports: React.FC = () => {
   });
 
   const { data: validations, isLoading: loadingValidations } = useQuery<ValidationResults[]>({
-    queryKey: ["/api/synopsis-validations"],
+    queryKey: ["/api/study-idea-validations"],
   });
 
   // Show all individual concepts since we no longer have proposal grouping
@@ -92,6 +93,29 @@ const Reports: React.FC = () => {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to delete concept",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteValidation = async (validationId: number | undefined) => {
+    if (!validationId) return;
+    
+    try {
+      await apiRequest("DELETE", `/api/study-idea-validations/${validationId}`);
+      
+      // Refresh the validations list
+      queryClient.invalidateQueries({ queryKey: ["/api/study-idea-validations"] });
+      
+      toast({
+        title: "Success",
+        description: "Validation deleted successfully"
+      });
+    } catch (error) {
+      console.error('Error deleting validation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete validation",
         variant: "destructive"
       });
     }
@@ -209,7 +233,12 @@ const Reports: React.FC = () => {
                       </Link>
                       <div className="flex space-x-1">
                         <Button variant="ghost" size="sm"><Download className="mr-1 h-4 w-4" /> PDF</Button>
-                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteValidation(validation.id!)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
