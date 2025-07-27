@@ -177,7 +177,7 @@ export class ResearchExecutor {
       console.log(`Starting Perplexity search for: "${enhancedQuery}"`);
       
       const targetDomains = this.getSearchDomains(search.type);
-      const useDeepResearch = search.priority >= 8; // Use deep research for high priority searches
+      const useDeepResearch = false; // Disable expensive deep research to control costs
       
       // Use shorter timeout and no retry to keep total time under 2 minutes
       const perplexityResult = await Promise.race([

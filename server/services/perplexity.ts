@@ -20,10 +20,10 @@ async function performSingleSearch(question: string, domains: string[] | null = 
       throw new Error("PERPLEXITY_API_KEY environment variable not found");
     }
 
-    console.log(`Performing Perplexity ${useDeepResearch ? 'Deep Research' : 'search'} with query: "${question}"`);
+    console.log(`Performing cost-effective Perplexity search with query: "${question}"`);
     
     const payload = {
-      model: useDeepResearch ? "sonar-deep-research" : "sonar",
+      model: "sonar", // Always use regular Sonar to avoid expensive Deep Research costs
       messages: [
         {
           role: "system",
