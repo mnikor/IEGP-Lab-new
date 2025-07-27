@@ -240,11 +240,11 @@ export interface ValidationResults {
   id?: number;
   title: string;
   originalFileName: string;
-  extractedPico: PicoData;
+  extractedPico?: PicoData;
   benchmarkDeltas?: BenchmarkDelta[];
   riskFlags?: RiskFlag[];
-  revisedEconomics: RevisedEconomics;
-  swotAnalysis: SwotAnalysis;
+  revisedEconomics?: RevisedEconomics;
+  swotAnalysis?: SwotAnalysis;
   strategicGoals: StrategicGoal[];
   otherStrategicGoalText?: string;
   globalLoeDate?: string;

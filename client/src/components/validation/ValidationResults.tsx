@@ -160,7 +160,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
           {/* Extracted PICO */}
           <div>
             <h3 className="text-md font-medium text-neutral-dark mb-3">Extracted PICO Framework</h3>
-            <PicoFramework picoData={results.extractedPico} />
+            <PicoFramework picoData={results.extractedPico!} />
           </div>
 
           {/* Benchmark Deltas */}
@@ -292,21 +292,22 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
           )}
 
           {/* Revised Economics */}
+          {results.revisedEconomics && (
           <div>
             <h3 className="text-md font-medium text-neutral-dark mb-3">Revised Economics</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="p-3 border rounded-md">
                 <h4 className="text-sm font-medium text-neutral-dark mb-1">Cost Estimate</h4>
                 <div className="flex items-center">
-                  {results.revisedEconomics.originalCost && typeof results.revisedEconomics.originalCost === 'number' && (
+                  {results.revisedEconomics?.originalCost && typeof results.revisedEconomics.originalCost === 'number' && (
                     <span className="text-sm line-through text-neutral-medium mr-2">
                       €{(results.revisedEconomics.originalCost / 1000000).toFixed(1)}M
                     </span>
                   )}
                   <span className="text-lg font-medium text-primary">
-                    {typeof results.revisedEconomics.revisedCost === 'number'
+                    {typeof results.revisedEconomics?.revisedCost === 'number'
                       ? `€${(results.revisedEconomics.revisedCost / 1000000).toFixed(1)}M`
-                      : results.revisedEconomics.revisedCost && 
+                      : results.revisedEconomics?.revisedCost && 
                         results.revisedEconomics.revisedCost !== 'undefined' && 
                         results.revisedEconomics.revisedCost !== 'Cost analysis in progress'
                       ? `€${results.revisedEconomics.revisedCost}M`
@@ -317,47 +318,50 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
               <div className="p-3 border rounded-md">
                 <h4 className="text-sm font-medium text-neutral-dark mb-1">Timeline</h4>
                 <div className="flex items-center">
-                  {results.revisedEconomics.originalTimeline && 
-                   results.revisedEconomics.originalTimeline !== results.revisedEconomics.revisedTimeline && (
+                  {results.revisedEconomics?.originalTimeline && 
+                   results.revisedEconomics.originalTimeline !== results.revisedEconomics?.revisedTimeline && (
                     <span className="text-sm line-through text-neutral-medium mr-2">
-                      {results.revisedEconomics.originalTimeline} months
+                      {results.revisedEconomics?.originalTimeline} months
                     </span>
                   )}
                   <span className="text-lg font-medium text-primary">
-                    {results.revisedEconomics.revisedTimeline} months
+                    {results.revisedEconomics?.revisedTimeline} months
                   </span>
                 </div>
               </div>
               <div className="p-3 border rounded-md">
                 <h4 className="text-sm font-medium text-neutral-dark mb-1">ROI Estimate</h4>
                 <div className="flex items-center">
-                  {results.revisedEconomics.originalROI && 
+                  {results.revisedEconomics?.originalROI && 
                    typeof results.revisedEconomics.originalROI === 'number' && 
-                   results.revisedEconomics.originalROI !== results.revisedEconomics.revisedROI && (
+                   results.revisedEconomics.originalROI !== results.revisedEconomics?.revisedROI && (
                     <span className="text-sm line-through text-neutral-medium mr-2">
-                      {results.revisedEconomics.originalROI.toFixed(1)}x
+                      {results.revisedEconomics?.originalROI?.toFixed(1)}x
                     </span>
                   )}
                   <span className="text-lg font-medium text-primary">
-                    {typeof results.revisedEconomics.revisedROI === 'number' 
+                    {typeof results.revisedEconomics?.revisedROI === 'number' 
                       ? `${results.revisedEconomics.revisedROI.toFixed(1)}x`
-                      : `${results.revisedEconomics.revisedROI}x`}
+                      : `${results.revisedEconomics?.revisedROI}x`}
                   </span>
                 </div>
               </div>
             </div>
-            {results.revisedEconomics.notes && (
+            {results.revisedEconomics?.notes && (
               <div className="mt-2 p-3 bg-neutral-lightest rounded text-sm">
                 <p>{results.revisedEconomics.notes}</p>
               </div>
             )}
           </div>
+          )}
 
           {/* SWOT Analysis */}
+          {results.swotAnalysis && (
           <div>
             <h3 className="text-md font-medium text-neutral-dark mb-3">SWOT Analysis</h3>
             <SwotAnalysis swotAnalysis={results.swotAnalysis} />
           </div>
+          )}
 
 
 
