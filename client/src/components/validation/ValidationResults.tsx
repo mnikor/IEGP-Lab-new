@@ -29,14 +29,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
   const [showRiskInfo, setShowRiskInfo] = React.useState(false);
   const [showSituationalAnalysis, setShowSituationalAnalysis] = React.useState(false);
   
-  // Debug log to see what we have
-  console.log('ValidationResults data:', {
-    extractedPico: results.extractedPico,
-    revisedEconomics: results.revisedEconomics,
-    swotAnalysis: results.swotAnalysis,
-    benchmarkDeltas: results.benchmarkDeltas,
-    riskFlags: results.riskFlags
-  });
+
 
   // Handle research results from multiple sources - props, results data, or none
   const getResearchResults = () => {

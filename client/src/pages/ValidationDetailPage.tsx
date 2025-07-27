@@ -14,12 +14,11 @@ const ValidationDetailPage: React.FC = () => {
   const { toast } = useToast();
 
   const { data: validation, isLoading, error } = useQuery<ValidationResultsType>({
-    queryKey: ['/api/study-idea-validations', id],
+    queryKey: [`/api/study-idea-validations/${id}`],
     enabled: !!id,
   });
   
-  // Debug log to see what we're getting from the API
-  console.log('ValidationDetailPage data:', validation);
+
 
   const handleExportPDF = async () => {
     try {
