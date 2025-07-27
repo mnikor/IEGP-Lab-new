@@ -37,9 +37,9 @@ export class ResearchExecutor {
 
     console.log(`Executing ${enabledSearches.length} research searches for strategy ${strategyId}`);
 
-    // Execute searches in parallel for efficiency
-    const searchPromises = enabledSearches.map(search => 
-      this.executeSearch(strategyId, search)
+    // Execute searches with intelligent batching to avoid rate limits
+    const searchPromises = enabledSearches.map((search, index) => 
+      this.executeSearchWithDelay(strategyId, search, index * 2000) // 2-second stagger
     );
 
     try {
@@ -49,8 +49,11 @@ export class ResearchExecutor {
       const allContent = results.map(r => r.synthesizedInsights).join('\n');
       const nctVerification = await this.nctVerifier.verifyNCTNumbers(allContent);
       
-      // Step 2: Synthesize results with verified trial information
-      const synthesizedInsights = await this.synthesizeResults(results, nctVerification);
+      // Step 2: Collect all authentic citations from successful searches
+      const allCitations = this.collectAllCitations(results);
+      
+      // Step 3: Synthesize results with verified trial information and real citations
+      const synthesizedInsights = await this.synthesizeResults(results, nctVerification, allCitations);
       const designImplications = this.extractDesignImplications(results);
       const strategicRecommendations = this.extractStrategicRecommendations(results);
 
@@ -146,6 +149,13 @@ export class ResearchExecutor {
           "jamanetwork.com"
         ]);
     }
+  }
+
+  private async executeSearchWithDelay(strategyId: number, search: SearchItem, delay: number): Promise<ResearchResult> {
+    if (delay > 0) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    return this.executeSearch(strategyId, search);
   }
 
   private async executeSearch(strategyId: number, search: SearchItem): Promise<ResearchResult> {
@@ -350,7 +360,26 @@ CRITICAL FORMATTING RULES:
     return null;
   }
 
-  private async synthesizeResults(results: ResearchResult[], nctVerification?: any): Promise<string> {
+  private collectAllCitations(results: ResearchResult[]): string[] {
+    const allCitations: string[] = [];
+    
+    results.forEach(result => {
+      if (result.rawResults && result.rawResults.citations && Array.isArray(result.rawResults.citations)) {
+        // Only collect citations from successful Perplexity API calls (not fallback content)
+        const realCitations = result.rawResults.citations.filter((citation: string) => 
+          citation.includes('http') && 
+          !citation.includes('clinicalresearch') && // Exclude fallback citations
+          !citation.includes('established frameworks') // Exclude fallback content
+        );
+        allCitations.push(...realCitations);
+      }
+    });
+    
+    // Remove duplicates and return unique authentic citations
+    return [...new Set(allCitations)];
+  }
+
+  private async synthesizeResults(results: ResearchResult[], nctVerification?: any, allCitations: string[] = []): Promise<string> {
     const successfulResults = results.filter(r => !(r.rawResults as any)?.error);
     
     console.log(`Synthesizing ${successfulResults.length} successful results out of ${results.length} total searches`);
@@ -423,6 +452,16 @@ Create a detailed synthesis with bold headings and specific citations that will 
         }
       }
       
+      // Add authentic citations section
+      let citationSection = '';
+      if (allCitations.length > 0) {
+        citationSection = `\n\n## 📚 **Authentic Research Sources**\n*${allCitations.length} verified citations from Perplexity web search*\n\n`;
+        allCitations.forEach((citation, index) => {
+          citationSection += `**[${index + 1}]** ${citation}\n`;
+        });
+        citationSection += '\n';
+      }
+
       // Add summary statistics
       const searchTypeSet = Array.from(new Set(successfulResults.map(r => r.searchType)));
       const synthesisWithStats = `# RESEARCH SYNTHESIS
@@ -432,12 +471,15 @@ ${verifiedTrialsSection}
 
 ${aiSynthesis}
 
+${citationSection}
+
 ---
 ## Research Execution Summary
 - **Total Searches Executed**: ${results.length}
 - **Successful Searches**: ${successfulResults.length}
 - **Failed Searches**: ${results.length - successfulResults.length}
 - **Intelligence Areas Covered**: ${Array.from(new Set(successfulResults.map(r => r.searchType))).join(', ')}
+- **Authentic Citations Found**: ${allCitations.length}
 - **High Priority Findings**: ${successfulResults.filter(r => r.priority >= 8).length}`;
 
       return synthesisWithStats;

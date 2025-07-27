@@ -70,7 +70,7 @@ Structure your response with bold headings and provide specific, actionable insi
           "Authorization": `Bearer ${apiKey}`,
           "Content-Type": "application/json"
         },
-        timeout: 60000 // 60 second timeout for comprehensive research
+        timeout: 45000 // 45 second timeout to reduce hanging
       }
     );
 
