@@ -23,7 +23,7 @@ async function performSingleSearch(question: string, domains: string[] | null = 
     console.log(`Performing Perplexity ${useDeepResearch ? 'Deep Research' : 'search'} with query: "${question}"`);
     
     const payload = {
-      model: "sonar",
+      model: useDeepResearch ? "sonar-deep-research" : "sonar",
       messages: [
         {
           role: "system",
@@ -88,6 +88,8 @@ Structure your response with bold headings and provide specific, actionable insi
     }
 
     console.log(`Perplexity search successful. Content length: ${content.length}, Citations: ${citations.length}`);
+    console.log(`First 200 chars of content: ${content.substring(0, 200)}...`);
+    console.log(`Citations received: ${JSON.stringify(citations.slice(0, 3))}`);
 
     return {
       content,

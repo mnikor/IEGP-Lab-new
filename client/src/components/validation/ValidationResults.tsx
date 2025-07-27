@@ -388,7 +388,8 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
             </div>
           )}
           
-          {/* Current Evidence Section - enhanced to show research intelligence data */}
+          {/* Current Evidence Section - only show when no research results exist */}
+          {!researchResults && (
           <div className="mb-6">
             <h3 className="text-md font-medium text-neutral-dark mb-3">Current Evidence Summary</h3>
             {results.currentEvidence ? (
@@ -418,6 +419,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
               </div>
             )}
           </div>
+          )}
         </div>
       </CardContent>
       

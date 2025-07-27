@@ -152,13 +152,14 @@ export class ResearchExecutor {
     console.log(`Executing search: ${search.query}`);
     
     try {
-      // Execute Perplexity Deep Research with enhanced query for ongoing studies
+      // Execute Perplexity search with enhanced query
       const enhancedQuery = this.enhanceQueryForSearchType(search);
-      console.log(`Starting Perplexity Deep Research for: "${enhancedQuery}"`);
+      console.log(`Starting Perplexity search for: "${enhancedQuery}"`);
       
       const targetDomains = this.getSearchDomains(search.type);
-      const perplexityResult = await perplexityWebSearch(enhancedQuery, targetDomains, true); // Enable deep research mode
-      console.log(`Perplexity Deep Research completed for: "${search.query}"`);
+      const useDeepResearch = search.priority >= 8; // Use deep research for high priority searches
+      const perplexityResult = await perplexityWebSearch(enhancedQuery, targetDomains, useDeepResearch);
+      console.log(`Perplexity search completed for: "${search.query}". Content length: ${perplexityResult.content?.length || 0}, Citations: ${perplexityResult.citations?.length || 0}`);
       
       // Process and structure the results
       const synthesizedInsights = await this.processSingleSearchResult(search, perplexityResult);
