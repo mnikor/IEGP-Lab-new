@@ -80,21 +80,15 @@ const Reports: React.FC = () => {
       proposal.generatedConcepts?.forEach(concept => {
         if (concept.id) {
           conceptIds.add(concept.id);
-          console.log('Adding concept ID to exclusion list:', concept.id);
         }
       });
     });
-    console.log('Excluded concept IDs:', Array.from(conceptIds));
     return conceptIds;
   }, [savedProposals]);
 
   const filteredConcepts = React.useMemo(() => {
     if (!concepts) return [];
-    const filtered = concepts.filter(concept => !conceptsInProposals.has(concept.id));
-    console.log('Original concepts count:', concepts.length);
-    console.log('Filtered concepts count:', filtered.length);
-    console.log('Filtered concept IDs:', filtered.map(c => c.id));
-    return filtered;
+    return concepts.filter(concept => !conceptsInProposals.has(concept.id));
   }, [concepts, conceptsInProposals]);
 
   const handleDownloadPDF = async (proposal: SavedStudyProposal) => {
