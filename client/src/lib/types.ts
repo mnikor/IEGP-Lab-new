@@ -241,8 +241,8 @@ export interface ValidationResults {
   title: string;
   originalFileName: string;
   extractedPico: PicoData;
-  benchmarkDeltas: BenchmarkDelta[];
-  riskFlags: RiskFlag[];
+  benchmarkDeltas?: BenchmarkDelta[];
+  riskFlags?: RiskFlag[];
   revisedEconomics: RevisedEconomics;
   swotAnalysis: SwotAnalysis;
   strategicGoals: StrategicGoal[];
@@ -258,6 +258,7 @@ export interface ValidationResults {
   // Research intelligence integration fields
   usedExistingResearch?: boolean;
   existingResearchData?: any;
+  researchResults?: any; // Research results data for backward compatibility
   drugName?: string;
   indication?: string;
   

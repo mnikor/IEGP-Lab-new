@@ -20,6 +20,10 @@ interface ValidationResultsProps {
 }
 
 const ValidationResults: React.FC<ValidationResultsProps> = ({ results, researchResults }) => {
+  // Early return if results is not available
+  if (!results) {
+    return <div>Loading validation results...</div>;
+  }
   const { toast } = useToast();
   const [showDeltasInfo, setShowDeltasInfo] = React.useState(true);
   const [showRiskInfo, setShowRiskInfo] = React.useState(false);
@@ -160,6 +164,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
           </div>
 
           {/* Benchmark Deltas */}
+          {results.benchmarkDeltas && results.benchmarkDeltas.length > 0 && (
           <div>
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-md font-medium text-neutral-dark">Benchmark Deltas</h3>
@@ -218,8 +223,10 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
               ))}
             </div>
           </div>
+          )}
 
           {/* Risk Flags */}
+          {results.riskFlags && results.riskFlags.length > 0 && (
           <div>
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-md font-medium text-neutral-dark">Risk Flags</h3>
@@ -251,7 +258,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
             )}
             
             <div className="space-y-2">
-              {results.riskFlags.map((flag, index) => (
+              {(results.riskFlags || []).map((flag, index) => (
                 <div key={index} className="p-3 border rounded-md">
                   <div className="flex items-start">
                     <AlertTriangle className={`h-5 w-5 mr-2 
@@ -282,6 +289,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
               ))}
             </div>
           </div>
+          )}
 
           {/* Revised Economics */}
           <div>
