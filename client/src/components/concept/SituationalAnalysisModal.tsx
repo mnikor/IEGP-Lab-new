@@ -68,7 +68,8 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
     return processed;
   };
 
-  const getSearchTypeColor = (type: string) => {
+  const getSearchTypeColor = (type: string | undefined) => {
+    if (!type) return 'bg-gray-100 text-gray-700 border-gray-200';
     switch (type.toLowerCase()) {
       case 'regulatory':
         return 'bg-red-100 text-red-700 border-red-200';
@@ -94,7 +95,7 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
   ) : 0;
 
   const getSearchesByType = (type: string) => 
-    researchResults ? researchResults.filter(result => result.searchType?.toLowerCase() === type.toLowerCase()) : [];
+    researchResults ? researchResults.filter(result => result.searchType?.toLowerCase?.() === type.toLowerCase()) : [];
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-auto">

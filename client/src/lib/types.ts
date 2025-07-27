@@ -255,6 +255,12 @@ export interface ValidationResults {
   feasibilityData?: FeasibilityData;
   currentEvidence?: CurrentEvidence;
   
+  // Research intelligence integration fields
+  usedExistingResearch?: boolean;
+  existingResearchData?: any;
+  drugName?: string;
+  indication?: string;
+  
   createdAt?: string;
 }
 
