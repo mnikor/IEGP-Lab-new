@@ -128,19 +128,14 @@ const Reports: React.FC = () => {
         <p className="text-neutral-medium mt-1">Access and manage your generated reports</p>
       </div>
 
-      <div className="mb-6 border-b border-neutral-light">
-        <Tabs defaultValue="saved-proposals">
-          <TabsList className="border-b-0">
-            <TabsTrigger value="saved-proposals">Saved Proposals</TabsTrigger>
-            <TabsTrigger value="concepts">Generated Concepts</TabsTrigger>
-            <TabsTrigger value="validations">Validated Synopses</TabsTrigger>
-          </TabsList>
-          <TabsContent value="saved-proposals">
-            <div className="grid gap-4 mt-6">
-              {loadingSavedProposals ? (
-                <p>Loading saved proposals...</p>
-              ) : savedProposals && savedProposals.length > 0 ? (
-                savedProposals.map((proposal) => (
+      {/* Saved Proposals Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Saved Proposals</h2>
+        <div className="grid gap-4">
+          {loadingSavedProposals ? (
+            <p>Loading saved proposals...</p>
+          ) : savedProposals && savedProposals.length > 0 ? (
+            savedProposals.map((proposal) => (
                   <Card key={proposal.id} className="hover:shadow-md transition-shadow">
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -244,8 +239,16 @@ const Reports: React.FC = () => {
                   </CardContent>
                 </Card>
               )}
-            </div>
-          </TabsContent>
+        </div>
+      </div>
+
+      {/* Other Reports Section */}
+      <div className="mb-6 border-b border-neutral-light">
+        <Tabs defaultValue="concepts">
+          <TabsList className="border-b-0">
+            <TabsTrigger value="concepts">Generated Concepts</TabsTrigger>
+            <TabsTrigger value="validations">Validated Synopses</TabsTrigger>
+          </TabsList>
           <TabsContent value="concepts">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
               {loadingConcepts ? (
