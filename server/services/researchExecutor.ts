@@ -651,6 +651,44 @@ ${citationSection}
     return regKeywords.filter(keyword => content.toLowerCase().includes(keyword));
   }
 
+  private getValidationSearchDomains(category?: string): string[] {
+    const baseDomains = [
+      "clinicaltrials.gov",
+      "pubmed.ncbi.nlm.nih.gov", 
+      "accessdata.fda.gov",
+      "ema.europa.eu"
+    ];
+
+    const categoryDomains: Record<string, string[]> = {
+      patent: [
+        "patents.google.com",
+        "epo.org",
+        "uspto.gov",
+        "accessdata.fda.gov" // Orange Book
+      ],
+      market_access: [
+        "nice.org.uk",
+        "iqwig.de",
+        "has-sante.fr",
+        "aifa.gov.it",
+        "aemps.gob.es",
+        "icer.org"
+      ],
+      regulatory: [
+        "accessdata.fda.gov",
+        "ema.europa.eu", 
+        "fda.gov",
+        "clinicaltrials.gov"
+      ]
+    };
+
+    if (category && categoryDomains[category]) {
+      return [...baseDomains, ...categoryDomains[category]];
+    }
+
+    return baseDomains;
+  }
+
   /**
    * Execute validation-focused research with risk assessment
    */
@@ -709,15 +747,9 @@ ${citationSection}
     try {
       console.log(`Executing validation search: ${search.query}`);
       
-      // Use cost-effective Perplexity search (not deep research)
-      const searchResult = await perplexityWebSearch(search.query, [
-        "clinicaltrials.gov",
-        "pubmed.ncbi.nlm.nih.gov", 
-        "accessdata.fda.gov",
-        "ema.europa.eu",
-        "nice.org.uk",
-        "icer.org"
-      ], false); // false = regular sonar, not expensive deep research
+      // Use enhanced domain list for comprehensive validation research
+      const searchDomains = this.getValidationSearchDomains(search.category);
+      const searchResult = await perplexityWebSearch(search.query, searchDomains, false); // false = regular sonar, not expensive deep research
 
       return {
         search,

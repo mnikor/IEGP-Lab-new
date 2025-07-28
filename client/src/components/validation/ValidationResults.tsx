@@ -53,11 +53,29 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
       }
     }
     
+    // Check for currentEvidence as a fallback to enable Situational Analysis
+    if (results.currentEvidence && results.currentEvidence.summary) {
+      return [{
+        search: { query: "Current Evidence Summary" },
+        content: results.currentEvidence.summary,
+        citations: results.currentEvidence.citations || []
+      }];
+    }
+    
     return null;
   };
 
   const finalResearchResults = getResearchResults();
-  const hasValidResearch = finalResearchResults && finalResearchResults.length > 0;
+  const hasValidResearch = finalResearchResults && Array.isArray(finalResearchResults) && finalResearchResults.length > 0;
+  
+  // Debug logging to understand research data availability
+  console.log('Research data debug:', {
+    propsResearchResults: researchResults,
+    resultsResearchResults: results.researchResults,
+    finalResearchResults,
+    hasValidResearch,
+    currentEvidence: results.currentEvidence
+  });
 
   const exportPDF = async () => {
     try {

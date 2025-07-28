@@ -131,14 +131,36 @@ Respond in JSON format:
     return [
       {
         id: uuidv4(),
-        query: `${drugName} patent expiration timeline biosimilar competition`,
+        query: `${drugName} patent expiration timeline "Orange Book" site:accessdata.fda.gov`,
         type: "strategic",
         priority: 9,
-        rationale: `Critical for understanding commercial viability timeline and competitive threats`,
+        rationale: `Critical US patent data from FDA Orange Book for commercial viability`,
         enabled: true,
         userModified: false,
         category: "patent",
         riskType: "showstopper"
+      },
+      {
+        id: uuidv4(),
+        query: `${drugName} patent protection European patent office EPO site:epo.org`,
+        type: "strategic",
+        priority: 9,
+        rationale: `European patent landscape and protection timeline`,
+        enabled: true,
+        userModified: false,
+        category: "patent",
+        riskType: "showstopper"
+      },
+      {
+        id: uuidv4(),
+        query: `${drugName} biosimilar competition approval timeline Google Patents`,
+        type: "strategic",
+        priority: 8,
+        rationale: `Comprehensive patent and biosimilar intelligence across databases`,
+        enabled: true,
+        userModified: false,
+        category: "patent",
+        riskType: "moderate"
       },
       {
         id: uuidv4(),
@@ -164,14 +186,91 @@ Respond in JSON format:
       },
       {
         id: uuidv4(),
-        query: `HTA NICE ICER cost effectiveness ${indication} ${drugName.split(' ')[0]}`,
+        query: `HTA NICE cost effectiveness ${indication} ${drugName.split(' ')[0]} site:nice.org.uk`,
         type: "strategic",
-        priority: 7,
-        rationale: `Evaluate market access and reimbursement precedents`,
+        priority: 8,
+        rationale: `UK market access and reimbursement assessment`,
         enabled: true,
         userModified: false,
         category: "market_access",
         riskType: "moderate"
+      },
+      {
+        id: uuidv4(),
+        query: `IQWiG G-BA ${drugName.split(' ')[0]} Germany reimbursement site:iqwig.de`,
+        type: "strategic",
+        priority: 8,
+        rationale: `German market access through IQWiG/G-BA evaluation`,
+        enabled: true,
+        userModified: false,
+        category: "market_access",
+        riskType: "moderate"
+      },
+      {
+        id: uuidv4(),
+        query: `HAS France ${drugName.split(' ')[0]} ${indication} reimbursement site:has-sante.fr`,
+        type: "strategic",
+        priority: 8,
+        rationale: `French market access through HAS evaluation`,
+        enabled: true,
+        userModified: false,
+        category: "market_access",
+        riskType: "moderate"
+      },
+      {
+        id: uuidv4(),
+        query: `AIFA Italy ${drugName.split(' ')[0]} ${indication} approval reimbursement`,
+        type: "strategic",
+        priority: 7,
+        rationale: `Italian market access and regulatory status`,
+        enabled: true,
+        userModified: false,
+        category: "market_access",
+        riskType: "moderate"
+      },
+      {
+        id: uuidv4(),
+        query: `AEMPS Spain ${drugName.split(' ')[0]} ${indication} market access pricing`,
+        type: "strategic",
+        priority: 7,
+        rationale: `Spanish market access through AEMPS regulatory review`,
+        enabled: true,
+        userModified: false,
+        category: "market_access",
+        riskType: "moderate"
+      },
+      {
+        id: uuidv4(),
+        query: `${drugName} all approved indications formulations FDA label site:accessdata.fda.gov`,
+        type: "regulatory",
+        priority: 9,
+        rationale: `Comprehensive US regulatory profile including all approved uses`,
+        enabled: true,
+        userModified: false,
+        category: "regulatory",
+        riskType: "informational"
+      },
+      {
+        id: uuidv4(),
+        query: `${drugName} EMA approval indications SmPC EPAR site:ema.europa.eu`,
+        type: "regulatory",
+        priority: 9,
+        rationale: `Complete European regulatory profile and approved indications`,
+        enabled: true,
+        userModified: false,
+        category: "regulatory",
+        riskType: "informational"
+      },
+      {
+        id: uuidv4(),
+        query: `${drugName} subcutaneous IV oral formulation approval status`,
+        type: "regulatory",
+        priority: 8,
+        rationale: `All formulation types and administration routes approved`,
+        enabled: true,
+        userModified: false,
+        category: "regulatory",
+        riskType: "informational"
       }
     ];
   }
