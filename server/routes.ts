@@ -21,6 +21,7 @@ import { generatePdfReport, generateSingleConceptPdfReport, generatePptxReport, 
 import { ResearchStrategyGenerator } from "./services/researchStrategyGenerator";
 import { ResearchExecutor } from "./services/researchExecutor";
 import { ValidationResearchGenerator } from "./services/validationResearchGenerator";
+import { ResearchExecutor } from "./services/researchExecutor";
 import { 
   researchStrategyRequestSchema, 
   amendStrategyRequestSchema, 
@@ -487,8 +488,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Step 2: Extract PICO from the document text
       const extractedPico = await extractPicoFromText(text);
       
-      // Step 3: Use existing research if available, otherwise perform web search
+      // Step 3: Use existing research if available, otherwise perform comprehensive research
       let searchResults;
+      let detailedResearchResults = null;
       
       if (existingResearchResults?.results) {
         console.log("Using existing Research Intelligence data for validation");
@@ -499,31 +501,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ).join('\n\n'),
           citations: existingResearchResults.results.flatMap((result: any) => result.citations || [])
         };
+        
+        // Store the detailed research for Situational Analysis
+        detailedResearchResults = existingResearchResults.results;
       } else {
-        console.log("No existing research - performing new web search for validation");
-        // Create a more detailed query similar to the one used in concept generation
-        const strategicGoalsFocus = data.strategicGoals.map(goal => goal.replace('_', ' ')).join(' and ');
+        console.log("No existing research - performing comprehensive validation research");
         
-        // Use a more detailed query similar to concept generation
-        const searchQuery = `Provide clinical evidence benchmarks for ${data.drugName} in ${data.indication} focusing on ${strategicGoalsFocus}. 
-        Include details about: 
-        1. Optimal study design${data.studyPhasePref ? ` (Phase ${data.studyPhasePref})` : ''} 
-        2. Typical patient populations and sample sizes 
-        3. Common comparators used in similar studies
-        4. Standard endpoints and outcomes
-        5. Average costs and durations for similar trials
-        6. Common inclusion/exclusion criteria 
-        7. Geographic patterns/differences in conducting these trials`;
+        // Use ValidationResearchGenerator for comprehensive research  
+        const validationResearchGenerator = new ValidationResearchGenerator();
+        const comprehensiveResearch = await validationResearchGenerator.generateValidationQueries({
+          drugName: data.drugName,
+          indication: data.indication,
+          strategicGoals: data.strategicGoals
+        });
         
-        // Use cost-effective regular Sonar with focused domains
-        searchResults = await perplexityWebSearch(searchQuery, [
-          "pubmed.ncbi.nlm.nih.gov",
-          "clinicaltrials.gov", 
-          "nejm.org",
-          "accessdata.fda.gov",
-          "ema.europa.eu",
-          "nature.com"
-        ], true); // Enable deep research mode for comprehensive validation
+        // Execute the research strategy
+        const researchExecutor = new ResearchExecutor();
+        const researchResults = await researchExecutor.executeSearches(comprehensiveResearch.searches);
+        
+        // Format for AI analysis
+        searchResults = {
+          content: researchResults.map((result: any) => 
+            `**${result.searchQuery}**\n${result.rawResults.content || result.content || ''}`
+          ).join('\n\n'),
+          citations: researchResults.flatMap((result: any) => result.rawResults?.citations || result.citations || [])
+        };
+        
+        // Store detailed research results for Situational Analysis
+        detailedResearchResults = researchResults.map((result: any) => ({
+          id: result.id || Math.random().toString(36).substr(2, 9),
+          searchQuery: result.searchQuery,
+          searchType: result.searchType || 'therapeutic',
+          priority: result.priority || 1,
+          rawResults: result.rawResults || { content: result.content, citations: result.citations },
+          synthesizedInsights: result.synthesizedInsights,
+          keyFindings: result.keyFindings,
+          designImplications: result.designImplications,
+          strategicRecommendations: result.strategicRecommendations,
+          content: result.rawResults?.content || result.content,
+          citations: result.rawResults?.citations || result.citations || []
+        }));
       }
       
       // Include additional context in analysis if provided
@@ -594,7 +611,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }))
       };
       
-      // Step 5: Save the validation to the database
+      // Step 5: Save the validation to the database with detailed research results
       const savedValidation = await storage.createSynopsisValidation({
         ...validationResults,
         strategicGoals: data.strategicGoals || [], // Ensure strategic goals are array, not null
@@ -602,7 +619,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         indication: data.indication,
         originalFileName: originalFileName,
         studyIdeaText: data.studyIdeaText,
-        additionalContext: data.additionalContext
+        additionalContext: data.additionalContext,
+        researchResults: detailedResearchResults ? JSON.stringify(detailedResearchResults) : null // Store detailed research for Situational Analysis
       });
 
       // Add metadata about research data usage for client-side handling
