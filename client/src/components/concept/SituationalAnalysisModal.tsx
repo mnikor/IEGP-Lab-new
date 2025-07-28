@@ -241,7 +241,7 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
                         )}
 
                         <div className="mt-3 text-xs text-gray-500">
-                          {result.rawResults.citations?.length || 0} sources referenced
+                          {(result.rawResults?.citations?.length || result.citations?.length || 0)} sources referenced
                         </div>
                       </CardContent>
                     </Card>
@@ -257,10 +257,10 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
                         <CardTitle className="text-base">{result.searchQuery}</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        {result.rawResults.content && (
+                        {(result.rawResults?.content || result.content) && (
                           <div 
                             className="text-sm text-gray-700 leading-relaxed max-w-none overflow-hidden"
-                            dangerouslySetInnerHTML={{ __html: processMarkdown(result.rawResults.content) }}
+                            dangerouslySetInnerHTML={{ __html: processMarkdown(result.rawResults?.content || result.content) }}
                           />
                         )}
                         {result.strategicRecommendations && result.strategicRecommendations.length > 0 && (
@@ -290,10 +290,10 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
                         <CardTitle className="text-base">{result.searchQuery}</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        {result.rawResults.content && (
+                        {(result.rawResults?.content || result.content) && (
                           <div 
                             className="text-sm text-gray-700 leading-relaxed max-w-none overflow-hidden"
-                            dangerouslySetInnerHTML={{ __html: processMarkdown(result.rawResults.content) }}
+                            dangerouslySetInnerHTML={{ __html: processMarkdown(result.rawResults?.content || result.content) }}
                           />
                         )}
                       </CardContent>
@@ -324,12 +324,12 @@ export const SituationalAnalysisModal: React.FC<SituationalAnalysisModalProps> =
                         <div key={result.id} className="mb-6 p-4 border border-gray-200 rounded-lg">
                           <h4 className="font-semibold text-gray-800 mb-2">{result.searchQuery}</h4>
                           <div className="text-xs text-gray-500 mb-3">
-                            {result.rawResults.citations?.length || 0} citations
+                            {(result.rawResults?.citations?.length || result.citations?.length || 0)} citations
                           </div>
                           
-                          {result.rawResults.citations && result.rawResults.citations.length > 0 ? (
+                          {(result.rawResults?.citations && result.rawResults.citations.length > 0) || (result.citations && result.citations.length > 0) ? (
                             <ol className="space-y-2 text-sm">
-                              {result.rawResults.citations.map((citation, idx) => (
+                              {(result.rawResults?.citations || result.citations || []).map((citation, idx) => (
                                 <li key={idx} className="flex items-start">
                                   <span className="text-gray-400 mr-2 flex-shrink-0">{idx + 1}.</span>
                                   <a

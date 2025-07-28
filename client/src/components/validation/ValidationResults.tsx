@@ -68,14 +68,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
   const finalResearchResults = getResearchResults();
   const hasValidResearch = finalResearchResults && Array.isArray(finalResearchResults) && finalResearchResults.length > 0;
   
-  // Debug logging to understand research data availability
-  console.log('Research data debug:', {
-    propsResearchResults: researchResults,
-    resultsResearchResults: results.researchResults,
-    finalResearchResults,
-    hasValidResearch,
-    currentEvidence: results.currentEvidence
-  });
+
 
   const exportPDF = async () => {
     try {
@@ -124,10 +117,7 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
           {hasValidResearch && (
             <Button 
               variant="outline" 
-              onClick={() => {
-                console.log('Situational Analysis clicked, finalResearchResults:', finalResearchResults);
-                setShowSituationalAnalysis(true);
-              }}
+              onClick={() => setShowSituationalAnalysis(true)}
               className="flex items-center space-x-2"
             >
               <Search className="h-4 w-4" />
