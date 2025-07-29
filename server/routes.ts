@@ -21,7 +21,6 @@ import { generatePdfReport, generateSingleConceptPdfReport, generatePptxReport, 
 import { ResearchStrategyGenerator } from "./services/researchStrategyGenerator";
 import { ResearchExecutor } from "./services/researchExecutor";
 import { ValidationResearchGenerator } from "./services/validationResearchGenerator";
-import { ResearchExecutor } from "./services/researchExecutor";
 import { 
   researchStrategyRequestSchema, 
   amendStrategyRequestSchema, 

@@ -88,6 +88,7 @@ export const synopsisValidations = pgTable("synopsis_validations", {
   mcdaScores: json("mcda_scores"),
   feasibilityData: json("feasibility_data"),
   currentEvidence: json("current_evidence"),
+  researchResults: json("research_results"), // Detailed research data for Situational Analysis
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
