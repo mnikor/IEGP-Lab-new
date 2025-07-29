@@ -55,10 +55,18 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
     
     // Check for currentEvidence as a fallback to enable Situational Analysis
     if (results.currentEvidence && results.currentEvidence.summary) {
+      console.log('Using currentEvidence fallback for Situational Analysis');
       return [{
-        search: { query: "Current Evidence Summary" },
+        id: 'current-evidence',
+        searchQuery: "Current Evidence Summary",
+        searchType: 'therapeutic',
+        priority: 1,
+        rawResults: {
+          content: results.currentEvidence.summary,
+          citations: results.currentEvidence.citations?.map(c => c.url || c.title || c) || []
+        },
         content: results.currentEvidence.summary,
-        citations: results.currentEvidence.citations || []
+        citations: results.currentEvidence.citations?.map(c => c.url || c.title || c) || []
       }];
     }
     
@@ -67,6 +75,14 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
 
   const finalResearchResults = getResearchResults();
   const hasValidResearch = finalResearchResults && Array.isArray(finalResearchResults) && finalResearchResults.length > 0;
+  
+  console.log('Validation research debug:', {
+    finalResearchResults: finalResearchResults?.length || 0,
+    hasValidResearch,
+    currentEvidenceExists: !!results.currentEvidence,
+    currentEvidenceSummaryExists: !!results.currentEvidence?.summary,
+    researchResultsExists: !!results.researchResults
+  });
   
 
 
