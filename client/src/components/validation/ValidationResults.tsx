@@ -54,7 +54,14 @@ const ValidationResults: React.FC<ValidationResultsProps> = ({ results, research
     }
     
     // Check for currentEvidence as a fallback to enable Situational Analysis
+    // But only if the content is meaningful (not just "undefined" from failed searches)
     if (results.currentEvidence && results.currentEvidence.summary) {
+      // Don't show Situational Analysis if the content is just failed search results with "undefined"
+      if (results.currentEvidence.summary.includes('undefined') && results.currentEvidence.summary.split('undefined').length > 5) {
+        console.log('Skipping currentEvidence - appears to contain failed search results');
+        return null;
+      }
+      
       console.log('Using currentEvidence fallback for Situational Analysis');
       return [{
         id: 'current-evidence',

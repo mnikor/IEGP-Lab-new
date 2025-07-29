@@ -496,13 +496,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Use the existing research results instead of duplicating search
         searchResults = {
           content: existingResearchResults.results.map((result: any) => 
-            `**${result.search.query}**\n${result.content}`
+            `**${result.search?.query || result.searchQuery}**\n${result.content || result.rawResults?.content || ''}`
           ).join('\n\n'),
-          citations: existingResearchResults.results.flatMap((result: any) => result.citations || [])
+          citations: existingResearchResults.results.flatMap((result: any) => 
+            result.citations || result.rawResults?.citations || []
+          )
         };
         
-        // Store the detailed research for Situational Analysis
-        detailedResearchResults = existingResearchResults.results;
+        // Store the detailed research for Situational Analysis (properly formatted)
+        detailedResearchResults = existingResearchResults.results.map((result: any) => ({
+          id: result.id || Math.random().toString(36).substr(2, 9),
+          searchQuery: result.search?.query || result.searchQuery || 'Research Query',
+          searchType: result.search?.type || result.searchType || 'therapeutic',
+          priority: result.search?.priority || result.priority || 1,
+          rawResults: {
+            content: result.content || result.rawResults?.content || '',
+            citations: result.citations || result.rawResults?.citations || []
+          },
+          synthesizedInsights: result.synthesizedInsights,
+          keyFindings: result.keyFindings,
+          designImplications: result.designImplications,
+          strategicRecommendations: result.strategicRecommendations,
+          content: result.content || result.rawResults?.content || '',
+          citations: result.citations || result.rawResults?.citations || []
+        }));
       } else {
         console.log("No existing research - performing comprehensive validation research");
         
