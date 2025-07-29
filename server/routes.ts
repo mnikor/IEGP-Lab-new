@@ -516,7 +516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let searchResults;
       let detailedResearchResults = null;
       
-      if (existingResearchResults?.results && Array.isArray(existingResearchResults.results) && existingResearchResults.results.length > 0) {
+      if (existingResearchResults && existingResearchResults.results && Array.isArray(existingResearchResults.results) && existingResearchResults.results.length > 0) {
         console.log("Using existing Research Intelligence data for validation");
         
         // Check if the research results have meaningful content
@@ -563,7 +563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Use ValidationResearchGenerator for comprehensive research  
         const validationResearchGenerator = new ValidationResearchGenerator();
-        const comprehensiveResearch = await validationResearchGenerator.generateValidationQueries({
+        const comprehensiveResearch = await validationResearchGenerator.generateValidationResearch({
           drugName: data.drugName,
           indication: data.indication,
           strategicGoals: data.strategicGoals
@@ -571,7 +571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Execute the research strategy
         const researchExecutor = new ResearchExecutor();
-        const researchResults = await researchExecutor.executeSearches(comprehensiveResearch.searches);
+        const researchResults = await researchExecutor.executeResearch(comprehensiveResearch.searches);
         
         // Format for AI analysis
         searchResults = {
