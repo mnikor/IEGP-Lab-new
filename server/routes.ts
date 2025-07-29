@@ -431,8 +431,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           existingResearchResults = JSON.parse(req.body.researchResults);
           console.log("Research Intelligence provided - enhancing validation with existing data");
+          console.log("Research results structure:", {
+            hasResults: !!existingResearchResults?.results,
+            resultsCount: existingResearchResults?.results?.length || 0,
+            firstResultHasContent: !!existingResearchResults?.results?.[0]?.content
+          });
         } catch (e) {
           console.warn("Failed to parse research results:", e);
+        }
+      }
+      
+      // Also check for researchStrategyId parameter
+      if (req.body.researchStrategyId && !existingResearchResults) {
+        try {
+          const strategyId = parseInt(req.body.researchStrategyId);
+          console.log("Looking for research strategy ID:", strategyId);
+          const strategy = await storage.getResearchStrategy(strategyId);
+          if (strategy) {
+            existingResearchResults = strategy;
+            console.log("Found research strategy:", {
+              hasResults: !!strategy.results,
+              resultsCount: strategy.results?.length || 0
+            });
+          } else {
+            console.log("No research strategy found for ID:", strategyId);
+          }
+        } catch (e) {
+          console.warn("Failed to fetch research strategy:", e);
         }
       }
       
@@ -491,37 +516,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let searchResults;
       let detailedResearchResults = null;
       
-      if (existingResearchResults?.results) {
+      if (existingResearchResults?.results && Array.isArray(existingResearchResults.results) && existingResearchResults.results.length > 0) {
         console.log("Using existing Research Intelligence data for validation");
-        // Use the existing research results instead of duplicating search
-        searchResults = {
-          content: existingResearchResults.results.map((result: any) => 
-            `**${result.search?.query || result.searchQuery}**\n${result.content || result.rawResults?.content || ''}`
-          ).join('\n\n'),
-          citations: existingResearchResults.results.flatMap((result: any) => 
-            result.citations || result.rawResults?.citations || []
-          )
-        };
         
-        // Store the detailed research for Situational Analysis (properly formatted)
-        detailedResearchResults = existingResearchResults.results.map((result: any) => ({
-          id: result.id || Math.random().toString(36).substr(2, 9),
-          searchQuery: result.search?.query || result.searchQuery || 'Research Query',
-          searchType: result.search?.type || result.searchType || 'therapeutic',
-          priority: result.search?.priority || result.priority || 1,
-          rawResults: {
+        // Check if the research results have meaningful content
+        const hasRealContent = existingResearchResults.results.some((result: any) => {
+          const content = result.content || result.rawResults?.content || '';
+          return content && content.trim() && !content.includes('undefined');
+        });
+        
+        if (hasRealContent) {
+          console.log("Research results contain meaningful content - using for validation");
+          // Use the existing research results instead of duplicating search
+          searchResults = {
+            content: existingResearchResults.results.map((result: any) => 
+              `**${result.search?.query || result.searchQuery}**\n${result.content || result.rawResults?.content || ''}`
+            ).join('\n\n'),
+            citations: existingResearchResults.results.flatMap((result: any) => 
+              result.citations || result.rawResults?.citations || []
+            )
+          };
+          
+          // Store the detailed research for Situational Analysis (properly formatted)
+          detailedResearchResults = existingResearchResults.results.map((result: any) => ({
+            id: result.id || Math.random().toString(36).substr(2, 9),
+            searchQuery: result.search?.query || result.searchQuery || 'Research Query',
+            searchType: result.search?.type || result.searchType || 'therapeutic',
+            priority: result.search?.priority || result.priority || 1,
+            rawResults: {
+              content: result.content || result.rawResults?.content || '',
+              citations: result.citations || result.rawResults?.citations || []
+            },
+            synthesizedInsights: result.synthesizedInsights,
+            keyFindings: result.keyFindings,
+            designImplications: result.designImplications,
+            strategicRecommendations: result.strategicRecommendations,
             content: result.content || result.rawResults?.content || '',
             citations: result.citations || result.rawResults?.citations || []
-          },
-          synthesizedInsights: result.synthesizedInsights,
-          keyFindings: result.keyFindings,
-          designImplications: result.designImplications,
-          strategicRecommendations: result.strategicRecommendations,
-          content: result.content || result.rawResults?.content || '',
-          citations: result.citations || result.rawResults?.citations || []
-        }));
+          }));
+        } else {
+          console.log("Research results exist but contain no meaningful content - performing new research");
+          existingResearchResults = null; // Force new research
+        }
       } else {
-        console.log("No existing research - performing comprehensive validation research");
+        console.log("No existing research available - performing comprehensive validation research");
         
         // Use ValidationResearchGenerator for comprehensive research  
         const validationResearchGenerator = new ValidationResearchGenerator();
