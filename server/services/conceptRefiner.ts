@@ -195,10 +195,10 @@ Provide a JSON response with detailed cascading analysis:
 - strategicGoals, budgetCeilingEur, timelineCeilingMonths, salesImpactThreshold
 
 **Study Parameters (via feasibilityData):**
-- estimatedCost, timeline, sampleSize, recruitmentRate, completionRisk
+- feasibilityData.estimatedCost, feasibilityData.timeline, feasibilityData.sampleSize, feasibilityData.recruitmentRate, feasibilityData.completionRisk
 
 **Scoring & Analysis:**
-- mcdaScores (scientificValidity, clinicalImpact, commercialValue, feasibility, overall)
+- mcdaScores.scientificValidity, mcdaScores.clinicalImpact, mcdaScores.commercialValue, mcdaScores.feasibility, mcdaScores.overall
 
 **CRITICAL INSTRUCTION:** 
 Dynamically identify which elements need modification based on the interconnection patterns above. Don't limit yourself to obvious changes - think through ALL potential cascading effects to optimize the entire study concept holistically.
@@ -277,11 +277,29 @@ Be conversational and natural. Explain your reasoning for each cascading change.
       const changes: ConceptChange[] = [];
 
       for (const change of analysisResult.changes || []) {
-        const oldValue = (updatedConcept as any)[change.field];
-        const newValue = change.newValue;
+        let oldValue, newValue;
         
-        // Apply the change
-        (updatedConcept as any)[change.field] = newValue;
+        // Handle nested properties (e.g., feasibilityData.sampleSize)
+        if (change.field.includes('.')) {
+          const [parentField, childField] = change.field.split('.');
+          oldValue = (updatedConcept as any)[parentField]?.[childField];
+          newValue = change.newValue;
+          
+          // Ensure parent object exists
+          if (!(updatedConcept as any)[parentField]) {
+            (updatedConcept as any)[parentField] = {};
+          }
+          
+          // Apply the nested change
+          (updatedConcept as any)[parentField][childField] = newValue;
+        } else {
+          // Handle top-level properties
+          oldValue = (updatedConcept as any)[change.field];
+          newValue = change.newValue;
+          
+          // Apply the change
+          (updatedConcept as any)[change.field] = newValue;
+        }
         
         changes.push({
           field: change.field,
@@ -379,6 +397,45 @@ Be conversational and natural. Explain your reasoning for each cascading change.
       // Update the concept with new calculations
       updatedConcept.mcdaScores = newMcdaScores;
       updatedConcept.feasibilityData = newFeasibilityData;
+      
+      // Add feasibility data changes as explicit cascading changes
+      if (needsRecalculation && newFeasibilityData !== originalFeasibilityData) {
+        // Add sample size change if it was recalculated
+        if (newFeasibilityData.sampleSize !== (originalFeasibilityData as any)?.sampleSize) {
+          changes.push({
+            field: 'feasibilityData.sampleSize',
+            oldValue: (originalFeasibilityData as any)?.sampleSize || 0,
+            newValue: newFeasibilityData.sampleSize,
+            impact: {},
+            cascadingEffect: true,
+            impactArea: 'resource'
+          });
+        }
+        
+        // Add cost change if it was recalculated
+        if (newFeasibilityData.estimatedCost !== (originalFeasibilityData as any)?.estimatedCost) {
+          changes.push({
+            field: 'feasibilityData.estimatedCost',
+            oldValue: (originalFeasibilityData as any)?.estimatedCost || 0,
+            newValue: newFeasibilityData.estimatedCost,
+            impact: {},
+            cascadingEffect: true,
+            impactArea: 'financial'
+          });
+        }
+        
+        // Add timeline change if it was recalculated
+        if (newFeasibilityData.timeline !== (originalFeasibilityData as any)?.timeline) {
+          changes.push({
+            field: 'feasibilityData.timeline',
+            oldValue: (originalFeasibilityData as any)?.timeline || 0,
+            newValue: newFeasibilityData.timeline,
+            impact: {},
+            cascadingEffect: true,
+            impactArea: 'timeline'
+          });
+        }
+      }
 
       // Add impact analysis to changes
       changes.forEach(change => {

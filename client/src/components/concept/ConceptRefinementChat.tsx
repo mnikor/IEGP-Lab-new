@@ -188,7 +188,20 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
     if (typeof value === 'object' && value !== null) {
       return JSON.stringify(value, null, 2);
     }
+    if (typeof value === 'number' && value > 1000000) {
+      return `€${(value / 1000000).toFixed(1)}M`;
+    }
     return String(value);
+  };
+
+  const formatFieldName = (field: string): string => {
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      const parentName = parent.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      const childName = child.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      return `${parentName} → ${childName}`;
+    }
+    return field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
   };
 
   const renderMessage = (message: ChatMessage) => {
@@ -210,7 +223,7 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
               {message.changes.map((change, index) => (
                 <div key={index} className="bg-white rounded p-2 border text-xs">
                   <div className="font-medium text-primary mb-1">
-                    {change.field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                    {formatFieldName(change.field)}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
