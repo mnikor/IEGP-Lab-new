@@ -131,7 +131,7 @@ Provide a JSON response with detailed cascading analysis:
     try {
       // Use o3 reasoning model for intelligent cascading change analysis
       const response = await openai.chat.completions.create({
-        model: "o3-mini", // o3 reasoning model for intelligent analysis and cascading change detection
+        model: "o3", // o3 reasoning model for intelligent analysis and cascading change detection
         messages: [
           {
             role: "system",
