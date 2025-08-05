@@ -16,6 +16,12 @@ interface ChatMessage {
   content: string;
   timestamp: Date;
   changes?: ConceptChange[];
+  cascadingAnalysis?: {
+    timelineImpact?: string;
+    resourceImpact?: string;
+    regulatoryImpact?: string;
+    strategicImpact?: string;
+  };
 }
 
 interface ConceptChange {
@@ -37,6 +43,8 @@ interface ConceptChange {
       completionRisk?: number;
     };
   };
+  cascadingEffect?: boolean;
+  impactArea?: string;
 }
 
 interface ConceptRefinementChatProps {
@@ -53,7 +61,7 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
     {
       id: '1',
       type: 'system',
-      content: `I can help you refine "${concept.title}" by modifying study parameters like strategic objectives, endpoints, comparators, population criteria, geography, and budget constraints. Just describe what you'd like to change in natural language.`,
+      content: `I can help you refine "${concept.title}" using OpenAI's o3 reasoning model for intelligent cascading analysis. When you modify study parameters, I'll automatically identify what else should change and explain the interconnected reasoning. Just describe what you'd like to modify in natural language.`,
       timestamp: new Date()
     }
   ]);
@@ -111,14 +119,15 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
       }
 
       const result = await response.json();
-      const { updatedConcept, explanation, changes } = result;
+      const { updatedConcept, explanation, changes, cascadingAnalysis } = result;
 
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
         content: explanation,
         timestamp: new Date(),
-        changes: changes
+        changes: changes,
+        cascadingAnalysis: cascadingAnalysis
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -217,6 +226,15 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
                     </div>
                   </div>
                   
+                  {/* Cascading Effect Indicator */}
+                  {change.cascadingEffect && (
+                    <div className="mt-2">
+                      <Badge variant="secondary" className="text-xs">
+                        🔗 Cascading Effect: {change.impactArea || 'general'}
+                      </Badge>
+                    </div>
+                  )}
+                  
                   {change.impact.mcdaScores && (
                     <div className="mt-2">
                       <div className="text-xs text-gray-500 mb-1">MCDA Score Impact:</div>
@@ -231,6 +249,42 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Cascading Analysis Display */}
+          {message.cascadingAnalysis && (
+            <div className="mt-3 space-y-2">
+              <Separator />
+              <div className="text-xs font-medium text-gray-600 flex items-center gap-1">
+                <span className="text-blue-600">🧠</span> O3 Reasoning Analysis:
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs space-y-2">
+                {message.cascadingAnalysis.timelineImpact && (
+                  <div>
+                    <span className="font-medium text-blue-800">Timeline Impact:</span>
+                    <p className="text-blue-700 mt-1">{message.cascadingAnalysis.timelineImpact}</p>
+                  </div>
+                )}
+                {message.cascadingAnalysis.resourceImpact && (
+                  <div>
+                    <span className="font-medium text-green-800">Resource Impact:</span>
+                    <p className="text-green-700 mt-1">{message.cascadingAnalysis.resourceImpact}</p>
+                  </div>
+                )}
+                {message.cascadingAnalysis.regulatoryImpact && (
+                  <div>
+                    <span className="font-medium text-purple-800">Regulatory Impact:</span>
+                    <p className="text-purple-700 mt-1">{message.cascadingAnalysis.regulatoryImpact}</p>
+                  </div>
+                )}
+                {message.cascadingAnalysis.strategicImpact && (
+                  <div>
+                    <span className="font-medium text-orange-800">Strategic Impact:</span>
+                    <p className="text-orange-700 mt-1">{message.cascadingAnalysis.strategicImpact}</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           

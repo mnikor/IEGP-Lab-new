@@ -17,6 +17,12 @@ export interface RefinementResponse {
   updatedConcept: StudyConcept;
   explanation: string;
   changes: ConceptChange[];
+  cascadingAnalysis?: {
+    timelineImpact?: string;
+    resourceImpact?: string;
+    regulatoryImpact?: string;
+    strategicImpact?: string;
+  };
 }
 
 export interface ConceptChange {
@@ -38,6 +44,8 @@ export interface ConceptChange {
       completionRisk?: number;
     };
   };
+  cascadingEffect?: boolean;
+  impactArea?: string;
 }
 
 export class ConceptRefiner {
@@ -46,50 +54,59 @@ export class ConceptRefiner {
 
     // Use OpenAI to analyze the user's request and determine what changes to make
     const analysisPrompt = `
-You are an expert clinical study designer. Analyze the user's message to determine if they want to:
+You are an expert clinical study designer with advanced reasoning capabilities. Analyze the user's message and think through all cascading implications systematically.
 
-1. **MODIFY** the study concept (requires specific changes) - Examples:
-   - "Change study phase to III"
-   - "Add Brazil to geography" 
-   - "Set first patient date to July 2026"
-   - "Update strategic goals to include regulatory approval"
+**REASONING PROCESS:**
+1. Identify the primary change requested
+2. Systematically analyze what other study components should change as a result
+3. Consider timeline, resource, regulatory, and strategic implications
+4. Provide clear rationale for each cascading change
 
-2. **DISCUSS** the concept (advisory/explanatory) - Examples:
-   - "What do you think about this design?"
-   - "How can we improve recruitment?"
-   - "Explain the sample size calculation"
-   - "What are the risks?"
+**USER REQUEST:** "${message}"
 
-User's message: "${message}"
-
-Current study concept:
+**CURRENT STUDY CONCEPT:**
 - Title: ${currentConcept.title}
 - Drug: ${currentConcept.drugName}
 - Indication: ${currentConcept.indication}
+- Phase: ${currentConcept.studyPhase}
 - Strategic Goals: ${JSON.stringify(currentConcept.strategicGoals)}
-- Study Phase: ${currentConcept.studyPhase}
 - Geography: ${JSON.stringify(currentConcept.geography)}
-- Target Subpopulation: ${currentConcept.targetSubpopulation || 'None specified'}
-- Comparator Drugs: ${JSON.stringify(currentConcept.comparatorDrugs)}
-- PICO Data: ${JSON.stringify(currentConcept.picoData)}
-- Timeline dates: ${JSON.stringify({
-  anticipatedFpiDate: currentConcept.anticipatedFpiDate,
-  plannedDbLockDate: currentConcept.plannedDbLockDate,
-  expectedToplineDate: currentConcept.expectedToplineDate
-})}
+- Target Population: ${currentConcept.targetSubpopulation}
+- Current Sample Size: ${(currentConcept.feasibilityData as any)?.sampleSize || 'Unknown'}
+- Current Timeline: ${(currentConcept.feasibilityData as any)?.timeline || 'Unknown'} months
+- Current Cost: €${((currentConcept.feasibilityData as any)?.estimatedCost || 0) / 1000000}M
+- Anticipated FPI: ${(currentConcept as any).anticipatedFpiDate || 'Not set'}
 
-Provide a JSON response:
+**ANALYSIS INSTRUCTIONS:**
+Determine if this is a MODIFY or DISCUSS request:
+
+**MODIFY**: Specific changes requiring updates to study parameters
+**DISCUSS**: Advisory questions without parameter changes
+
+For MODIFY requests, systematically think through ALL cascading changes using your reasoning framework.
+
+Provide a JSON response with detailed cascading analysis:
 {
   "intent": "MODIFY" | "DISCUSS",
+  "primaryChange": "Description of the main requested change",
+  "reasoning": "Step-by-step analysis of cascading implications",
   "changes": [
     {
       "field": "fieldName",
       "newValue": "newValue", 
-      "rationale": "explanation for this change"
+      "rationale": "explanation for this specific change",
+      "cascadingEffect": true/false,
+      "impactArea": "timeline|resource|regulatory|strategic"
     }
   ],
-  "explanation": "Clear explanation of what was changed and why, OR detailed advice if DISCUSS",
-  "discussionOnly": boolean
+  "explanation": "Conversational explanation of all changes made and their interconnected rationale",
+  "discussionOnly": boolean,
+  "cascadingAnalysis": {
+    "timelineImpact": "How changes affect study timeline and milestones",
+    "resourceImpact": "How changes affect costs, sample size and resources", 
+    "regulatoryImpact": "How changes affect regulatory pathway and endpoints",
+    "strategicImpact": "How changes affect strategic goals and commercial objectives"
+  }
 }
 
 **Available fields for modification:**
@@ -103,17 +120,38 @@ Provide a JSON response:
 - anticipatedFpiDate (First Patient In date, e.g., "July 2026", "Q3 2025")
 - plannedDbLockDate (Database lock date)
 - expectedToplineDate (Topline results date)
+- primaryEndpoint (string - main efficacy endpoint)
+- secondaryEndpoints (array of secondary endpoints)
+- followUpDuration (number - months of follow-up)
+- recruitmentPeriod (number - months for recruitment)
 
 **Critical:** If intent is DISCUSS, set discussionOnly: true and provide comprehensive advice without making changes.
 `;
 
     try {
+      // Use o3 reasoning model for intelligent cascading change analysis
       const response = await openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        model: "o3-mini", // o3 reasoning model for intelligent analysis and cascading change detection
         messages: [
           {
             role: "system",
-            content: "You are an expert clinical study designer who helps refine study concepts based on user feedback. Be conversational and natural, avoiding phrases like 'user inquired' or 'user requested'. Respond only with valid JSON."
+            content: `You are an expert clinical study designer with deep reasoning capabilities. When analyzing changes to study concepts, think through all interconnected implications systematically.
+
+REASONING FRAMEWORK:
+1. Primary Change Analysis: Understand the requested modification
+2. Cascading Impact Assessment: Identify what other study components should change
+3. Timeline Implications: Consider how changes affect study duration, milestones
+4. Resource Impact: Analyze effects on sample size, costs, site requirements
+5. Regulatory Considerations: Assess implications for endpoints, comparators
+6. Strategic Alignment: Ensure changes support overall study goals
+
+CASCADING CHANGE EXAMPLES:
+- Phase change (II→III): Affects sample size, endpoints, regulatory pathway, costs, timeline
+- Geography expansion: Impacts recruitment, regulatory, costs, site count, timeline
+- Endpoint changes: Affects sample size calculations, study duration, regulatory strategy
+- FPI date changes: Cascades to data readout, LOE timelines, strategic planning
+
+Be conversational and natural. Explain your reasoning for each cascading change. Respond only with valid JSON.`
           },
           // Include conversation history for context
           ...conversationHistory.slice(-3).map(msg => ({
@@ -126,7 +164,7 @@ Provide a JSON response:
           }
         ],
         response_format: { type: "json_object" },
-        temperature: 0.3
+        temperature: 0.2 // Lower temperature for more systematic reasoning
       });
 
       const analysisResult = JSON.parse(response.choices[0].message.content || '{}');
@@ -135,8 +173,9 @@ Provide a JSON response:
       if (analysisResult.intent === 'DISCUSS' || analysisResult.discussionOnly) {
         return {
           updatedConcept: currentConcept, // No changes
-          explanation: analysisResult.explanation,
-          changes: []
+          explanation: analysisResult.explanation || "Provided analysis and recommendations without modifying the study concept.",
+          changes: [],
+          cascadingAnalysis: analysisResult.cascadingAnalysis || null
         };
       }
       
@@ -155,7 +194,9 @@ Provide a JSON response:
           field: change.field,
           oldValue,
           newValue,
-          impact: {} // Will be calculated below
+          impact: {}, // Will be calculated below
+          cascadingEffect: change.cascadingEffect || false,
+          impactArea: change.impactArea || 'general'
         });
       }
 
@@ -241,7 +282,8 @@ Provide a JSON response:
       return {
         updatedConcept,
         explanation: analysisResult.explanation || "Your study concept has been updated based on your request.",
-        changes
+        changes,
+        cascadingAnalysis: analysisResult.cascadingAnalysis || null
       };
 
     } catch (error) {

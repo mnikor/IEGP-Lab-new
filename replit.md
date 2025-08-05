@@ -30,6 +30,7 @@ The system is built as a full-stack application.
 - **Dynamic SWOT Analysis**: Generates intelligent, context-aware SWOT analyses using therapeutic area expertise and market intelligence.
 - **Research Strategy Integration**: Seamlessly integrates AI-driven research strategy into workflows, synthesizing findings from external research.
 - **AI Chat Recalculation**: AI chat intelligently detects user intent, distinguishing between actionable changes and advisory discussions, and triggers recalculations for critical study parameter changes while preserving conversational context.
+- **OpenAI o3 Reasoning Integration**: Utilizes OpenAI's o3-mini reasoning model for intelligent cascading change analysis, automatically identifying and implementing interconnected parameter modifications while providing detailed rationale for each cascading effect across timeline, resource, regulatory, and strategic dimensions.
 
 ### System Design Choices
 The architecture emphasizes modularity with distinct services:
@@ -44,7 +45,7 @@ The architecture emphasizes modularity with distinct services:
 - `Aggregator`: Synthesizes data for final concept optimization.
 
 ## External Dependencies
-- **OpenAI**: Used for AI-powered concept generation, analysis, intent detection, and synthesis.
+- **OpenAI**: Used for AI-powered concept generation, analysis, intent detection, and synthesis. Now includes o3-mini reasoning model for intelligent cascading change analysis.
 - **Perplexity API**: Specifically `sonar` and `sonar-deep-research` models, integrated for real-time, comprehensive clinical evidence research and market intelligence.
 - **ClinicalTrials.gov API**: Utilized for real-time validation of clinical trial numbers (NCTs).
 - **PubMed**: Referenced for authentic citations in research intelligence.
