@@ -49,6 +49,58 @@ export interface ConceptChange {
 }
 
 export class ConceptRefiner {
+  // Helper function to calculate LOE-related fields when timeline dates change
+  private calculateLoeTimelines(concept: StudyConcept, changes: any[]): { timeToLoe?: number; updatedConcept: StudyConcept } {
+    let updatedConcept = { ...concept };
+    let calculatedTimeToLoe: number | undefined;
+
+    // Check if FPI date or LOE date was changed
+    const fpiChange = changes.find(c => c.field === 'anticipatedFpiDate');
+    const loeChange = changes.find(c => c.field === 'globalLoeDate');
+
+    if (fpiChange || loeChange) {
+      try {
+        // Get the updated FPI date
+        const fpiDate = fpiChange ? fpiChange.newValue : concept.anticipatedFpiDate;
+        // Get the updated LOE date  
+        const loeDate = loeChange ? loeChange.newValue : concept.globalLoeDate;
+
+        if (fpiDate && loeDate) {
+          // Parse FPI date (handle both formats)
+          let parsedFpiDate: Date;
+          if (fpiDate.includes('-') && fpiDate.length >= 10) {
+            parsedFpiDate = new Date(fpiDate);
+          } else {
+            // Handle "July 2026" format - default to end of month
+            const testDate = new Date(fpiDate + ' 1');
+            const year = testDate.getFullYear();
+            const month = testDate.getMonth();
+            parsedFpiDate = new Date(year, month + 1, 0); // Last day of month
+          }
+
+          // Calculate data readout date (FPI + 24 months study duration)
+          const readoutDate = new Date(parsedFpiDate);
+          readoutDate.setMonth(parsedFpiDate.getMonth() + 24);
+
+          // Parse LOE date
+          const parsedLoeDate = new Date(loeDate);
+
+          // Calculate time to LOE in years from data readout
+          const timeDiffMs = parsedLoeDate.getTime() - readoutDate.getTime();
+          const timeDiffYears = timeDiffMs / (1000 * 60 * 60 * 24 * 365.25);
+          calculatedTimeToLoe = Math.max(0, Math.round(timeDiffYears * 10) / 10); // Round to 1 decimal
+
+          // Update the concept with calculated timeToLoe
+          updatedConcept.timeToLoe = calculatedTimeToLoe;
+        }
+      } catch (error) {
+        console.error('Error calculating LOE timelines:', error);
+      }
+    }
+
+    return { timeToLoe: calculatedTimeToLoe, updatedConcept };
+  }
+
   async refineStudyConcept(request: RefinementRequest): Promise<RefinementResponse> {
     const { message, currentConcept, conversationHistory = [] } = request;
 
@@ -76,6 +128,8 @@ You are an expert clinical study designer with advanced reasoning capabilities. 
 - Current Timeline: ${(currentConcept.feasibilityData as any)?.timeline || 'Unknown'} months
 - Current Cost: €${((currentConcept.feasibilityData as any)?.estimatedCost || 0) / 1000000}M
 - Anticipated FPI: ${(currentConcept as any).anticipatedFpiDate || 'Not set'}
+- Global LOE Date: ${(currentConcept as any).globalLoeDate || 'Not set'}
+- Time to LOE: ${(currentConcept as any).timeToLoe || 'Not set'} years
 
 **ANALYSIS INSTRUCTIONS:**
 Determine if this is a MODIFY or DISCUSS request:
@@ -120,6 +174,8 @@ Provide a JSON response with detailed cascading analysis:
 - anticipatedFpiDate (First Patient In date, e.g., "July 2026", "Q3 2025")
 - plannedDbLockDate (Database lock date)
 - expectedToplineDate (Topline results date)
+- globalLoeDate (Global Loss of Exclusivity date)
+- timeToLoe (Time until LOE from data readout in years)
 - primaryEndpoint (string - main efficacy endpoint)
 - secondaryEndpoints (array of secondary endpoints)
 - followUpDuration (number - months of follow-up)
@@ -149,7 +205,8 @@ CASCADING CHANGE EXAMPLES:
 - Phase change (II→III): Affects sample size, endpoints, regulatory pathway, costs, timeline
 - Geography expansion: Impacts recruitment, regulatory, costs, site count, timeline
 - Endpoint changes: Affects sample size calculations, study duration, regulatory strategy
-- FPI date changes: Cascades to data readout, LOE timelines, strategic planning
+- FPI date changes: Cascades to data readout, LOE timelines, timeToLoe calculations, strategic planning
+- LOE date changes: Affects timeToLoe, commercial viability, strategic value, urgency assessments
 
 Be conversational and natural. Explain your reasoning for each cascading change. Respond only with valid JSON.`
           },
@@ -179,7 +236,7 @@ Be conversational and natural. Explain your reasoning for each cascading change.
       }
       
       // Apply the changes to create an updated concept
-      const updatedConcept = { ...currentConcept };
+      let updatedConcept = { ...currentConcept };
       const changes: ConceptChange[] = [];
 
       for (const change of analysisResult.changes || []) {
@@ -196,6 +253,22 @@ Be conversational and natural. Explain your reasoning for each cascading change.
           impact: {}, // Will be calculated below
           cascadingEffect: change.cascadingEffect || false,
           impactArea: change.impactArea || 'general'
+        });
+      }
+
+      // Calculate LOE timelines if FPI or LOE dates changed
+      const loeCalculation = this.calculateLoeTimelines(currentConcept, analysisResult.changes || []);
+      updatedConcept = loeCalculation.updatedConcept;
+      
+      // If timeToLoe was recalculated, add it as a cascading change
+      if (loeCalculation.timeToLoe !== undefined && !changes.find(c => c.field === 'timeToLoe')) {
+        changes.push({
+          field: 'timeToLoe',
+          oldValue: currentConcept.timeToLoe,
+          newValue: loeCalculation.timeToLoe,
+          impact: {},
+          cascadingEffect: true,
+          impactArea: 'timeline'
         });
       }
 
