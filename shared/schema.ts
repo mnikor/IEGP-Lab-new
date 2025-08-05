@@ -35,6 +35,10 @@ export const studyConcepts = pgTable("study_concepts", {
   // Adding explicit LOE fields at the study concept level (top level) for easier access
   globalLoeDate: text("global_loe_date"),
   timeToLoe: integer("time_to_loe"),
+  // Timeline milestone dates
+  anticipatedFpiDate: text("anticipated_fpi_date"), // First Patient In date
+  plannedDbLockDate: text("planned_db_lock_date"), // Database Lock date
+  expectedToplineDate: text("expected_topline_date"), // Topline results date
   picoData: json("pico_data").notNull(),
   mcdaScores: json("mcda_scores").notNull(),
   swotAnalysis: json("swot_analysis").notNull(),

@@ -1,105 +1,7 @@
 # Clinical Study Ideator & Validator
 
-## Project Overview
-A comprehensive clinical study concept generation and validation application featuring OpenAI's o3 reasoning model integration, enhanced feasibility analysis with cost breakdowns, anti-overengineering tournament system, and complete statistical sample size calculations. The application addresses the tendency for clinical trials to become unnecessarily complex by implementing complexity penalties while ensuring proper patient enrollment targets and statistical foundations for study designs.
-
-## Key Features
-- **AI-Powered Study Concept Generation**: Uses OpenAI's latest models (gpt-4o) with real-time literature search via Perplexity
-- **Anti-Overengineering System**: Complexity penalty algorithm (up to 30%) that reduces scores for overcomplex designs
-- **Tournament-Based Optimization**: Multi-round evaluation system that systematically improves study concepts
-- **Integrated Sample Size Calculations**: Statistical power analysis with 80% power and proper justification
-- **Comprehensive Feasibility Analysis**: Cost breakdowns including personnel (25-30% of budget), timeline projections, and risk assessment
-- **Strategic Goal Alignment**: Maps study designs to business objectives (label expansion, market access, etc.)
-
-## Recent Changes (July 2025)
-- ✓ **Comprehensive Generalization**: Rebuilt system to work reliably for any disease and study type, not just psoriasis examples
-- ✓ **Therapeutic Area Intelligence Engine**: Added comprehensive therapeutic area analysis (oncology, immunology, neurology, cardiovascular, rare disease, infectious) with context-aware calculations
-- ✓ **Enhanced Biologics Detection**: Improved high-cost therapy detection with comprehensive drug naming patterns and therapeutic area indicators
-- ✓ **Robust Sample Size Calculations**: Fixed consistency issues with study-specific statistical power analysis and therapeutic area adjustments
-- ✓ **Dynamic SWOT Analysis**: Replaced generic templates with intelligent, context-aware analysis using therapeutic area expertise and market intelligence
-- ✓ **Integrated Cost Modeling**: Applied therapeutic area cost multipliers for realistic Phase III biologics costs (€15-50M+ range)
-- ✓ **Data-Driven Analysis**: Enhanced all calculations to be based on study characteristics rather than hardcoded examples
-- ✓ **Research Strategy Integration**: Seamlessly integrated AI-driven research strategy functionality into ConceptForm workflow with Perplexity API execution and OpenAI synthesis
-- ✓ **Perplexity Deep Research Implementation**: Successfully integrated `sonar-deep-research` model with comprehensive analysis prompts for enhanced clinical evidence research
-- ✓ **Duplicate Search Prevention**: Fixed concept generation to properly reuse existing research strategy results via researchStrategyId parameter, eliminating redundant API calls
-- ✓ **Enhanced Research Quality**: Deep Research provides structured analysis with strategic importance, design implications, and actionable recommendations with proper citation formatting
-- ✓ **Consistent Situational Analysis UI**: Replaced research sidebar with Tournament-style "Situational Analysis" modal for consistent UX across applications, eliminating scrolling issues and providing organized tabbed research intelligence display
-- ✓ **Fixed Duplicate Confidence Labels**: Removed duplicate confidence badges from ReasonsToBelieve component to show single accurate confidence level
-- ✓ **Enhanced Clinical Trial Search**: Improved Perplexity queries to find real ongoing trials with actual NCT numbers instead of hypothetical examples, using site:clinicaltrials.gov with recruitment status filters
-- ✓ **Universal Drug/Disease Support**: Fixed research strategy to work generically for any drug and disease combination using proper variable substitution, not limited to specific examples
-- ✓ **Improved Table Formatting**: Enhanced competitive analysis table display with professional styling and highlighted NCT numbers for better readability
-- ✓ **Immediate Research Results Access**: Added "View Results" button to show research findings immediately when complete, with option to add additional targeted searches
-- ✓ **Enhanced Research UX**: Users can now review research insights before concept generation and run supplementary research if gaps are identified
-- ✓ **Fixed Table Formatting**: Completely rebuilt table detection and formatting system for proper display of clinical trial data with NCT highlighting
-- ✓ **Cumulative Research Functionality**: "Add More Research" now preserves previous results and appends new findings for comprehensive analysis
-- ✓ **Improved Data Persistence**: Research results accumulate across multiple research sessions rather than being replaced
-- ✓ **Universal Search Strategy Overhaul**: Removed restrictive AND operators, implemented intelligent therapeutic area-adaptive search patterns
-- ✓ **Disease-Agnostic Intelligence**: System now works universally for any drug/disease combination with therapeutic area-specific terminology
-- ✓ **Adaptive Guidelines Integration**: Guidelines searches focus on indication-only with relevant medical societies (NCCN, ESMO, AHA, etc.)
-- ✓ **Flexible Competitive Landscape**: Captures all therapeutic classes and mechanisms, not limited to specific drugs or classes
-- ✓ **Enhanced NCT Verification**: Real-time validation via ClinicalTrials.gov API prevents hallucinated trial numbers
-- ✓ **Fixed Perplexity API Integration**: Updated deprecated model names to current "sonar" and "sonar-deep-research" models for authentic web search
-- ✓ **Unified Research Approach**: Validation research now uses the same proven Perplexity implementation as New Concept component
-- ✓ **Real Citation Integration**: Both validation and research intelligence provide authentic citations from FDA, EMA, ClinicalTrials.gov, PubMed
-- ✓ **Enhanced Content Quality**: Deep research mode provides comprehensive clinical evidence with proper formatting and structured analysis
-- ✓ **Citations Display Resolution**: Fixed conditional logic to always show citations when available, eliminating missing reference issue
-- ✓ **Robust Fallback System**: Timeout-resistant citation system provides 6 professional regulatory sources when API unavailable
-- ✓ **Professional Fallback Content**: Enhanced fallback response includes comprehensive clinical research framework with structured analysis
-- ✓ **Fallback System Removal**: Completely removed misleading fallback content system in favor of transparent error reporting with clear failure indicators and actionable recommendations
-- ✓ **Authentic Citation Collection**: Enhanced citation system to preserve only real Perplexity API citations, filtering out generic fallback references  
-- ✓ **Intelligent Request Batching**: Added 2-second delays between API calls to reduce rate limiting (429 errors) and improved timeout handling (45s vs 60s)
-- ✓ **Transparent Error Reporting**: Failed searches now show clear error types (RATE_LIMIT, TIMEOUT, AUTH_ERROR) with specific explanations and recommended actions
-- ✓ **Sequential Processing Implementation**: Replaced simultaneous API calls with sequential execution using 3-second delays to prevent overwhelming Perplexity API
-- ✓ **Enhanced Timeout Management**: Added individual search timeouts (40s) with retry logic and fallback to faster mode for failed searches
-- ✓ **Real-time Progress Reporting**: Sequential execution now provides detailed progress logs showing completion status for each search
-- ✓ **Optimized Timing Strategy**: Reduced total execution time from 3-5 minutes to 90-120 seconds using 1.5s delays and 25s timeouts for better user experience
-- ✓ **Session Timeout Prevention**: Faster execution prevents browser session timeouts when screen locks or user navigates away
-- ✓ **Cost Optimization Implementation**: Replaced expensive Perplexity Deep Research ($1-2 per search) with regular Sonar model for sustainable operation
-- ✓ **Financial Sustainability**: Fixed cost issue that was consuming entire user credit balance with single research execution
-- ✓ **Maintained Research Quality**: Regular Sonar model still provides comprehensive clinical research data with authentic citations
-- ✓ **Complete System Coverage**: Applied cost optimization to both New Concept generation and Validate Study Idea workflows
-- ✓ **Verified Working Status**: Cost-optimized system tested and confirmed working with refreshed API credits
-- ✓ **Complete Workflow Integration Resolution**: Fixed critical integration issues between research intelligence and validation workflow, eliminating duplicate research execution and ensuring existing research data is properly utilized with "Situational Analysis" button visibility
-- ✓ **Enhanced Type Safety**: Updated ValidationResults interface to support research intelligence metadata and prevent TypeScript errors in SituationalAnalysisModal component
-- ✓ **Intelligent Research Reuse**: Validation now detects and leverages existing research intelligence data from concept generation, showing clear status messaging and proper UI state management
-- ✓ **Complete Validation Compatibility Resolution**: Fixed all runtime errors in validation display system with comprehensive null guards, optional properties, and proper API query configuration, ensuring both new and legacy validations display correctly
-- ✓ **React Query Configuration Fix**: Corrected API endpoint query to fetch individual validation objects instead of arrays, resolving empty content display issue
-- ✓ **Robust Component Error Handling**: Enhanced PicoFramework and all validation sections with comprehensive undefined property protection and fallback displays
-
-## Project Architecture
-
-### Frontend (React + TypeScript)
-- **Framework**: Vite + React with TypeScript
-- **Routing**: Wouter for client-side routing
-- **UI Components**: Shadcn/ui + Tailwind CSS
-- **State Management**: TanStack Query for server state
-- **Forms**: React Hook Form with Zod validation
-
-### Backend (Express + TypeScript)
-- **Server**: Express.js with TypeScript
-- **Storage**: In-memory storage (MemStorage) with interface for future database migration
-- **AI Integration**: OpenAI SDK for concept generation and analysis
-- **External APIs**: Perplexity Deep Research (`sonar-deep-research`) for comprehensive clinical evidence research and market intelligence
-
-### Key Services
-- **IdeaGenerator**: Tournament-based study concept generation with anti-overengineering
-- **FeasibilityCalculator**: Cost, timeline, and risk assessment with therapeutic area intelligence
-- **TherapeuticAreaEngine**: Comprehensive therapeutic area analysis with context-aware multipliers
-- **SimpliciticyAgent**: Complexity penalty algorithm to reduce overengineering
-- **SampleSizeCalculator**: Statistical power analysis with therapeutic area adjustments
-- **SwotGenerator**: Dynamic SWOT analysis using therapeutic area expertise and market intelligence
-- **ResearchStrategyGenerator**: AI-driven research strategy generation with targeted query creation
-- **ResearchExecutor**: Perplexity API integration for real-time research execution and OpenAI synthesis
-- **Aggregator**: Data synthesis and final concept optimization
-
-### Database Schema
-- **Users**: Authentication and user management
-- **StudyConcepts**: Individual study concept storage
-- **SynopsisValidations**: Study synopsis analysis results
-- **Tournaments**: Multi-round optimization sessions
-- **Ideas**: Tournament study concepts with feasibility data
-- **Reviews**: Evaluation and scoring data
-- **TournamentRounds**: Round-by-round progression tracking
+## Overview
+The Clinical Study Ideator & Validator is an application designed to generate and validate clinical study concepts. Its core purpose is to address the over-complexification often seen in clinical trials by integrating an anti-overengineering system that penalizes complexity. It leverages AI for concept generation, conducts comprehensive feasibility analysis including cost breakdowns and timeline projections, performs statistical sample size calculations, and aligns study designs with strategic business goals like label expansion and market access. The system is designed to work reliably across various disease and study types, providing therapeutic area-specific intelligence and realistic cost modeling.
 
 ## User Preferences
 - Focus on practical, executable study designs over theoretical complexity
@@ -107,23 +9,43 @@ A comprehensive clinical study concept generation and validation application fea
 - Prioritize regulatory compliance and approval probability
 - Value evidence-based decision making with statistical rigor
 
-## Current Status
-- **Fully Generalized System**: Works reliably for any disease area and study type
-- **Therapeutic Area Intelligence**: Comprehensive analysis covering oncology, immunology, neurology, cardiovascular, rare disease, and infectious disease
-- **Enhanced Cost Accuracy**: Realistic Phase III biologics costs (€15-50M+ range) with therapeutic area multipliers
-- **Dynamic SWOT Analysis**: Context-aware analysis with real competitive intelligence and market insights
-- **Robust Sample Size Calculations**: Study-specific calculations with proper statistical justification
-- **Complete Validation System**: All validation displays work correctly with comprehensive error handling and backward compatibility
-- **Production Ready**: Enterprise-ready system with reliable calculation engines and robust data display components
+## System Architecture
 
-## Environment Setup
-- Node.js application with TypeScript
-- OpenAI API integration (OPENAI_API_KEY required)
-- Development server runs on port 5000
-- Frontend served via Vite development server
+### UI/UX Decisions
+The application uses Shadcn/ui and Tailwind CSS for a modern and responsive user interface. Key UI enhancements include a consistent "Situational Analysis" modal for organized tabbed research intelligence display, professional table styling with highlighted NCT numbers, and immediate access to research results upon completion.
 
-## Deployment Notes
-- Uses Replit's built-in deployment system
-- No Docker or containerization required
-- Environment variables managed through Replit secrets
-- Ready for production deployment
+### Technical Implementations
+The system is built as a full-stack application.
+- **Frontend**: Developed with React and TypeScript, using Vite for bundling, Wouter for routing, TanStack Query for server state management, and React Hook Form with Zod for form validation.
+- **Backend**: Implemented with Express.js and TypeScript, utilizing in-memory storage (MemStorage) for current data persistence with an interface for future database migration. OpenAI SDK is used for AI integration.
+
+### Feature Specifications
+- **AI-Powered Concept Generation**: Utilizes OpenAI's latest models for study concept generation, enhanced by real-time literature search.
+- **Anti-Overengineering System**: Implements a complexity penalty algorithm that reduces scores for overly complex designs.
+- **Tournament-Based Optimization**: Employs a multi-round evaluation system to systematically refine study concepts.
+- **Integrated Statistical Analysis**: Provides comprehensive statistical power analysis for sample size calculations.
+- **Feasibility Analysis**: Offers detailed cost breakdowns, timeline projections, and risk assessments.
+- **Strategic Goal Alignment**: Maps study designs to business objectives (e.g., label expansion, market access).
+- **Therapeutic Area Intelligence**: Incorporates comprehensive analysis for various therapeutic areas (oncology, immunology, neurology, cardiovascular, rare disease, infectious) to provide context-aware calculations and cost multipliers.
+- **Dynamic SWOT Analysis**: Generates intelligent, context-aware SWOT analyses using therapeutic area expertise and market intelligence.
+- **Research Strategy Integration**: Seamlessly integrates AI-driven research strategy into workflows, synthesizing findings from external research.
+- **AI Chat Recalculation**: AI chat intelligently detects user intent, distinguishing between actionable changes and advisory discussions, and triggers recalculations for critical study parameter changes while preserving conversational context.
+
+### System Design Choices
+The architecture emphasizes modularity with distinct services:
+- `IdeaGenerator`: Handles tournament-based concept generation.
+- `FeasibilityCalculator`: Manages cost, timeline, and risk assessments.
+- `TherapeuticAreaEngine`: Provides therapeutic area-specific intelligence.
+- `SimpliciticyAgent`: Implements the complexity penalty.
+- `SampleSizeCalculator`: Performs statistical power analysis.
+- `SwotGenerator`: Creates dynamic SWOT analyses.
+- `ResearchStrategyGenerator`: Generates AI-driven research strategies.
+- `ResearchExecutor`: Integrates with external APIs for research execution and synthesis.
+- `Aggregator`: Synthesizes data for final concept optimization.
+
+## External Dependencies
+- **OpenAI**: Used for AI-powered concept generation, analysis, intent detection, and synthesis.
+- **Perplexity API**: Specifically `sonar` and `sonar-deep-research` models, integrated for real-time, comprehensive clinical evidence research and market intelligence.
+- **ClinicalTrials.gov API**: Utilized for real-time validation of clinical trial numbers (NCTs).
+- **PubMed**: Referenced for authentic citations in research intelligence.
+- **FDA, EMA**: Referenced for authentic regulatory citations.

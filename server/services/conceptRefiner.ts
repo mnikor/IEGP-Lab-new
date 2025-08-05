@@ -42,7 +42,21 @@ export class ConceptRefiner {
 
     // Use OpenAI to analyze the user's request and determine what changes to make
     const analysisPrompt = `
-You are an expert clinical study designer. A user wants to modify their study concept based on this request: "${message}"
+You are an expert clinical study designer. Analyze the user's message to determine if they want to:
+
+1. **MODIFY** the study concept (requires specific changes) - Examples:
+   - "Change study phase to III"
+   - "Add Brazil to geography" 
+   - "Set first patient date to July 2026"
+   - "Update strategic goals to include regulatory approval"
+
+2. **DISCUSS** the concept (advisory/explanatory) - Examples:
+   - "What do you think about this design?"
+   - "How can we improve recruitment?"
+   - "Explain the sample size calculation"
+   - "What are the risks?"
+
+User's message: "${message}"
 
 Current study concept:
 - Title: ${currentConcept.title}
@@ -54,20 +68,27 @@ Current study concept:
 - Target Subpopulation: ${currentConcept.targetSubpopulation || 'None specified'}
 - Comparator Drugs: ${JSON.stringify(currentConcept.comparatorDrugs)}
 - PICO Data: ${JSON.stringify(currentConcept.picoData)}
+- Timeline dates: ${JSON.stringify({
+  anticipatedFpiDate: currentConcept.anticipatedFpiDate,
+  plannedDbLockDate: currentConcept.plannedDbLockDate,
+  expectedToplineDate: currentConcept.expectedToplineDate
+})}
 
-Analyze the user's request and provide a JSON response with the following structure:
+Provide a JSON response:
 {
+  "intent": "MODIFY" | "DISCUSS",
   "changes": [
     {
       "field": "fieldName",
-      "newValue": "newValue",
+      "newValue": "newValue", 
       "rationale": "explanation for this change"
     }
   ],
-  "explanation": "A clear explanation of what was changed and why, including potential impacts on the study"
+  "explanation": "Clear explanation of what was changed and why, OR detailed advice if DISCUSS",
+  "discussionOnly": boolean
 }
 
-Valid fields that can be modified:
+**Available fields for modification:**
 - strategicGoals (array of strategic goals)
 - studyPhase (I, II, III, IV)
 - geography (array of regions)
@@ -75,8 +96,11 @@ Valid fields that can be modified:
 - comparatorDrugs (array of drug names)
 - picoData (object with population, intervention, comparator, outcomes)
 - title (study title)
+- anticipatedFpiDate (First Patient In date, e.g., "July 2026", "Q3 2025")
+- plannedDbLockDate (Database lock date)
+- expectedToplineDate (Topline results date)
 
-Focus on the specific changes requested. If the request is ambiguous, make reasonable assumptions based on clinical best practices.
+**Critical:** If intent is DISCUSS, set discussionOnly: true and provide comprehensive advice without making changes.
 `;
 
     try {
@@ -97,6 +121,15 @@ Focus on the specific changes requested. If the request is ambiguous, make reaso
       });
 
       const analysisResult = JSON.parse(response.choices[0].message.content || '{}');
+      
+      // If this is a discussion-only request, return without making changes
+      if (analysisResult.intent === 'DISCUSS' || analysisResult.discussionOnly) {
+        return {
+          updatedConcept: currentConcept, // No changes
+          explanation: analysisResult.explanation,
+          changes: []
+        };
+      }
       
       // Apply the changes to create an updated concept
       const updatedConcept = { ...currentConcept };
@@ -149,9 +182,7 @@ Focus on the specific changes requested. If the request is ambiguous, make reaso
           
           // Import services dynamically to avoid circular dependencies
           const { calculateFeasibility } = await import('./feasibilityCalculator');
-          const { McdaScorer } = await import('./mcdaScorer');
-          
-          const mcdaScorer = new McdaScorer();
+          const { scoreMcda } = await import('./mcdaScorer');
           
           // Recalculate feasibility data with updated parameters
           console.log('Calling calculateFeasibility with updated concept...');
@@ -163,10 +194,10 @@ Focus on the specific changes requested. If the request is ambiguous, make reaso
           });
           
           // Recalculate MCDA scores
-          newMcdaScores = await mcdaScorer.calculateScores({
+          newMcdaScores = scoreMcda({
             ...updatedConcept,
             feasibilityData: newFeasibilityData
-          });
+          }, conceptFormData);
           
           console.log('Recalculated feasibility and MCDA scores due to parameter changes');
         } catch (error) {
