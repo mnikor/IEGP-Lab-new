@@ -19,6 +19,7 @@ interface ChatMessage {
   cascadingAnalysis?: {
     timelineImpact?: string;
     resourceImpact?: string;
+    financialImpact?: string;
     regulatoryImpact?: string;
     strategicImpact?: string;
   };
@@ -270,6 +271,12 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
                   <div>
                     <span className="font-medium text-green-800">Resource Impact:</span>
                     <p className="text-green-700 mt-1">{message.cascadingAnalysis.resourceImpact}</p>
+                  </div>
+                )}
+                {message.cascadingAnalysis.financialImpact && (
+                  <div>
+                    <span className="font-medium text-emerald-800">Financial Impact:</span>
+                    <p className="text-emerald-700 mt-1">{message.cascadingAnalysis.financialImpact}</p>
                   </div>
                 )}
                 {message.cascadingAnalysis.regulatoryImpact && (

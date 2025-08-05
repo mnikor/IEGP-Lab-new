@@ -20,6 +20,7 @@ export interface RefinementResponse {
   cascadingAnalysis?: {
     timelineImpact?: string;
     resourceImpact?: string;
+    financialImpact?: string;
     regulatoryImpact?: string;
     strategicImpact?: string;
   };
@@ -156,10 +157,11 @@ Provide a JSON response with detailed cascading analysis:
   "explanation": "Conversational explanation of all changes made and their interconnected rationale",
   "discussionOnly": boolean,
   "cascadingAnalysis": {
-    "timelineImpact": "How changes affect study timeline and milestones",
-    "resourceImpact": "How changes affect costs, sample size and resources", 
-    "regulatoryImpact": "How changes affect regulatory pathway and endpoints",
-    "strategicImpact": "How changes affect strategic goals and commercial objectives"
+    "timelineImpact": "How changes affect study timeline, milestones, and time-to-market",
+    "resourceImpact": "How changes affect costs, sample size, and operational resources", 
+    "financialImpact": "How changes affect ROI, NPV, revenue timing, and financial projections",
+    "regulatoryImpact": "How changes affect regulatory pathway, endpoints, and approval strategy",
+    "strategicImpact": "How changes affect strategic goals, competitive positioning, and commercial objectives"
   }
 }
 
@@ -198,15 +200,17 @@ REASONING FRAMEWORK:
 2. Cascading Impact Assessment: Identify what other study components should change
 3. Timeline Implications: Consider how changes affect study duration, milestones
 4. Resource Impact: Analyze effects on sample size, costs, site requirements
-5. Regulatory Considerations: Assess implications for endpoints, comparators
-6. Strategic Alignment: Ensure changes support overall study goals
+5. Financial Impact: Consider ROI implications, NPV changes, time value of money effects
+6. Regulatory Considerations: Assess implications for endpoints, comparators
+7. Strategic Alignment: Ensure changes support overall study goals and commercial objectives
 
 CASCADING CHANGE EXAMPLES:
 - Phase change (II→III): Affects sample size, endpoints, regulatory pathway, costs, timeline
 - Geography expansion: Impacts recruitment, regulatory, costs, site count, timeline
 - Endpoint changes: Affects sample size calculations, study duration, regulatory strategy
-- FPI date changes: Cascades to data readout, LOE timelines, timeToLoe calculations, strategic planning
-- LOE date changes: Affects timeToLoe, commercial viability, strategic value, urgency assessments
+- FPI date changes: Cascades to data readout, LOE timelines, timeToLoe calculations, ROI projections, NPV calculations, strategic planning
+- LOE date changes: Affects timeToLoe, commercial viability, strategic value, urgency assessments, competitive positioning
+- Timeline shifts: Impact ROI through delayed revenue recognition, reduced market exclusivity period, time value of money effects
 
 Be conversational and natural. Explain your reasoning for each cascading change. Respond only with valid JSON.`
           },
