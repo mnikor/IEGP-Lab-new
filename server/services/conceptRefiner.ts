@@ -163,8 +163,7 @@ Be conversational and natural. Explain your reasoning for each cascading change.
             content: analysisPrompt
           }
         ],
-        response_format: { type: "json_object" },
-        temperature: 0.2 // Lower temperature for more systematic reasoning
+        response_format: { type: "json_object" }
       });
 
       const analysisResult = JSON.parse(response.choices[0].message.content || '{}');
