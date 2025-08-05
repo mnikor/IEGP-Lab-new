@@ -1209,8 +1209,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentConcept
       });
       
-      // Update the stored concept
-      await storage.updateStudyConcept(conceptId, result.updatedConcept);
+      // Update the stored concept (remove timestamp fields that cause DB issues)
+      const { updatedAt, createdAt, ...conceptToUpdate } = result.updatedConcept;
+      await storage.updateStudyConcept(conceptId, conceptToUpdate);
       
       res.json(result);
     } catch (error) {

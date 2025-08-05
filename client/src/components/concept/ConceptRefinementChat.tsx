@@ -224,7 +224,7 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed top-4 right-4 z-50">
       {!isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
@@ -236,7 +236,7 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
       )}
       
       {isOpen && (
-        <Card className="w-96 h-96 shadow-xl">
+        <Card className="w-96 h-[500px] shadow-xl border-2">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm flex items-center gap-2">

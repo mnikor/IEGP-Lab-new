@@ -103,9 +103,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateStudyConcept(id: number, updates: Partial<StudyConcept>): Promise<StudyConcept | null> {
+    // Convert any date fields to proper Date objects
+    const cleanUpdates = { ...updates };
+    if (cleanUpdates.updatedAt && typeof cleanUpdates.updatedAt === 'string') {
+      cleanUpdates.updatedAt = new Date(cleanUpdates.updatedAt);
+    }
+    if (cleanUpdates.createdAt && typeof cleanUpdates.createdAt === 'string') {
+      cleanUpdates.createdAt = new Date(cleanUpdates.createdAt);
+    }
+    
     const [updated] = await db
       .update(studyConcepts)
-      .set(updates)
+      .set({
+        ...cleanUpdates,
+        updatedAt: new Date()
+      })
       .where(eq(studyConcepts.id, id))
       .returning();
     return updated || null;
