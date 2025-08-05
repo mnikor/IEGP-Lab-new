@@ -147,12 +147,17 @@ Focus on the specific changes requested. If the request is ambiguous, make reaso
       // Add impact analysis to changes
       changes.forEach(change => {
         change.impact = {
-          mcdaScores: newMcdaScores,
-          feasibilityData: {
-            estimatedCost: newFeasibilityData.estimatedCost,
-            timeline: newFeasibilityData.timeline,
-            recruitmentRate: newFeasibilityData.recruitmentRate,
-            completionRisk: newFeasibilityData.completionRisk
+          mcdaScores: newMcdaScores || {},
+          feasibilityData: newFeasibilityData ? {
+            estimatedCost: newFeasibilityData.estimatedCost || 0,
+            timeline: newFeasibilityData.timeline || 0,
+            recruitmentRate: newFeasibilityData.recruitmentRate || 0,
+            completionRisk: newFeasibilityData.completionRisk || 0
+          } : {
+            estimatedCost: 0,
+            timeline: 0,
+            recruitmentRate: 0,
+            completionRisk: 0
           }
         };
       });
