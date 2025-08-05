@@ -135,10 +135,46 @@ Focus on the specific changes requested. If the request is ambiguous, make reaso
         numberOfConcepts: 1 // Default value
       };
 
-      // For now, preserve the existing feasibility data and MCDA scores
-      // TODO: Implement proper recalculation once we have the correct service signatures
-      const newFeasibilityData = originalFeasibilityData;
-      const newMcdaScores = originalMcdaScores;
+      // Recalculate feasibility data and MCDA scores when study parameters change
+      let newFeasibilityData = originalFeasibilityData;
+      let newMcdaScores = originalMcdaScores;
+      
+      // Check if any critical parameters changed that require recalculation
+      const criticalFields = ['studyPhase', 'geography', 'targetSubpopulation', 'strategicGoals'];
+      const needsRecalculation = changes.some(change => criticalFields.includes(change.field));
+      
+      if (needsRecalculation) {
+        try {
+          console.log(`Starting recalculation for fields: ${changes.map(c => c.field).join(', ')}`);
+          
+          // Import services dynamically to avoid circular dependencies
+          const { calculateFeasibility } = await import('./feasibilityCalculator');
+          const { McdaScorer } = await import('./mcdaScorer');
+          
+          const mcdaScorer = new McdaScorer();
+          
+          // Recalculate feasibility data with updated parameters
+          console.log('Calling calculateFeasibility with updated concept...');
+          newFeasibilityData = await calculateFeasibility(updatedConcept, conceptFormData);
+          console.log('New feasibility data calculated:', { 
+            sampleSize: newFeasibilityData.sampleSize, 
+            estimatedCost: newFeasibilityData.estimatedCost,
+            timeline: newFeasibilityData.timeline 
+          });
+          
+          // Recalculate MCDA scores
+          newMcdaScores = await mcdaScorer.calculateScores({
+            ...updatedConcept,
+            feasibilityData: newFeasibilityData
+          });
+          
+          console.log('Recalculated feasibility and MCDA scores due to parameter changes');
+        } catch (error) {
+          console.error('Error during recalculation, using original values:', error);
+          console.error('Full error details:', error.stack);
+          // Fall back to original values if recalculation fails
+        }
+      }
 
       // Update the concept with new calculations
       updatedConcept.mcdaScores = newMcdaScores;
