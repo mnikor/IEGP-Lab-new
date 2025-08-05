@@ -21,6 +21,7 @@ import { generatePdfReport, generateSingleConceptPdfReport, generatePptxReport, 
 import { ResearchStrategyGenerator } from "./services/researchStrategyGenerator";
 import { ResearchExecutor } from "./services/researchExecutor";
 import { ValidationResearchGenerator } from "./services/validationResearchGenerator";
+import { ConceptRefiner } from "./services/conceptRefiner";
 import { 
   researchStrategyRequestSchema, 
   amendStrategyRequestSchema, 
@@ -1189,6 +1190,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error executing validation research:", error);
       res.status(500).json({ message: "Failed to execute validation research" });
+    }
+  });
+
+  // API endpoint for concept refinement
+  app.post("/api/study-concepts/:id/refine", async (req, res) => {
+    try {
+      const conceptId = parseInt(req.params.id);
+      const { message, currentConcept } = req.body;
+      
+      if (!message || !currentConcept) {
+        return res.status(400).json({ error: "Message and current concept are required" });
+      }
+      
+      const conceptRefiner = new ConceptRefiner();
+      const result = await conceptRefiner.refineStudyConcept({
+        message,
+        currentConcept
+      });
+      
+      // Update the stored concept
+      await storage.updateStudyConcept(conceptId, result.updatedConcept);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error refining concept:", error);
+      res.status(500).json({ error: "Failed to refine concept" });
+    }
+  });
+
+  // API endpoint for getting refinement suggestions
+  app.get("/api/study-concepts/:id/suggestions", async (req, res) => {
+    try {
+      const conceptId = parseInt(req.params.id);
+      const concept = await storage.getStudyConcept(conceptId);
+      
+      if (!concept) {
+        return res.status(404).json({ error: "Concept not found" });
+      }
+      
+      const conceptRefiner = new ConceptRefiner();
+      const suggestions = await conceptRefiner.generateRefinementSuggestions(concept);
+      
+      res.json({ suggestions });
+    } catch (error) {
+      console.error("Error generating suggestions:", error);
+      res.status(500).json({ error: "Failed to generate suggestions" });
     }
   });
 

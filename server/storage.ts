@@ -13,6 +13,7 @@ export interface IStorage {
   getAllStudyConcepts(): Promise<StudyConcept[]>;
   getStudyConcept(id: number): Promise<StudyConcept | undefined>;
   createStudyConcept(concept: InsertStudyConcept): Promise<StudyConcept>;
+  updateStudyConcept(id: number, updates: Partial<StudyConcept>): Promise<StudyConcept | null>;
   deleteStudyConcept(id: number): Promise<boolean>;
   getRecentStudyConcepts(limit: number): Promise<StudyConcept[]>;
   
@@ -99,6 +100,15 @@ export class DatabaseStorage implements IStorage {
 
   async getRecentStudyConcepts(limit: number = 10): Promise<StudyConcept[]> {
     return await db.select().from(studyConcepts).orderBy(desc(studyConcepts.createdAt)).limit(limit);
+  }
+
+  async updateStudyConcept(id: number, updates: Partial<StudyConcept>): Promise<StudyConcept | null> {
+    const [updated] = await db
+      .update(studyConcepts)
+      .set(updates)
+      .where(eq(studyConcepts.id, id))
+      .returning();
+    return updated || null;
   }
 
   async deleteStudyConcept(id: number): Promise<boolean> {

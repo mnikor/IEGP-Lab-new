@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SituationalAnalysisModal } from "@/components/concept/SituationalAnalysisModal";
+import ConceptRefinementChat from "@/components/concept/ConceptRefinementChat";
 import AIAnalysisSection from "@/components/concept/AIAnalysisSection";
 import { ArrowLeft, BookOpen, Search, Calendar, TrendingUp, Star } from "lucide-react";
 import { Link } from "wouter";
@@ -19,7 +20,7 @@ const ConceptDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [showSituationalAnalysis, setShowSituationalAnalysis] = useState(false);
   
-  const { data: concept, isLoading, error } = useQuery({
+  const { data: concept, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/study-concepts', parseInt(id!)],
     queryFn: async (): Promise<StudyConcept> => {
       const response = await fetch(`/api/study-concepts/${id}`);
@@ -382,6 +383,17 @@ const ConceptDetailPage: React.FC = () => {
           indication={concept.indication}
           researchResults={Array.isArray(relatedProposal.researchResults) ? relatedProposal.researchResults : []}
           isLoading={false}
+        />
+      )}
+      
+      {/* AI Chat for Concept Refinement */}
+      {concept && (
+        <ConceptRefinementChat
+          concept={concept}
+          onConceptUpdate={(updatedConcept) => {
+            // Refetch the concept to get the latest data
+            refetch();
+          }}
         />
       )}
     </div>
