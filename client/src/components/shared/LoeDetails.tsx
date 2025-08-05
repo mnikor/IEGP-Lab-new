@@ -38,11 +38,38 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
   const defaultLoeYears = 10;
   
   // STEP 1: Handle First Patient In (FPI) date
-  const defaultFpiDate = estimatedFpiDate || new Date(
-    today.getFullYear(),
-    today.getMonth() + 12,
-    today.getDate()
-  ).toISOString().split('T')[0];
+  let defaultFpiDate: string;
+  if (estimatedFpiDate) {
+    // Handle both human-readable dates ("July 2026") and ISO dates ("2026-07-01")
+    if (estimatedFpiDate.includes('-') && estimatedFpiDate.length >= 10) {
+      // ISO date format
+      defaultFpiDate = estimatedFpiDate.split('T')[0];
+    } else {
+      // Human-readable format like "July 2026" or "December 2025"
+      try {
+        const parsedDate = new Date(estimatedFpiDate + ' 1'); // Add day for parsing
+        if (!isNaN(parsedDate.getTime())) {
+          defaultFpiDate = parsedDate.toISOString().split('T')[0];
+        } else {
+          throw new Error('Invalid date format');
+        }
+      } catch {
+        // Fallback to default if parsing fails
+        defaultFpiDate = new Date(
+          today.getFullYear(),
+          today.getMonth() + 12,
+          today.getDate()
+        ).toISOString().split('T')[0];
+      }
+    }
+  } else {
+    // No FPI date provided, use default
+    defaultFpiDate = new Date(
+      today.getFullYear(),
+      today.getMonth() + 12,
+      today.getDate()
+    ).toISOString().split('T')[0];
+  }
   
   // STEP 2: Handle global LOE date - critical to preserve user input
   let formattedLoeDate: string;

@@ -276,7 +276,7 @@ const ConceptDetailPage: React.FC = () => {
               regionalLoeData={feasibilityData?.regionalLoeData}
               timeToLoe={(concept as any).timeToLoe || feasibilityData?.timeToLoe}
               postLoeValue={feasibilityData?.postLoeValue}
-              estimatedFpiDate={feasibilityData?.estimatedFpiDate}
+              estimatedFpiDate={(concept as any).anticipatedFpiDate || feasibilityData?.estimatedFpiDate}
             />
           </div>
 
