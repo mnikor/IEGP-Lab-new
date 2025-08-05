@@ -125,12 +125,28 @@ You are an expert clinical study designer with advanced reasoning capabilities. 
 - Strategic Goals: ${JSON.stringify(currentConcept.strategicGoals)}
 - Geography: ${JSON.stringify(currentConcept.geography)}
 - Target Population: ${currentConcept.targetSubpopulation}
-- Current Sample Size: ${(currentConcept.feasibilityData as any)?.sampleSize || 'Unknown'}
-- Current Timeline: ${(currentConcept.feasibilityData as any)?.timeline || 'Unknown'} months
-- Current Cost: €${((currentConcept.feasibilityData as any)?.estimatedCost || 0) / 1000000}M
-- Anticipated FPI: ${(currentConcept as any).anticipatedFpiDate || 'Not set'}
-- Global LOE Date: ${(currentConcept as any).globalLoeDate || 'Not set'}
+**Current Study Parameters:**
+- Sample Size: ${(currentConcept.feasibilityData as any)?.sampleSize || 'Unknown'}
+- Timeline: ${(currentConcept.feasibilityData as any)?.timeline || 'Unknown'} months  
+- Cost: €${((currentConcept.feasibilityData as any)?.estimatedCost || 0) / 1000000}M
+- Recruitment Rate: ${(currentConcept.feasibilityData as any)?.recruitmentRate || 'Unknown'} patients/month
+- Completion Risk: ${(currentConcept.feasibilityData as any)?.completionRisk || 'Unknown'}%
+
+**Current Timeline & Commercial:**
+- FPI Date: ${(currentConcept as any).anticipatedFpiDate || 'Not set'}
+- DB Lock: ${(currentConcept as any).plannedDbLockDate || 'Not set'}
+- Topline: ${(currentConcept as any).expectedToplineDate || 'Not set'}
+- Global LOE: ${(currentConcept as any).globalLoeDate || 'Not set'}
 - Time to LOE: ${(currentConcept as any).timeToLoe || 'Not set'} years
+- Budget Ceiling: €${((currentConcept as any).budgetCeilingEur || 0) / 1000000}M
+- Timeline Ceiling: ${(currentConcept as any).timelineCeilingMonths || 'Not set'} months
+
+**Current MCDA Scores:**
+- Scientific Validity: ${(currentConcept.mcdaScores as any)?.scientificValidity || 'Unknown'}
+- Clinical Impact: ${(currentConcept.mcdaScores as any)?.clinicalImpact || 'Unknown'}
+- Commercial Value: ${(currentConcept.mcdaScores as any)?.commercialValue || 'Unknown'}
+- Feasibility: ${(currentConcept.mcdaScores as any)?.feasibility || 'Unknown'}
+- Overall Score: ${(currentConcept.mcdaScores as any)?.overall || 'Unknown'}
 
 **ANALYSIS INSTRUCTIONS:**
 Determine if this is a MODIFY or DISCUSS request:
@@ -165,23 +181,27 @@ Provide a JSON response with detailed cascading analysis:
   }
 }
 
-**Available fields for modification:**
-- strategicGoals (array of strategic goals)
-- studyPhase (I, II, III, IV)
-- geography (array of regions)
-- targetSubpopulation (string)
-- comparatorDrugs (array of drug names)
-- picoData (object with population, intervention, comparator, outcomes)
-- title (study title)
-- anticipatedFpiDate (First Patient In date, e.g., "July 2026", "Q3 2025")
-- plannedDbLockDate (Database lock date)
-- expectedToplineDate (Topline results date)
-- globalLoeDate (Global Loss of Exclusivity date)
-- timeToLoe (Time until LOE from data readout in years)
-- primaryEndpoint (string - main efficacy endpoint)
-- secondaryEndpoints (array of secondary endpoints)
-- followUpDuration (number - months of follow-up)
-- recruitmentPeriod (number - months for recruitment)
+**All Available Study Elements for Dynamic Modification:**
+
+**Core Study Design:**
+- title, studyPhase, targetSubpopulation, geography, comparatorDrugs
+- primaryEndpoint, secondaryEndpoints, picoData
+
+**Timeline & Milestones:**
+- anticipatedFpiDate, plannedDbLockDate, expectedToplineDate, globalLoeDate
+- followUpDuration, recruitmentPeriod, timeToLoe
+
+**Strategic & Commercial:**
+- strategicGoals, budgetCeilingEur, timelineCeilingMonths, salesImpactThreshold
+
+**Study Parameters (via feasibilityData):**
+- estimatedCost, timeline, sampleSize, recruitmentRate, completionRisk
+
+**Scoring & Analysis:**
+- mcdaScores (scientificValidity, clinicalImpact, commercialValue, feasibility, overall)
+
+**CRITICAL INSTRUCTION:** 
+Dynamically identify which elements need modification based on the interconnection patterns above. Don't limit yourself to obvious changes - think through ALL potential cascading effects to optimize the entire study concept holistically.
 
 **Critical:** If intent is DISCUSS, set discussionOnly: true and provide comprehensive advice without making changes.
 `;
@@ -195,22 +215,35 @@ Provide a JSON response with detailed cascading analysis:
             role: "system",
             content: `You are an expert clinical study designer with deep reasoning capabilities. When analyzing changes to study concepts, think through all interconnected implications systematically.
 
-REASONING FRAMEWORK:
-1. Primary Change Analysis: Understand the requested modification
-2. Cascading Impact Assessment: Identify what other study components should change
-3. Timeline Implications: Consider how changes affect study duration, milestones
-4. Resource Impact: Analyze effects on sample size, costs, site requirements
-5. Financial Impact: Consider ROI implications, NPV changes, time value of money effects
-6. Regulatory Considerations: Assess implications for endpoints, comparators
-7. Strategic Alignment: Ensure changes support overall study goals and commercial objectives
+DYNAMIC REASONING FRAMEWORK:
+Think systematically through ALL interconnected study elements. For ANY change, analyze these interconnection patterns:
 
-CASCADING CHANGE EXAMPLES:
-- Phase change (II→III): Affects sample size, endpoints, regulatory pathway, costs, timeline
-- Geography expansion: Impacts recruitment, regulatory, costs, site count, timeline
-- Endpoint changes: Affects sample size calculations, study duration, regulatory strategy
-- FPI date changes: Cascades to data readout, LOE timelines, timeToLoe calculations, ROI projections, NPV calculations, strategic planning
-- LOE date changes: Affects timeToLoe, commercial viability, strategic value, urgency assessments, competitive positioning
-- Timeline shifts: Impact ROI through delayed revenue recognition, reduced market exclusivity period, time value of money effects
+**CLINICAL DESIGN INTERCONNECTIONS:**
+- Study Phase ↔ Sample Size ↔ Statistical Power ↔ Primary Endpoints ↔ Study Duration
+- Geography ↔ Recruitment Rate ↔ Site Count ↔ Regulatory Requirements ↔ Costs
+- Population Criteria ↔ Sample Size ↔ Recruitment Feasibility ↔ Geographic Strategy
+- Endpoints ↔ Study Duration ↔ Sample Size ↔ Statistical Analysis Plan ↔ Regulatory Strategy
+
+**TIMELINE INTERCONNECTIONS:**
+- FPI Date ↔ Recruitment Period ↔ Study Duration ↔ Data Lock ↔ Readout ↔ Filing ↔ Launch
+- Any Timeline Change ↔ LOE Calculations ↔ Market Exclusivity ↔ ROI ↔ NPV ↔ Strategic Value
+
+**FINANCIAL INTERCONNECTIONS:**
+- Sample Size ↔ Study Costs ↔ Site Count ↔ Geography ↔ Budget Constraints
+- Timeline ↔ Development Costs ↔ Revenue Timing ↔ NPV ↔ ROI ↔ Commercial Viability
+- Study Duration ↔ Opportunity Costs ↔ Competitive Risk ↔ Market Position
+
+**REGULATORY INTERCONNECTIONS:**
+- Study Phase ↔ Regulatory Requirements ↔ Endpoints ↔ Sample Size ↔ Geography
+- Comparators ↔ Regulatory Strategy ↔ Market Access ↔ Competitive Positioning
+- Endpoints ↔ Label Claims ↔ Market Access ↔ Commercial Strategy
+
+**STRATEGIC INTERCONNECTIONS:**
+- Strategic Goals ↔ Study Design ↔ Timeline ↔ Budget ↔ Commercial Objectives
+- Competitive Landscape ↔ Timeline Urgency ↔ Study Scope ↔ Resource Allocation
+
+DYNAMIC ANALYSIS INSTRUCTIONS:
+For EVERY change request, systematically evaluate which of these interconnections are triggered and determine what cascading modifications are needed to maintain study coherence and optimization.
 
 Be conversational and natural. Explain your reasoning for each cascading change. Respond only with valid JSON.`
           },
@@ -275,6 +308,16 @@ Be conversational and natural. Explain your reasoning for each cascading change.
           impactArea: 'timeline'
         });
       }
+
+      // Handle feasibility data updates for interconnected parameters
+      const needsFeasibilityUpdate = changes.some(change => 
+        ['studyPhase', 'geography', 'targetSubpopulation', 'sampleSize', 'timeline', 'recruitmentPeriod', 'followUpDuration'].includes(change.field)
+      );
+
+      // Handle MCDA score updates for changes that affect scoring
+      const needsMcdaUpdate = changes.some(change => 
+        ['studyPhase', 'geography', 'strategicGoals', 'comparatorDrugs', 'primaryEndpoint', 'timeline', 'estimatedCost'].includes(change.field)
+      );
 
       // Recalculate MCDA scores and feasibility data
       const originalMcdaScores = currentConcept.mcdaScores;
@@ -355,9 +398,12 @@ Be conversational and natural. Explain your reasoning for each cascading change.
         };
       });
 
+      // Enhanced explanation that includes interconnection analysis
+      const enhancedExplanation = analysisResult.explanation || "Your study concept has been updated with intelligent cascading analysis.";
+      
       return {
         updatedConcept,
-        explanation: analysisResult.explanation || "Your study concept has been updated based on your request.",
+        explanation: enhancedExplanation,
         changes,
         cascadingAnalysis: analysisResult.cascadingAnalysis || null
       };

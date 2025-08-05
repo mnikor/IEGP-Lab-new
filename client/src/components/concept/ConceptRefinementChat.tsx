@@ -62,7 +62,7 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
     {
       id: '1',
       type: 'system',
-      content: `I can help you refine "${concept.title}" using OpenAI's o3 reasoning model for intelligent cascading analysis. When you modify study parameters, I'll automatically identify what else should change and explain the interconnected reasoning. Just describe what you'd like to modify in natural language.`,
+      content: `I can help you refine "${concept.title}" using OpenAI's o3 reasoning model for comprehensive interconnected analysis. I'll dynamically identify ALL cascading effects across clinical design, timeline, financial, regulatory, and strategic dimensions. Any parameter change triggers intelligent analysis of related elements that should also be modified to maintain study coherence and optimization.`,
       timestamp: new Date()
     }
   ]);
