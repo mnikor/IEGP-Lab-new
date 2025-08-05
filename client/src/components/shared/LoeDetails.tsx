@@ -47,9 +47,14 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
     } else {
       // Human-readable format like "July 2026" or "December 2025"
       try {
-        const parsedDate = new Date(estimatedFpiDate + ' 1'); // Add day for parsing
-        if (!isNaN(parsedDate.getTime())) {
-          defaultFpiDate = parsedDate.toISOString().split('T')[0];
+        // For month-year format, default to the last day of the month for better UX
+        const testDate = new Date(estimatedFpiDate + ' 1');
+        if (!isNaN(testDate.getTime())) {
+          // Get the last day of the month
+          const year = testDate.getFullYear();
+          const month = testDate.getMonth();
+          const lastDayOfMonth = new Date(year, month + 1, 0); // Day 0 = last day of previous month
+          defaultFpiDate = lastDayOfMonth.toISOString().split('T')[0];
         } else {
           throw new Error('Invalid date format');
         }
