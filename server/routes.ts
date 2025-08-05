@@ -1197,7 +1197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/study-concepts/:id/refine", async (req, res) => {
     try {
       const conceptId = parseInt(req.params.id);
-      const { message, currentConcept } = req.body;
+      const { message, currentConcept, conversationHistory } = req.body;
       
       if (!message || !currentConcept) {
         return res.status(400).json({ error: "Message and current concept are required" });
@@ -1206,7 +1206,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const conceptRefiner = new ConceptRefiner();
       const result = await conceptRefiner.refineStudyConcept({
         message,
-        currentConcept
+        currentConcept,
+        conversationHistory
       });
       
       // Update the stored concept (remove timestamp fields that cause DB issues)

@@ -85,11 +85,21 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
     setIsProcessing(true);
 
     try {
+      // Build conversation history for context
+      const conversationHistory = messages
+        .filter(msg => msg.type !== 'system')
+        .slice(-5) // Only send last 5 messages for context
+        .map(msg => ({
+          role: msg.type === 'user' ? 'user' : 'assistant',
+          content: msg.content
+        }));
+
       const response = await fetch(`/api/study-concepts/${concept.id}/refine`, {
         method: 'POST',
         body: JSON.stringify({
           message: inputValue,
-          currentConcept: concept
+          currentConcept: concept,
+          conversationHistory: conversationHistory
         }),
         headers: {
           'Content-Type': 'application/json'
@@ -114,14 +124,23 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
       setMessages(prev => [...prev, assistantMessage]);
       
       // Update the concept in the parent component
-      if (updatedConcept) {
+      if (updatedConcept && changes && changes.length > 0) {
+        // Only call update if there were actual changes made
         onConceptUpdate(updatedConcept);
       }
 
-      toast({
-        title: "Concept Updated",
-        description: "Your study concept has been refined successfully."
-      });
+      // Show appropriate toast based on whether changes were made
+      if (changes && changes.length > 0) {
+        toast({
+          title: "Concept Updated",
+          description: `Updated ${changes.length} parameter${changes.length > 1 ? 's' : ''} successfully.`
+        });
+      } else {
+        toast({
+          title: "Analysis Complete",
+          description: "Provided guidance without modifying the study concept."
+        });
+      }
 
     } catch (error) {
       console.error('Error refining concept:', error);

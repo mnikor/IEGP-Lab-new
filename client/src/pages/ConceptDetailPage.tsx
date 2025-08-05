@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import type { StudyConcept, SavedStudyProposal } from "@shared/schema";
 const ConceptDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [showSituationalAnalysis, setShowSituationalAnalysis] = useState(false);
+  const queryClient = useQueryClient();
   
   const { data: concept, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/study-concepts', parseInt(id!)],
@@ -391,7 +392,10 @@ const ConceptDetailPage: React.FC = () => {
         <ConceptRefinementChat
           concept={concept}
           onConceptUpdate={(updatedConcept) => {
-            // Refetch the concept to get the latest data
+            // Invalidate and refetch the concept to get the latest data
+            queryClient.invalidateQueries({ 
+              queryKey: ['/api/study-concepts', parseInt(id!)] 
+            });
             refetch();
           }}
         />

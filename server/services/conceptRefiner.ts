@@ -7,6 +7,10 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 export interface RefinementRequest {
   message: string;
   currentConcept: StudyConcept;
+  conversationHistory?: Array<{
+    role: 'user' | 'assistant';
+    content: string;
+  }>;
 }
 
 export interface RefinementResponse {
@@ -38,7 +42,7 @@ export interface ConceptChange {
 
 export class ConceptRefiner {
   async refineStudyConcept(request: RefinementRequest): Promise<RefinementResponse> {
-    const { message, currentConcept } = request;
+    const { message, currentConcept, conversationHistory = [] } = request;
 
     // Use OpenAI to analyze the user's request and determine what changes to make
     const analysisPrompt = `
@@ -109,8 +113,13 @@ Provide a JSON response:
         messages: [
           {
             role: "system",
-            content: "You are an expert clinical study designer who helps refine study concepts based on user feedback. Respond only with valid JSON."
+            content: "You are an expert clinical study designer who helps refine study concepts based on user feedback. Be conversational and natural, avoiding phrases like 'user inquired' or 'user requested'. Respond only with valid JSON."
           },
+          // Include conversation history for context
+          ...conversationHistory.slice(-3).map(msg => ({
+            role: msg.role,
+            content: msg.content
+          })),
           {
             role: "user",
             content: analysisPrompt
