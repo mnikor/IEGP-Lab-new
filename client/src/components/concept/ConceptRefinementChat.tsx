@@ -207,6 +207,41 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
     }
   };
 
+  const copyFormattedAnalysis = async (cascadingAnalysis: any) => {
+    try {
+      // Format the analysis with proper bullet points and structure
+      const sections = [
+        { key: 'timelineImpact', title: 'Timeline Impact', value: cascadingAnalysis.timelineImpact },
+        { key: 'resourceImpact', title: 'Resource Impact', value: cascadingAnalysis.resourceImpact },
+        { key: 'financialImpact', title: 'Financial Impact', value: cascadingAnalysis.financialImpact },
+        { key: 'regulatoryImpact', title: 'Regulatory Impact', value: cascadingAnalysis.regulatoryImpact },
+        { key: 'strategicImpact', title: 'Strategic Impact', value: cascadingAnalysis.strategicImpact }
+      ].filter(section => section.value);
+
+      const formattedText = sections.map(section => {
+        const title = `${section.title}:`;
+        const content = section.value
+          .replace(/• /g, '  • ') // Add indentation to bullet points
+          .replace(/\n/g, '\n  ') // Indent all lines
+          .replace(/  $/, ''); // Remove trailing spaces
+        
+        return `${title}\n  ${content}`;
+      }).join('\n\n');
+
+      await navigator.clipboard.writeText(formattedText);
+      toast({
+        title: "Formatted Analysis Copied!",
+        description: "Analysis copied with preserved formatting"
+      });
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Could not copy formatted analysis",
+        variant: "destructive"
+      });
+    }
+  };
+
   const clearChatHistory = async () => {
     try {
       await fetch(`/api/study-concepts/${concept.id}/chat-messages`, {
@@ -357,14 +392,8 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
                   variant="ghost"
                   size="sm"
                   className="h-4 w-4 p-0 ml-auto"
-                  onClick={() => {
-                    const analysisText = Object.entries(message.cascadingAnalysis!)
-                      .filter(([, value]) => value)
-                      .map(([key, value]) => `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}`)
-                      .join('\n\n');
-                    copyToClipboard(analysisText);
-                  }}
-                  title="Copy full analysis"
+                  onClick={() => copyFormattedAnalysis(message.cascadingAnalysis!)}
+                  title="Copy formatted analysis"
                 >
                   <Copy className="h-3 w-3" />
                 </Button>
