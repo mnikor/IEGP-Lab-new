@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { StudyConcept } from "@/lib/types";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+// import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 interface ChatMessage {
   id: string;
@@ -412,8 +412,8 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
     );
   };
 
-  const chatWidth = isExpanded ? 'w-[800px]' : 'w-[600px]'; // 50% larger than original 400px
-  const chatHeight = isExpanded ? 'h-[800px]' : 'h-[750px]'; // 50% larger than original 500px
+  const chatWidth = isExpanded ? 'w-[800px]' : 'w-[600px]';
+  const chatHeight = isExpanded ? 'h-[800px]' : 'h-[750px]';
 
   return (
     <div className="fixed top-4 right-4 z-50">
@@ -428,92 +428,78 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
       )}
       
       {isOpen && (
-        <div className={`${chatWidth} ${chatHeight} shadow-xl border-2 rounded-lg bg-white overflow-hidden`}>
-          <PanelGroup direction="vertical">
-            {/* Header Panel */}
-            <Panel defaultSize={8} minSize={8} maxSize={8}>
-              <div className="bg-white border-b p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MessageCircle className="h-4 w-4" />
-                    <span className="text-sm font-medium">Refine Study Concept</span>
-                    {loadingHistory && <Loader2 className="h-3 w-3 animate-spin" />}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsExpanded(!isExpanded)}
-                      className="h-6 w-6 p-0"
-                      title={isExpanded ? "Minimize" : "Maximize"}
-                    >
-                      {isExpanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearChatHistory}
-                      className="h-6 w-6 p-0"
-                      title="Clear chat history"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsOpen(false)}
-                      className="h-6 w-6 p-0"
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+        <Card className={`${chatWidth} ${chatHeight} shadow-xl border-2 flex flex-col`}>
+          {/* Header */}
+          <CardHeader className="pb-2 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
+                <CardTitle className="text-sm">Refine Study Concept</CardTitle>
+                {loadingHistory && <Loader2 className="h-3 w-3 animate-spin" />}
               </div>
-            </Panel>
-            
-            <PanelResizeHandle className="h-1 bg-gray-200 hover:bg-gray-300 transition-colors" />
-            
-            {/* Chat Messages Panel */}
-            <Panel defaultSize={84} minSize={50}>
-              <div className="h-full flex flex-col p-3">
-                <ScrollArea className="flex-1 pr-3">
-                  {messages.map(renderMessage)}
-                  <div ref={messagesEndRef} />
-                </ScrollArea>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="h-6 w-6 p-0"
+                  title={isExpanded ? "Minimize" : "Maximize"}
+                >
+                  {isExpanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearChatHistory}
+                  className="h-6 w-6 p-0"
+                  title="Clear chat history"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsOpen(false)}
+                  className="h-6 w-6 p-0"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
               </div>
-            </Panel>
+            </div>
+          </CardHeader>
+          
+          {/* Chat Messages */}
+          <CardContent className="flex-1 flex flex-col p-3 min-h-0">
+            <ScrollArea className="flex-1 pr-3">
+              {messages.map(renderMessage)}
+              <div ref={messagesEndRef} />
+            </ScrollArea>
             
-            <PanelResizeHandle className="h-1 bg-gray-200 hover:bg-gray-300 transition-colors" />
-            
-            {/* Input Panel */}
-            <Panel defaultSize={8} minSize={8} maxSize={15}>
-              <div className="border-t p-3">
-                <div className="flex gap-2">
-                  <Input
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Describe changes you'd like to make..."
-                    className="text-sm"
-                    disabled={isProcessing}
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!inputValue.trim() || isProcessing}
-                    size="sm"
-                    className="px-3"
-                  >
-                    {isProcessing ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </Panel>
-          </PanelGroup>
-        </div>
+            {/* Input */}
+            <div className="flex gap-2 mt-3 pt-3 border-t">
+              <Input
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Describe changes you'd like to make..."
+                className="text-sm"
+                disabled={isProcessing}
+              />
+              <Button
+                onClick={handleSendMessage}
+                disabled={!inputValue.trim() || isProcessing}
+                size="sm"
+                className="px-3"
+              >
+                {isProcessing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
