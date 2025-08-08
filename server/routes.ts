@@ -1271,6 +1271,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register tournament routes
   app.use('/api/tournaments', tournamentRoutes);
 
+  // Register chat message routes
+  await registerChatRoutes(app);
+
   const httpServer = createServer(app);
   return httpServer;
 }

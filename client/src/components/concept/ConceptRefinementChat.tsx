@@ -70,7 +70,7 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
   // Load chat history from server
   const { data: chatHistory, isLoading: loadingHistory } = useQuery({
     queryKey: [`/api/study-concepts/${concept.id}/chat-messages`],
-    enabled: isOpen && !!concept.id
+    enabled: !!concept.id
   });
 
   useEffect(() => {
