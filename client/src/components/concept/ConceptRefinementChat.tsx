@@ -220,12 +220,27 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
 
       const formattedText = sections.map(section => {
         const title = `${section.title}:`;
-        const content = section.value
-          .replace(/• /g, '  • ') // Add indentation to bullet points
-          .replace(/\n/g, '\n  ') // Indent all lines
-          .replace(/  $/, ''); // Remove trailing spaces
         
-        return `${title}\n  ${content}`;
+        // Enhanced formatting to handle various text patterns
+        let content = section.value
+          // Convert existing bullets to proper format
+          .replace(/^• /gm, '• ') // Ensure bullets at start of line
+          .replace(/^\s*-\s+/gm, '• ') // Convert dashes to bullets
+          .replace(/^\s*\*\s+/gm, '• ') // Convert asterisks to bullets
+          // Handle line breaks and indentation
+          .split('\n')
+          .map((line: string) => {
+            if (line.trim() === '') return '';
+            if (line.trim().startsWith('•')) {
+              return `    ${line.trim()}`; // Indent bullet points
+            } else {
+              return `    ${line.trim()}`; // Indent regular lines
+            }
+          })
+          .join('\n')
+          .trim();
+        
+        return `${title}\n${content}`;
       }).join('\n\n');
 
       await navigator.clipboard.writeText(formattedText);
