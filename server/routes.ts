@@ -1203,18 +1203,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Message and current concept are required" });
       }
       
+      // Save user message to database
+      await storage.createChatMessage({
+        conceptId: conceptId,
+        type: 'user',
+        content: message
+      });
+
+      // Get full chat history for context
+      const fullChatHistory = await storage.getChatMessagesByConceptId(conceptId);
+      
       const conceptRefiner = new ConceptRefiner();
       const result = await conceptRefiner.refineStudyConcept({
         message,
         currentConcept,
-        conversationHistory
+        conversationHistory: fullChatHistory
       });
       
-      // Update the stored concept (remove timestamp fields that cause DB issues)
-      const { updatedAt, createdAt, ...conceptToUpdate } = result.updatedConcept;
-      await storage.updateStudyConcept(conceptId, conceptToUpdate);
+      // Save assistant response to database
+      await storage.createChatMessage({
+        conceptId: conceptId,
+        type: 'assistant',
+        content: result.explanation,
+        changes: result.changes || null,
+        cascadingAnalysis: result.cascadingAnalysis || null
+      });
       
-      res.json(result);
+      // Note: We no longer update the concept in storage - changes are only shown in chat
+      res.json({
+        ...result,
+        chatHistory: await storage.getChatMessagesByConceptId(conceptId)
+      });
     } catch (error) {
       console.error("Error refining concept:", error);
       res.status(500).json({ error: "Failed to refine concept" });
@@ -1285,4 +1304,40 @@ function updatePicoPopulationWithSampleSize(
   
   // Otherwise, prepend the sample size to the existing description
   return `${sampleSizeText}. ${cleanedPopulation}`;
+}
+
+// Export function needs to be at end of file
+export async function registerChatRoutes(app: Express) {
+  // API endpoints for chat messages
+  app.get("/api/study-concepts/:id/chat-messages", async (req, res) => {
+    try {
+      const conceptId = parseInt(req.params.id);
+      
+      if (isNaN(conceptId)) {
+        return res.status(400).json({ message: "Invalid concept ID" });
+      }
+      
+      const chatMessages = await storage.getChatMessagesByConceptId(conceptId);
+      res.json(chatMessages);
+    } catch (error) {
+      console.error("Error fetching chat messages:", error);
+      res.status(500).json({ message: "Failed to fetch chat messages" });
+    }
+  });
+
+  app.delete("/api/study-concepts/:id/chat-messages", async (req, res) => {
+    try {
+      const conceptId = parseInt(req.params.id);
+      
+      if (isNaN(conceptId)) {
+        return res.status(400).json({ message: "Invalid concept ID" });
+      }
+      
+      const success = await storage.deleteChatMessagesByConceptId(conceptId);
+      res.json({ success, message: success ? "Chat history cleared" : "No messages found" });
+    } catch (error) {
+      console.error("Error clearing chat messages:", error);
+      res.status(500).json({ message: "Failed to clear chat messages" });
+    }
+  });
 }

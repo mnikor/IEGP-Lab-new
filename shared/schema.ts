@@ -278,6 +278,22 @@ export const insertSavedStudyProposalSchema = createInsertSchema(savedStudyPropo
   updatedAt: true,
 });
 
+// Chat Messages table for study concept refinement
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  conceptId: integer("concept_id").references(() => studyConcepts.id).notNull(),
+  type: text("type").notNull(), // 'user' | 'assistant' | 'system'
+  content: text("content").notNull(),
+  changes: json("changes"), // Array of ConceptChange objects
+  cascadingAnalysis: json("cascading_analysis"), // O3 reasoning analysis
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
+  id: true,
+  timestamp: true,
+});
+
 // Search item validation schema
 export const searchItemSchema = z.object({
   id: z.string(),
@@ -330,3 +346,5 @@ export type AmendStrategyRequest = z.infer<typeof amendStrategyRequestSchema>;
 export type ExecuteStrategyRequest = z.infer<typeof executeStrategyRequestSchema>;
 export type SavedStudyProposal = typeof savedStudyProposals.$inferSelect;
 export type InsertSavedStudyProposal = z.infer<typeof insertSavedStudyProposalSchema>;
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;

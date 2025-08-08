@@ -1,4 +1,4 @@
-import { users, studyConcepts, synopsisValidations, researchStrategies, researchResults, savedStudyProposals, type User, type InsertUser, type StudyConcept, type InsertStudyConcept, type SynopsisValidation, type InsertSynopsisValidation, type ResearchStrategy, type InsertResearchStrategy, type ResearchResult, type InsertResearchResult, type SavedStudyProposal, type InsertSavedStudyProposal } from "@shared/schema";
+import { users, studyConcepts, synopsisValidations, researchStrategies, researchResults, savedStudyProposals, chatMessages, type User, type InsertUser, type StudyConcept, type InsertStudyConcept, type SynopsisValidation, type InsertSynopsisValidation, type ResearchStrategy, type InsertResearchStrategy, type ResearchResult, type InsertResearchResult, type SavedStudyProposal, type InsertSavedStudyProposal, type ChatMessage, type InsertChatMessage } from "@shared/schema";
 import { tournaments, ideas, reviews, tournamentRounds, type Tournament, type InsertTournament, type Idea, type InsertIdea, type Review, type InsertReview, type TournamentRound, type InsertTournamentRound } from "@shared/tournament";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -61,6 +61,11 @@ export interface IStorage {
   getAllSavedStudyProposals(): Promise<SavedStudyProposal[]>;
   deleteSavedStudyProposal(id: number): Promise<boolean>;
   updateSavedStudyProposal(id: number, updates: Partial<SavedStudyProposal>): Promise<SavedStudyProposal | undefined>;
+  
+  // Chat Message methods
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  getChatMessagesByConceptId(conceptId: number): Promise<ChatMessage[]>;
+  deleteChatMessagesByConceptId(conceptId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -276,6 +281,21 @@ export class DatabaseStorage implements IStorage {
       updatedAt: new Date()
     }).where(eq(savedStudyProposals.id, id)).returning();
     return updated || undefined;
+  }
+
+  // Chat message methods
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const [created] = await db.insert(chatMessages).values(message).returning();
+    return created;
+  }
+
+  async getChatMessagesByConceptId(conceptId: number): Promise<ChatMessage[]> {
+    return await db.select().from(chatMessages).where(eq(chatMessages.conceptId, conceptId)).orderBy(chatMessages.timestamp);
+  }
+
+  async deleteChatMessagesByConceptId(conceptId: number): Promise<boolean> {
+    const result = await db.delete(chatMessages).where(eq(chatMessages.conceptId, conceptId));
+    return result.rowCount > 0;
   }
 }
 
