@@ -126,8 +126,7 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
         method: 'POST',
         body: JSON.stringify({
           message: inputValue,
-          currentConcept: concept,
-          conversationHistory: messages
+          currentConcept: concept
         }),
         headers: {
           'Content-Type': 'application/json'

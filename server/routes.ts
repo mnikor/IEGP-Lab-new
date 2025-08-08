@@ -1197,7 +1197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/study-concepts/:id/refine", async (req, res) => {
     try {
       const conceptId = parseInt(req.params.id);
-      const { message, currentConcept, conversationHistory } = req.body;
+      const { message, currentConcept } = req.body;
       
       if (!message || !currentConcept) {
         return res.status(400).json({ error: "Message and current concept are required" });
@@ -1210,14 +1210,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: message
       });
 
-      // Get full chat history for context
+      // Get full chat history for context and convert format
       const fullChatHistory = await storage.getChatMessagesByConceptId(conceptId);
+      
+      // Convert database chat format to OpenAI format
+      const formattedHistory = fullChatHistory
+        .filter(msg => msg.type !== 'system') // Exclude system messages
+        .map(msg => ({
+          role: msg.type === 'user' ? 'user' as const : 'assistant' as const,
+          content: msg.content
+        }));
       
       const conceptRefiner = new ConceptRefiner();
       const result = await conceptRefiner.refineStudyConcept({
         message,
         currentConcept,
-        conversationHistory: fullChatHistory
+        conversationHistory: formattedHistory
       });
       
       // Save assistant response to database
