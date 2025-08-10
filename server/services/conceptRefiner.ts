@@ -1,6 +1,5 @@
 import OpenAI from 'openai';
-import { StudyConcept, ConceptFormData } from "@shared/schema";
-import { MCDAScorer } from './mcdaScorer';
+import { StudyConcept } from "@shared/schema";
 import { generateJJBusinessPrompt, getJJBusinessGuidance } from './jjBusinessIntelligence';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -365,7 +364,7 @@ Be conversational and natural. Explain your reasoning for each cascading change.
       const originalFeasibilityData = currentConcept.feasibilityData;
 
       // Create concept form data for recalculation
-      const conceptFormData: ConceptFormData = {
+      const conceptFormData = {
         drugName: updatedConcept.drugName,
         indication: updatedConcept.indication,
         strategicGoals: updatedConcept.strategicGoals,
@@ -373,8 +372,8 @@ Be conversational and natural. Explain your reasoning for each cascading change.
         geography: updatedConcept.geography,
         targetSubpopulation: updatedConcept.targetSubpopulation,
         comparatorDrugs: updatedConcept.comparatorDrugs || [],
-        studyPhasePref: 'phase_iii', // Default value
-        aiModel: 'gpt-4o', // Default value
+        studyPhasePref: 'phase_iii' as const, // Default value
+        aiModel: 'gpt-4o' as const, // Default value
         numberOfConcepts: 1 // Default value
       };
 
@@ -396,23 +395,23 @@ Be conversational and natural. Explain your reasoning for each cascading change.
           
           // Recalculate feasibility data with updated parameters
           console.log('Calling calculateFeasibility with updated concept...');
-          newFeasibilityData = await calculateFeasibility(updatedConcept, conceptFormData);
+          newFeasibilityData = await calculateFeasibility(updatedConcept as any, conceptFormData);
           console.log('New feasibility data calculated:', { 
-            sampleSize: newFeasibilityData.sampleSize, 
-            estimatedCost: newFeasibilityData.estimatedCost,
-            timeline: newFeasibilityData.timeline 
+            sampleSize: (newFeasibilityData as any)?.sampleSize, 
+            estimatedCost: (newFeasibilityData as any)?.estimatedCost,
+            timeline: (newFeasibilityData as any)?.timeline 
           });
           
           // Recalculate MCDA scores
-          newMcdaScores = scoreMcda({
+          newMcdaScores = (await import('./mcdaScorer')).scoreMcda({
             ...updatedConcept,
             feasibilityData: newFeasibilityData
-          }, conceptFormData);
+          } as any, conceptFormData);
           
           console.log('Recalculated feasibility and MCDA scores due to parameter changes');
         } catch (error) {
           console.error('Error during recalculation, using original values:', error);
-          console.error('Full error details:', error.stack);
+          console.error('Full error details:', (error as Error).stack);
           // Fall back to original values if recalculation fails
         }
       }
@@ -424,36 +423,57 @@ Be conversational and natural. Explain your reasoning for each cascading change.
       // Add feasibility data changes as explicit cascading changes
       if (needsRecalculation && newFeasibilityData !== originalFeasibilityData) {
         // Add sample size change if it was recalculated
-        if (newFeasibilityData.sampleSize !== (originalFeasibilityData as any)?.sampleSize) {
+        if ((newFeasibilityData as any)?.sampleSize !== (originalFeasibilityData as any)?.sampleSize) {
           changes.push({
             field: 'feasibilityData.sampleSize',
             oldValue: (originalFeasibilityData as any)?.sampleSize || 0,
-            newValue: newFeasibilityData.sampleSize,
-            impact: {},
+            newValue: (newFeasibilityData as any)?.sampleSize,
+            impact: {
+              feasibilityData: {
+                estimatedCost: (newFeasibilityData as any)?.estimatedCost,
+                timeline: (newFeasibilityData as any)?.timeline,
+                recruitmentRate: (newFeasibilityData as any)?.recruitmentRate,
+                completionRisk: (newFeasibilityData as any)?.completionRisk
+              }
+            },
             cascadingEffect: true,
             impactArea: 'resource'
           });
         }
         
         // Add cost change if it was recalculated
-        if (newFeasibilityData.estimatedCost !== (originalFeasibilityData as any)?.estimatedCost) {
+        if ((newFeasibilityData as any)?.estimatedCost !== (originalFeasibilityData as any)?.estimatedCost) {
           changes.push({
             field: 'feasibilityData.estimatedCost',
             oldValue: (originalFeasibilityData as any)?.estimatedCost || 0,
-            newValue: newFeasibilityData.estimatedCost,
-            impact: {},
+            newValue: (newFeasibilityData as any)?.estimatedCost,
+            impact: {
+              feasibilityData: {
+                estimatedCost: (newFeasibilityData as any)?.estimatedCost,
+                timeline: (newFeasibilityData as any)?.timeline,
+                recruitmentRate: (newFeasibilityData as any)?.recruitmentRate,
+                completionRisk: (newFeasibilityData as any)?.completionRisk
+              }
+            },
             cascadingEffect: true,
             impactArea: 'financial'
           });
         }
         
         // Add timeline change if it was recalculated
-        if (newFeasibilityData.timeline !== (originalFeasibilityData as any)?.timeline) {
+        if ((newFeasibilityData as any)?.timeline !== (originalFeasibilityData as any)?.timeline) {
           changes.push({
             field: 'feasibilityData.timeline',
             oldValue: (originalFeasibilityData as any)?.timeline || 0,
-            newValue: newFeasibilityData.timeline,
-            impact: {},
+            newValue: (newFeasibilityData as any)?.timeline,
+            impact: {
+              feasibilityData: {
+                estimatedCost: (newFeasibilityData as any)?.estimatedCost,
+                timeline: (newFeasibilityData as any)?.timeline,
+                recruitmentRate: (newFeasibilityData as any)?.recruitmentRate,
+                completionRisk: (newFeasibilityData as any)?.completionRisk
+              }
+            },
             cascadingEffect: true,
             impactArea: 'timeline'
           });

@@ -294,11 +294,36 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
   };
 
   const formatChangeValue = (value: any): string => {
-    if (Array.isArray(value)) {
-      return value.join(', ');
+    if (value === null || value === undefined) {
+      return 'N/A';
     }
-    if (typeof value === 'object' && value !== null) {
-      return JSON.stringify(value, null, 2);
+    if (Array.isArray(value)) {
+      return value.map(v => typeof v === 'object' ? '[Object]' : String(v)).join(', ');
+    }
+    if (typeof value === 'object') {
+      try {
+        // Handle common complex objects
+        if (value.hasOwnProperty('epidemiologyData') || value.hasOwnProperty('patientEpidemiology')) {
+          return '[Patient Epidemiology Data]';
+        }
+        if (value.hasOwnProperty('uptakeCurve') || value.hasOwnProperty('triplet')) {
+          return '[Uptake Curve Data]';
+        }
+        if (value.hasOwnProperty('additionalUplift') || value.hasOwnProperty('SyVrossRevenue')) {
+          return '[Revenue Model Data]';
+        }
+        // For other objects, try to show key-value pairs safely
+        const keys = Object.keys(value);
+        if (keys.length === 0) {
+          return '{}';
+        }
+        if (keys.length <= 3) {
+          return keys.map(k => `${k}: ${String(value[k])}`).join(', ');
+        }
+        return `[Object with ${keys.length} properties]`;
+      } catch (error) {
+        return '[Complex Object]';
+      }
     }
     if (typeof value === 'number' && value > 1000000) {
       return `€${(value / 1000000).toFixed(1)}M`;
