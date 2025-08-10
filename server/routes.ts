@@ -1228,13 +1228,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         conversationHistory: formattedHistory
       });
       
-      // Save assistant response to database
+      // Save assistant response to database - ensure proper serialization of complex objects
+      const sanitizedCascadingAnalysis = result.cascadingAnalysis ? {
+        timelineImpact: typeof result.cascadingAnalysis.timelineImpact === 'string' 
+          ? result.cascadingAnalysis.timelineImpact 
+          : JSON.stringify(result.cascadingAnalysis.timelineImpact),
+        resourceImpact: typeof result.cascadingAnalysis.resourceImpact === 'string' 
+          ? result.cascadingAnalysis.resourceImpact 
+          : JSON.stringify(result.cascadingAnalysis.resourceImpact),
+        financialImpact: typeof result.cascadingAnalysis.financialImpact === 'string' 
+          ? result.cascadingAnalysis.financialImpact 
+          : JSON.stringify(result.cascadingAnalysis.financialImpact),
+        regulatoryImpact: typeof result.cascadingAnalysis.regulatoryImpact === 'string' 
+          ? result.cascadingAnalysis.regulatoryImpact 
+          : JSON.stringify(result.cascadingAnalysis.regulatoryImpact),
+        strategicImpact: typeof result.cascadingAnalysis.strategicImpact === 'string' 
+          ? result.cascadingAnalysis.strategicImpact 
+          : JSON.stringify(result.cascadingAnalysis.strategicImpact)
+      } : null;
+
       await storage.createChatMessage({
         conceptId: conceptId,
         type: 'assistant',
         content: result.explanation,
         changes: result.changes || null,
-        cascadingAnalysis: result.cascadingAnalysis || null
+        cascadingAnalysis: sanitizedCascadingAnalysis
       });
       
       // Note: We no longer update the concept in storage - changes are only shown in chat

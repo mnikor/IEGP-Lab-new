@@ -442,31 +442,51 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
                 {message.cascadingAnalysis.timelineImpact && (
                   <div>
                     <span className="font-medium text-blue-800">Timeline Impact:</span>
-                    <p className="text-blue-700 mt-1">{message.cascadingAnalysis.timelineImpact}</p>
+                    <p className="text-blue-700 mt-1">{
+                      typeof message.cascadingAnalysis.timelineImpact === 'string' 
+                        ? message.cascadingAnalysis.timelineImpact 
+                        : '[Complex data - see details]'
+                    }</p>
                   </div>
                 )}
                 {message.cascadingAnalysis.resourceImpact && (
                   <div>
                     <span className="font-medium text-green-800">Resource Impact:</span>
-                    <p className="text-green-700 mt-1">{message.cascadingAnalysis.resourceImpact}</p>
+                    <p className="text-green-700 mt-1">{
+                      typeof message.cascadingAnalysis.resourceImpact === 'string' 
+                        ? message.cascadingAnalysis.resourceImpact 
+                        : '[Complex data - see details]'
+                    }</p>
                   </div>
                 )}
                 {message.cascadingAnalysis.financialImpact && (
                   <div>
                     <span className="font-medium text-emerald-800">Financial Impact:</span>
-                    <p className="text-emerald-700 mt-1">{message.cascadingAnalysis.financialImpact}</p>
+                    <p className="text-emerald-700 mt-1">{
+                      typeof message.cascadingAnalysis.financialImpact === 'string' 
+                        ? message.cascadingAnalysis.financialImpact 
+                        : '[Complex data - see details]'
+                    }</p>
                   </div>
                 )}
                 {message.cascadingAnalysis.regulatoryImpact && (
                   <div>
                     <span className="font-medium text-purple-800">Regulatory Impact:</span>
-                    <p className="text-purple-700 mt-1">{message.cascadingAnalysis.regulatoryImpact}</p>
+                    <p className="text-purple-700 mt-1">{
+                      typeof message.cascadingAnalysis.regulatoryImpact === 'string' 
+                        ? message.cascadingAnalysis.regulatoryImpact 
+                        : '[Complex data - see details]'
+                    }</p>
                   </div>
                 )}
                 {message.cascadingAnalysis.strategicImpact && (
                   <div>
                     <span className="font-medium text-orange-800">Strategic Impact:</span>
-                    <p className="text-orange-700 mt-1">{message.cascadingAnalysis.strategicImpact}</p>
+                    <p className="text-orange-700 mt-1">{
+                      typeof message.cascadingAnalysis.strategicImpact === 'string' 
+                        ? message.cascadingAnalysis.strategicImpact 
+                        : '[Complex data - see details]'
+                    }</p>
                   </div>
                 )}
               </div>
