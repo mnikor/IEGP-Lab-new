@@ -31,6 +31,7 @@ interface ResultsSectionProps {
 
 const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts, researchStrategyId }) => {
   const { toast } = useToast();
+  const [localConcepts, setLocalConcepts] = useState<StudyConcept[]>(concepts);
   const [researchResults, setResearchResults] = useState<ResearchResult[]>([]);
   const [showSituationalAnalysis, setShowSituationalAnalysis] = useState(false);
   const [loadingResearch, setLoadingResearch] = useState(false);
@@ -122,9 +123,23 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts, researchStrat
     }
   };
 
+  // Update local concepts when props change
+  useEffect(() => {
+    setLocalConcepts(concepts);
+  }, [concepts]);
+
+  // Handle concept updates from chat
+  const handleConceptUpdate = (updatedConcept: StudyConcept) => {
+    setLocalConcepts(prevConcepts =>
+      prevConcepts.map(concept =>
+        concept.id === updatedConcept.id ? updatedConcept : concept
+      )
+    );
+  };
+
   // Extract drug name and indication from the first concept
-  const drugName = concepts.length > 0 ? concepts[0].drugName || 'Unknown Drug' : 'Unknown Drug';
-  const indication = concepts.length > 0 ? concepts[0].indication || 'Unknown Indication' : 'Unknown Indication';
+  const drugName = localConcepts.length > 0 ? localConcepts[0].drugName || 'Unknown Drug' : 'Unknown Drug';
+  const indication = localConcepts.length > 0 ? localConcepts[0].indication || 'Unknown Indication' : 'Unknown Indication';
 
   return (
     <>
@@ -155,8 +170,13 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts, researchStrat
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {concepts.map((concept, index) => (
-              <ConceptCard key={index} concept={concept} index={index + 1} />
+            {localConcepts.map((concept, index) => (
+              <ConceptCard 
+                key={concept.id || index} 
+                concept={concept} 
+                index={index + 1}
+                onConceptUpdate={handleConceptUpdate}
+              />
             ))}
           </div>
         </CardContent>

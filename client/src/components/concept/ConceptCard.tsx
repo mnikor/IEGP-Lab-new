@@ -6,6 +6,7 @@ import { Star, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
 import PicoFramework from "@/components/shared/PicoFramework";
 import SwotAnalysis from "@/components/shared/SwotAnalysis";
 import ConfidenceLevel from "@/components/shared/ConfidenceLevel";
+import ConceptRefinementChat from "@/components/concept/ConceptRefinementChat";
 
 import FeasibilityDashboard from "@/components/shared/FeasibilityDashboard";
 import CurrentEvidence from "@/components/shared/CurrentEvidence";
@@ -24,9 +25,10 @@ import {
 interface ConceptCardProps {
   concept: StudyConcept;
   index: number;
+  onConceptUpdate?: (updatedConcept: StudyConcept) => void;
 }
 
-const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
+const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index, onConceptUpdate }) => {
   const [showFeasibilityDetails, setShowFeasibilityDetails] = useState(false);
   
   return (
@@ -262,6 +264,14 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index }) => {
           </div>
         </div>
       </CardContent>
+      
+      {/* AI Refinement Chat - Only show if concept has been saved and has an ID */}
+      {concept.id && onConceptUpdate && (
+        <ConceptRefinementChat
+          concept={concept}
+          onConceptUpdate={onConceptUpdate}
+        />
+      )}
     </Card>
   );
 };
