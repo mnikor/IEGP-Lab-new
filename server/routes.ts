@@ -93,8 +93,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log the incoming request data to debug anticipatedFpiDate
       console.log("Received request with anticipatedFpiDate:", data.anticipatedFpiDate);
       
+      // Define performNewSearch function first
+      const performNewSearch = async (data: any) => {
+        console.log("Performing new Perplexity search");
+        const isOncology = (data.indication || '').toLowerCase().includes('cancer') || 
+                           (data.indication || '').toLowerCase().includes('oncol') ||
+                           (data.indication || '').toLowerCase().includes('tumor');
+        
+        const strategicGoalsFocus = data.strategicGoals.map((goal: string) => goal.replace('_', ' ')).join(' and ');
+        const searchQuery = `${data.drugName} ${data.indication} ${strategicGoalsFocus} Phase ${data.studyPhasePref} clinical trials study design`;
+        
+        return await perplexityWebSearch(searchQuery, [
+          "pubmed.ncbi.nlm.nih.gov",
+          "clinicaltrials.gov", 
+          "nejm.org",
+          "accessdata.fda.gov",
+          "ema.europa.eu",
+          "nature.com"
+        ]);
+      };
+
       // Step 1: Use existing research strategy results or perform new search
-      let searchResults;
+      let searchResults: { content: string; citations: string[] };
       
       if (data.researchStrategyId) {
         // Use existing research strategy results to avoid duplicate searches
@@ -120,28 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error retrieving research strategy results:", error);
           searchResults = await performNewSearch(data);
         }
-      }
-
-      const performNewSearch = async (data: any) => {
-        console.log("Performing new Perplexity search");
-        const isOncology = (data.indication || '').toLowerCase().includes('cancer') || 
-                           (data.indication || '').toLowerCase().includes('oncol') ||
-                           (data.indication || '').toLowerCase().includes('tumor');
-        
-        const strategicGoalsFocus = data.strategicGoals.map((goal: string) => goal.replace('_', ' ')).join(' and ');
-        const searchQuery = `${data.drugName} ${data.indication} ${strategicGoalsFocus} Phase ${data.studyPhasePref} clinical trials study design`;
-        
-        return await perplexityWebSearch(searchQuery, [
-          "pubmed.ncbi.nlm.nih.gov",
-          "clinicaltrials.gov", 
-          "nejm.org",
-          "accessdata.fda.gov",
-          "ema.europa.eu",
-          "nature.com"
-        ]);
-      };
-
-      if (!data.researchStrategyId) {
+      } else {
         searchResults = await performNewSearch(data);
       }
 
@@ -164,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           feasibilityData: concept.feasibilityData
         });
         
-        const feasibilityData = await calculateFeasibility(concept, data);
+        const feasibilityData = await calculateFeasibility(concept as any, data);
         
         // Debug the calculated feasibility data
         console.log("Calculated feasibility data - ROI Debug:", {
@@ -197,9 +196,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Update PICO population field to reflect calculated sample size
         const correctedPicoData = {
-          ...concept.picoData,
+          ...(concept.picoData || {}),
           population: updatePicoPopulationWithSampleSize(
-            concept.picoData?.population || "Study population",
+            (concept.picoData as any)?.population || "Study population",
             feasibilityData.sampleSize,
             concept.indication || data.indication,
             concept.targetSubpopulation
@@ -231,7 +230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             globalLoeDate: data.globalLoeDate || feasibilityData.globalLoeDate
           },
           // Store comprehensive AI analysis data for transparency
-          aiAnalysis: feasibilityData.aiAnalysis || null,
+          aiAnalysis: (feasibilityData as any)?.aiAnalysis || null,
           mcdaScores,
           swotAnalysis,
           currentEvidence
@@ -240,7 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Step 4: Save the concepts to the database
       const savedConcepts = await Promise.all(
-        enrichedConcepts.map((concept: Partial<StudyConcept>) => storage.createStudyConcept(concept))
+        enrichedConcepts.map((concept: any) => storage.createStudyConcept(concept))
       );
 
       // Step 5: Automatically save as a study proposal for persistence
@@ -451,8 +450,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (strategy) {
             existingResearchResults = strategy;
             console.log("Found research strategy:", {
-              hasResults: !!strategy.results,
-              resultsCount: strategy.results?.length || 0
+              hasResults: !!(strategy as any).results,
+              resultsCount: (strategy as any).results?.length || 0
             });
           } else {
             console.log("No research strategy found for ID:", strategyId);
@@ -622,7 +621,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const feasibilityData = await calculateFeasibility(tempConcept, data);
       
       // Step 5: Analyze the document against evidence with feasibility context
-      const validationResults = await analyzeWithOpenAI(searchResults, { 
+      const validationResults = await analyzeWithOpenAI(searchResults!, { 
         ...data,
         documentText: enrichedText,
         extractedPico,
@@ -634,7 +633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Ensure revised economics uses the calculated feasibility cost
       if (validationResults.revisedEconomics) {
-        validationResults.revisedEconomics.revisedCost = feasibilityData.totalCost;
+        validationResults.revisedEconomics.revisedCost = (feasibilityData as any).totalCost;
         validationResults.revisedEconomics.revisedTimeline = feasibilityData.timeline;
         validationResults.revisedEconomics.revisedROI = feasibilityData.projectedROI;
         validationResults.revisedEconomics.notes = `Costs account for increased sample size and extended recruitment. ${validationResults.revisedEconomics.notes || ''}`.trim();
@@ -654,12 +653,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Set the current evidence with clean content and proper citations
-      console.log("Setting detailed evidence with search results length:", searchResults.content.length);
-      console.log("Citations received:", searchResults.citations.length);
+      console.log("Setting detailed evidence with search results length:", searchResults?.content?.length || 0);
+      console.log("Citations received:", searchResults?.citations?.length || 0);
       
       validationResults.currentEvidence = {
-        summary: searchResults.content, // Use clean content directly
-        citations: searchResults.citations.map((citation, index) => ({
+        summary: searchResults?.content || '', // Use clean content directly
+        citations: (searchResults?.citations || []).map((citation: any, index: number) => ({
           id: `${index + 1}`,
           title: citation,
           url: citation

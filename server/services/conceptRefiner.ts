@@ -395,7 +395,7 @@ Be conversational and natural. Explain your reasoning for each cascading change.
           
           // Recalculate feasibility data with updated parameters
           console.log('Calling calculateFeasibility with updated concept...');
-          newFeasibilityData = await calculateFeasibility(updatedConcept as any, conceptFormData);
+          newFeasibilityData = await calculateFeasibility(updatedConcept as any, conceptFormData as any);
           console.log('New feasibility data calculated:', { 
             sampleSize: (newFeasibilityData as any)?.sampleSize, 
             estimatedCost: (newFeasibilityData as any)?.estimatedCost,
@@ -406,7 +406,7 @@ Be conversational and natural. Explain your reasoning for each cascading change.
           newMcdaScores = (await import('./mcdaScorer')).scoreMcda({
             ...updatedConcept,
             feasibilityData: newFeasibilityData
-          } as any, conceptFormData);
+          } as any, conceptFormData as any);
           
           console.log('Recalculated feasibility and MCDA scores due to parameter changes');
         } catch (error) {
@@ -485,10 +485,10 @@ Be conversational and natural. Explain your reasoning for each cascading change.
         change.impact = {
           mcdaScores: newMcdaScores || {},
           feasibilityData: newFeasibilityData ? {
-            estimatedCost: newFeasibilityData.estimatedCost || 0,
-            timeline: newFeasibilityData.timeline || 0,
-            recruitmentRate: newFeasibilityData.recruitmentRate || 0,
-            completionRisk: newFeasibilityData.completionRisk || 0
+            estimatedCost: (newFeasibilityData as any)?.estimatedCost || 0,
+            timeline: (newFeasibilityData as any)?.timeline || 0,
+            recruitmentRate: (newFeasibilityData as any)?.recruitmentRate || 0,
+            completionRisk: (newFeasibilityData as any)?.completionRisk || 0
           } : {
             estimatedCost: 0,
             timeline: 0,
