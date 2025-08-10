@@ -90,13 +90,15 @@ export const JJ_COMPETITORS_TO_AVOID = [
 ];
 
 export const JJ_STRATEGIC_PRIORITIES = [
-  "Leverage existing J&J portfolio synergies",
-  "Prioritize combination opportunities with J&J drugs",
-  "Focus on differentiation from competitor approaches",
+  "Leverage existing J&J portfolio synergies for combination studies",
+  "Prioritize J&J drugs for combination partners when scientifically appropriate",
+  "Design head-to-head studies against competitors to demonstrate superiority",
+  "Focus on differentiation strategies that highlight J&J drug advantages",
   "Maximize lifecycle management of approved J&J assets",
-  "Support regulatory pathways that favor J&J portfolio",
-  "Consider manufacturing and supply chain advantages",
-  "Align with J&J's therapeutic area expertise and infrastructure"
+  "Support regulatory pathways that favor J&J portfolio positioning",
+  "Consider manufacturing and supply chain advantages in study design",
+  "Align with J&J's therapeutic area expertise and infrastructure",
+  "Include competitor comparisons when they strengthen J&J's market position"
 ];
 
 export function getJJBusinessGuidance(therapeuticArea: string, drugName?: string): JJBusinessGuidance {
@@ -133,22 +135,26 @@ ${guidance.preferredDrugs.map(drug =>
   `• ${drug.name}: ${drug.mechanism} (${drug.indication.join(', ')}) - Strategic Priority: ${drug.strategicPriority}`
 ).join('\n')}
 
-AVOID THESE COMPETITORS:
-${guidance.avoidCompetitors.join(', ')}
-
-STRATEGIC PRIORITIES:
+STRATEGIC STUDY DESIGN APPROACH:
 ${guidance.strategicPriorities.map(priority => `• ${priority}`).join('\n')}
 
 COMBINATION STRATEGY:
-- When suggesting combinations, ALWAYS prefer J&J drugs over competitors
+- When suggesting combinations, STRONGLY prefer J&J drugs over competitors
 - For example: prefer apalutamide over enzalutamide for prostate cancer combinations
 - Consider J&J portfolio synergies and cross-selling opportunities
 - Factor in J&J's manufacturing capabilities and regulatory relationships
 
+HEAD-TO-HEAD COMPARATOR STRATEGY:
+- Design H2H studies against competitors when they can demonstrate J&J drug superiority
+- Choose comparators that position J&J drugs favorably (e.g., against older standards of care)
+- Focus on endpoints where J&J drugs have competitive advantages
+- Consider market access implications of comparator choice
+
 BUSINESS IMPACT CONSIDERATIONS:
 - Maximize lifecycle value of existing J&J assets
-- Support regulatory differentiation from competitor approaches  
+- Support regulatory differentiation that favors J&J portfolio
 - Consider commercial advantages (pricing, market access, physician relationships)
 - Align with J&J's therapeutic area centers of excellence
+- Design studies that can support superior labeling claims vs competitors
 `;
 }
