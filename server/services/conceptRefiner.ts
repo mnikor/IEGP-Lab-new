@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { StudyConcept, ConceptFormData } from "@shared/schema";
 import { MCDAScorer } from './mcdaScorer';
+import { generateJJBusinessPrompt, getJJBusinessGuidance } from './jjBusinessIntelligence';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -102,11 +103,33 @@ export class ConceptRefiner {
     return { timeToLoe: calculatedTimeToLoe, updatedConcept };
   }
 
+  // Helper function to determine therapeutic area from indication
+  private getTherapeuticAreaFromIndication(indication: string): string {
+    const lowerIndication = indication.toLowerCase();
+    if (lowerIndication.includes('cancer') || lowerIndication.includes('tumor') || lowerIndication.includes('oncol') || 
+        lowerIndication.includes('carcinoma') || lowerIndication.includes('sarcoma') || lowerIndication.includes('leukemia') ||
+        lowerIndication.includes('lymphoma') || lowerIndication.includes('prostate') || lowerIndication.includes('nsclc') ||
+        lowerIndication.includes('colorectal') || lowerIndication.includes('crc')) {
+      return 'oncology';
+    }
+    if (lowerIndication.includes('psoriasis') || lowerIndication.includes('arthritis') || lowerIndication.includes('crohn') ||
+        lowerIndication.includes('colitis') || lowerIndication.includes('immunology') || lowerIndication.includes('autoimmune')) {
+      return 'immunology';
+    }
+    return 'general';
+  }
+
   async refineStudyConcept(request: RefinementRequest): Promise<RefinementResponse> {
     const { message, currentConcept, conversationHistory = [] } = request;
 
+    // Generate J&J business intelligence guidance
+    const therapeuticArea = this.getTherapeuticAreaFromIndication(currentConcept.indication);
+    const jjBusinessPrompt = generateJJBusinessPrompt(therapeuticArea, currentConcept.drugName);
+
     // Use OpenAI to analyze the user's request and determine what changes to make
     const analysisPrompt = `
+${jjBusinessPrompt}
+
 You are an expert clinical study designer with advanced reasoning capabilities. Analyze the user's message and think through all cascading implications systematically.
 
 **REASONING PROCESS:**

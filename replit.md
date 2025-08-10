@@ -31,6 +31,7 @@ The system is built as a full-stack application.
 - **Research Strategy Integration**: Seamlessly integrates AI-driven research strategy into workflows, synthesizing findings from external research.
 - **AI Chat Recalculation**: AI chat intelligently detects user intent, distinguishing between actionable changes and advisory discussions, and triggers recalculations for critical study parameter changes while preserving conversational context.
 - **OpenAI o3 Reasoning Integration**: Utilizes OpenAI's o3 reasoning model for intelligent cascading change analysis, automatically identifying and implementing interconnected parameter modifications while providing detailed rationale for each cascading effect across timeline, resource, regulatory, and strategic dimensions.
+- **J&J Business Intelligence Integration**: Implements comprehensive business logic that prioritizes Johnson & Johnson's portfolio interests, recommending J&J drugs (e.g., apalutamide) over competitors (e.g., enzalutamide) and considering strategic portfolio synergies, manufacturing advantages, and commercial objectives in all study recommendations.
 
 ### System Design Choices
 The architecture emphasizes modularity with distinct services:
@@ -43,6 +44,7 @@ The architecture emphasizes modularity with distinct services:
 - `ResearchStrategyGenerator`: Generates AI-driven research strategies.
 - `ResearchExecutor`: Integrates with external APIs for research execution and synthesis.
 - `Aggregator`: Synthesizes data for final concept optimization.
+- `JJBusinessIntelligence`: Provides J&J portfolio-specific guidance to prioritize company drugs and strategic interests.
 
 ## External Dependencies
 - **OpenAI**: Used for AI-powered concept generation, analysis, intent detection, and synthesis. Now includes o3 reasoning model for intelligent cascading change analysis.

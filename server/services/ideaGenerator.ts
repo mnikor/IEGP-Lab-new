@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { InsertIdea, NewTournamentRequest } from "@shared/tournament";
 import { perplexityWebSearch } from "./perplexity";
 import { calculateFeasibility } from "./feasibilityCalculator";
+import { generateJJBusinessPrompt } from "./jjBusinessIntelligence";
 
 // Use the OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -191,6 +192,22 @@ function updatePicoPopulationWithSampleSize(
   return `${sampleSizeText}. ${cleanedPopulation}`;
 }
 
+// Helper function to determine therapeutic area from indication
+function getTherapeuticAreaFromIndication(indication: string): string {
+  const lowerIndication = indication.toLowerCase();
+  if (lowerIndication.includes('cancer') || lowerIndication.includes('tumor') || lowerIndication.includes('oncol') || 
+      lowerIndication.includes('carcinoma') || lowerIndication.includes('sarcoma') || lowerIndication.includes('leukemia') ||
+      lowerIndication.includes('lymphoma') || lowerIndication.includes('prostate') || lowerIndication.includes('nsclc') ||
+      lowerIndication.includes('colorectal') || lowerIndication.includes('crc')) {
+    return 'oncology';
+  }
+  if (lowerIndication.includes('psoriasis') || lowerIndication.includes('arthritis') || lowerIndication.includes('crohn') ||
+      lowerIndication.includes('colitis') || lowerIndication.includes('immunology') || lowerIndication.includes('autoimmune')) {
+    return 'immunology';
+  }
+  return 'general';
+}
+
 /**
  * Builds a prompt for seed idea generation
  */
@@ -203,7 +220,13 @@ function buildSeedIdeaPrompt(
     return `${goalObj.goal.replace('_', ' ')} (weight: ${goalObj.weight})`;
   }).join(', ');
 
+  // Generate J&J business intelligence guidance
+  const therapeuticArea = getTherapeuticAreaFromIndication(data.indication);
+  const jjBusinessPrompt = generateJJBusinessPrompt(therapeuticArea, data.drugName);
+
   return `
+  ${jjBusinessPrompt}
+  
   Based on the following parameters and evidence, generate ${numIdeas} distinct clinical study concepts for ${data.drugName} in ${data.indication}.
 
   # Parameters:
