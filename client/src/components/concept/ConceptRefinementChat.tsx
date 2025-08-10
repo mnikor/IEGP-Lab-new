@@ -89,7 +89,16 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
         const systemMessage: ChatMessage = {
           id: 'system-1',
           type: 'system',
-          content: `I can help you refine "${concept.title}" using OpenAI's o3 reasoning model for comprehensive interconnected analysis. I'll dynamically identify ALL cascading effects across clinical design, timeline, financial, regulatory, and strategic dimensions. Any parameter change triggers intelligent analysis of related elements that should also be modified to maintain study coherence and optimization.`,
+          content: `I can help you refine "${concept.title}" using OpenAI's o3 reasoning model for comprehensive interconnected analysis and advanced commercial intelligence. I'll dynamically identify ALL cascading effects across clinical design, timeline, financial, regulatory, and strategic dimensions. 
+
+I can also provide detailed commercial impact analysis including:
+• Specific revenue projections and market share estimates
+• Regional analysis (US, EMEA, Asia-Pacific) with pricing and access considerations  
+• Competitive positioning and patent protection assessments
+• Risk-adjusted financial projections and NPV calculations
+• Market access strategy and payer negotiation insights
+
+Ask me about commercial impact, EMEA market potential, competitive analysis, or any study-related questions!`,
           timestamp: new Date()
         };
         setMessages([systemMessage]);
@@ -266,7 +275,9 @@ const ConceptRefinementChat: React.FC<ConceptRefinementChatProps> = ({
       const systemMessage: ChatMessage = {
         id: 'system-new',
         type: 'system',
-        content: `I can help you refine "${concept.title}" using OpenAI's o3 reasoning model for comprehensive interconnected analysis. I'll dynamically identify ALL cascading effects across clinical design, timeline, financial, regulatory, and strategic dimensions.`,
+        content: `I can help you refine "${concept.title}" using OpenAI's o3 reasoning model for comprehensive interconnected analysis and advanced commercial intelligence. I'll dynamically identify ALL cascading effects across clinical design, timeline, financial, regulatory, and strategic dimensions.
+
+I can also provide detailed commercial impact analysis including specific revenue projections, regional market analysis (US, EMEA, Asia-Pacific), competitive positioning, and risk-adjusted financial assessments. Ask me about commercial impact, EMEA market potential, or any study-related questions!`,
         timestamp: new Date()
       };
       setMessages([systemMessage]);

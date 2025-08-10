@@ -1,4 +1,4 @@
-import { TherapeuticArea } from '@shared/schema';
+// Business intelligence for J&J portfolio prioritization
 
 export interface JJDrugInfo {
   name: string;
@@ -150,11 +150,30 @@ HEAD-TO-HEAD COMPARATOR STRATEGY:
 - Focus on endpoints where J&J drugs have competitive advantages
 - Consider market access implications of comparator choice
 
+COMMERCIAL INTELLIGENCE & MARKET ANALYSIS:
+When asked about commercial impact, market analysis, or revenue projections:
+- Provide specific figures based on therapeutic area market size and competitive landscape
+- Consider regional differences (US, EMEA, Asia-Pacific) in pricing, market access, and competitive dynamics
+- Factor in patent protection timeline, generic/biosimilar threats, and market exclusivity periods
+- Include payer considerations (HTA requirements, cost-effectiveness thresholds, formulary access)
+- Assess competitive positioning against major players in the therapeutic area
+- Provide risk-adjusted financial projections considering regulatory and market access hurdles
+- Consider J&J's specific advantages (portfolio synergies, manufacturing scale, market access relationships)
+
+REGIONAL COMMERCIAL CONSIDERATIONS:
+- US: Focus on formulary access, prior authorization requirements, competitive positioning
+- EMEA: Emphasize HTA requirements, cost-effectiveness data needs, pricing negotiations, 18+ month access timelines
+- Asia-Pacific: Consider local clinical data requirements, price-volume agreements, regulatory complexity
+- China: Factor in NRDL inclusion strategies, VBP tender considerations, local manufacturing preferences
+- Always provide specific revenue estimates, market share projections, and time-to-impact assessments
+
 BUSINESS IMPACT CONSIDERATIONS:
 - Maximize lifecycle value of existing J&J assets
 - Support regulatory differentiation that favors J&J portfolio
 - Consider commercial advantages (pricing, market access, physician relationships)
 - Align with J&J's therapeutic area centers of excellence
 - Design studies that can support superior labeling claims vs competitors
+- Generate data that supports premium pricing and market access negotiations
+- Consider post-approval commercial strategy and real-world evidence generation
 `;
 }

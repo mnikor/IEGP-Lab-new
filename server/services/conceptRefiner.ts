@@ -124,18 +124,44 @@ export class ConceptRefiner {
     // Generate J&J business intelligence guidance
     const therapeuticArea = this.getTherapeuticAreaFromIndication(currentConcept.indication);
     const jjBusinessPrompt = generateJJBusinessPrompt(therapeuticArea, currentConcept.drugName);
+    
+    // Import commercial intelligence service for enhanced analysis
+    const { commercialIntelligenceService } = await import('./commercialIntelligence');
+
+    // Detect if this is a commercial/market analysis question
+    const isCommercialQuery = this.isCommercialAnalysisQuery(message);
+    let commercialAnalysis = '';
+    
+    if (isCommercialQuery) {
+      // Generate detailed commercial analysis
+      if (message.toLowerCase().includes('emea') || message.toLowerCase().includes('europe')) {
+        commercialAnalysis = await commercialIntelligenceService.generateEMEACommercialAnalysis(currentConcept);
+      } else {
+        const fullAnalysis = await commercialIntelligenceService.generateCommercialImpactAnalysis(currentConcept);
+        commercialAnalysis = this.formatCommercialAnalysisForChat(fullAnalysis, currentConcept);
+      }
+    }
 
     // Use OpenAI to analyze the user's request and determine what changes to make
     const analysisPrompt = `
 ${jjBusinessPrompt}
 
-You are an expert clinical study designer with advanced reasoning capabilities. Analyze the user's message and think through all cascading implications systematically.
+You are an expert clinical study designer with advanced reasoning capabilities and comprehensive commercial intelligence. Analyze the user's message and think through all cascading implications systematically.
+
+**COMMERCIAL INTELLIGENCE AVAILABLE:**
+${commercialAnalysis ? `
+DETAILED COMMERCIAL ANALYSIS FOR THIS STUDY:
+${commercialAnalysis}
+
+Use this detailed commercial analysis to provide specific, data-driven responses to commercial questions. Always reference specific figures, timelines, and regional considerations when discussing commercial impact.
+` : 'No specific commercial analysis requested - focus on study design optimization.'}
 
 **REASONING PROCESS:**
-1. Identify the primary change requested
-2. Systematically analyze what other study components should change as a result
-3. Consider timeline, resource, regulatory, and strategic implications
-4. Provide clear rationale for each cascading change
+1. Identify the primary change requested OR if this is a commercial/market analysis question
+2. If commercial question: Provide detailed, specific analysis using the commercial intelligence above
+3. If study change: Systematically analyze what other study components should change as a result
+4. Consider timeline, resource, regulatory, and strategic implications
+5. Provide clear rationale for each cascading change
 
 **USER REQUEST:** "${message}"
 
@@ -235,7 +261,16 @@ Dynamically identify which elements need modification based on the interconnecti
         messages: [
           {
             role: "system",
-            content: `You are an expert clinical study designer with deep reasoning capabilities. When analyzing changes to study concepts, think through all interconnected implications systematically.
+            content: `You are an expert clinical study designer with deep reasoning capabilities and comprehensive commercial intelligence. When analyzing changes to study concepts or answering commercial questions, think through all interconnected implications systematically.
+
+COMMERCIAL ANALYSIS CAPABILITIES:
+When users ask about commercial impact, market analysis, revenue projections, or regional considerations (especially EMEA):
+- Provide specific financial figures, market share estimates, and revenue projections
+- Consider regional differences in pricing, market access, regulatory requirements, and competitive dynamics
+- Factor in patent protection timelines, competitive threats, and market exclusivity periods
+- Include payer considerations such as HTA requirements, cost-effectiveness thresholds, and formulary access challenges
+- Assess time-to-market factors and commercial feasibility scores
+- Always reference the detailed commercial intelligence data provided in the prompt when available
 
 DYNAMIC REASONING FRAMEWORK:
 Think systematically through ALL interconnected study elements. For ANY change, analyze these interconnection patterns:
@@ -557,5 +592,55 @@ Provide practical, actionable suggestions in a JSON array format:
         "Review strategic goals alignment with study design"
       ];
     }
+  }
+
+  /**
+   * Detects if the user message is asking for commercial/market analysis
+   */
+  private isCommercialAnalysisQuery(message: string): boolean {
+    const commercialKeywords = [
+      'commercial', 'revenue', 'market', 'sales', 'profit', 'roi', 'financial',
+      'impact', 'emea', 'europe', 'pricing', 'payer', 'access', 'reimbursement',
+      'competition', 'competitive', 'share', 'opportunity', 'valuation', 'npv'
+    ];
+    
+    const lowerMessage = message.toLowerCase();
+    return commercialKeywords.some(keyword => lowerMessage.includes(keyword));
+  }
+
+  /**
+   * Formats commercial analysis for chat display
+   */
+  private formatCommercialAnalysisForChat(analysis: any, concept: StudyConcept): string {
+    const regions = Object.keys(analysis.regionalBreakdown);
+    
+    return `
+**Commercial Impact Analysis for ${concept.title}**
+
+**Overall Financial Projections:**
+- Total Market Opportunity: $${(analysis.totalMarketOpportunity / 1000000).toFixed(0)}M
+- Peak Sales Projection: $${(analysis.peakSalesProjection / 1000000).toFixed(0)}M annually
+- Time to Breakeven: ${analysis.timeToBreakeven.toFixed(1)} years
+- Net Present Value: $${(analysis.netPresentValue / 1000000).toFixed(0)}M
+
+**Regional Breakdown:**
+${regions.map(region => {
+  const data = analysis.regionalBreakdown[region];
+  return `- ${region.toUpperCase()}: ${data.marketShare.toFixed(1)}% market share, $${(data.revenueProjection / 1000000).toFixed(0)}M revenue projection`;
+}).join('\n')}
+
+**Competitive Position:**
+- Differentiation Score: ${(analysis.competitiveAdvantage.differentiationScore * 100).toFixed(0)}%
+- Defensibility Score: ${(analysis.competitiveAdvantage.defensibilityScore * 100).toFixed(0)}%
+- First Mover Advantage: ${analysis.competitiveAdvantage.firstMoverAdvantage ? 'Yes' : 'No'}
+
+**Commercial Feasibility Score: ${(analysis.commercialFeasibility.score * 100).toFixed(0)}%**
+
+**Key Success Factors:**
+${analysis.commercialFeasibility.keyEnabler.map((factor: string) => `- ${factor}`).join('\n')}
+
+**Major Risks:**
+${analysis.commercialFeasibility.majorBarriers.map((barrier: string) => `- ${barrier}`).join('\n')}
+`;
   }
 }
