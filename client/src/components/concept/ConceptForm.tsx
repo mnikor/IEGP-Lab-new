@@ -302,17 +302,26 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
 
   const geographyOptions = [
     { code: "US", name: "United States" },
-    { code: "EU", name: "European Union" },
+    { code: "UK", name: "United Kingdom" },
+    { code: "DE", name: "Germany" },
+    { code: "FR", name: "France" },
+    { code: "ES", name: "Spain" },
+    { code: "IT", name: "Italy" },
+    { code: "EU", name: "European Union (blended)" },
     { code: "JP", name: "Japan" },
     { code: "CN", name: "China" },
-    { code: "UK", name: "United Kingdom" },
-    { code: "CA", name: "Canada" },
     { code: "AU", name: "Australia" },
+    { code: "CA", name: "Canada" },
     { code: "BR", name: "Brazil" },
+    { code: "MX", name: "Mexico" },
+    { code: "AR", name: "Argentina" },
+    { code: "CO", name: "Colombia" },
+    { code: "CL", name: "Chile" },
+    { code: "IN", name: "India" },
   ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="lg:col-span-2">
         <Card>
           <CardHeader>
@@ -797,71 +806,6 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
               existingFiles={evidenceFiles}
               onFileRemove={removeEvidenceFile}
             />
-          </CardContent>
-        </Card>
-      </div>
-
-      <div>
-        <Card>
-          <CardHeader>
-            <CardTitle>How It Works</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-neutral-medium mb-3">
-              The concept generator uses AI to create evidence-based clinical study designs aligned with your strategic goals.
-            </p>
-            
-            <div className="space-y-3">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-primary text-sm font-medium">
-                  1
-                </div>
-                <p className="ml-3 text-sm text-neutral-medium">Enter basic study parameters</p>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-primary text-sm font-medium">
-                  2
-                </div>
-                <p className="ml-3 text-sm text-neutral-medium">Our system searches latest evidence using Perplexity API</p>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-primary text-sm font-medium">
-                  3
-                </div>
-                <p className="ml-3 text-sm text-neutral-medium">LLM analyzes findings & generates concepts</p>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-primary text-sm font-medium">
-                  4
-                </div>
-                <p className="ml-3 text-sm text-neutral-medium">Each concept is scored for feasibility and impact</p>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-primary text-sm font-medium">
-                  5
-                </div>
-                <p className="ml-3 text-sm text-neutral-medium">Export complete reports for decision-making</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Recently Generated</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {/* This would be populated from API data */}
-              <a href="#" className="block p-3 border border-neutral-light rounded-md hover:bg-neutral-lightest">
-                <h3 className="text-sm font-medium text-primary">Pembrolizumab in NSCLC with Brain Metastases</h3>
-                <p className="text-xs text-neutral-medium mt-1">Generated on May 12, 2023</p>
-              </a>
-              <a href="#" className="block p-3 border border-neutral-light rounded-md hover:bg-neutral-lightest">
-                <h3 className="text-sm font-medium text-primary">Combination Therapy: JAK Inhibitors + Anti-TNF</h3>
-                <p className="text-xs text-neutral-medium mt-1">Generated on April 27, 2023</p>
-              </a>
-            </div>
           </CardContent>
         </Card>
       </div>

@@ -1,6 +1,162 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { SearchItem } from '@shared/schema';
 
+type GeographyCategory = 'marketAccess' | 'regulatory';
+
+const GEOGRAPHY_INTELLIGENCE: Record<string, Partial<Record<GeographyCategory, string[]>>> = {
+  DE: {
+    marketAccess: [
+      'IQWiG early benefit assessment dossier requirements',
+      'G-BA Module 4 comparator evidence expectations',
+      'AMNOG price negotiation real-world evidence city:Berlin'
+    ],
+    regulatory: [
+      'EMA centralized procedure alignment for German label',
+      'BfArM post-approval safety commitments'
+    ],
+  },
+  EU: {
+    marketAccess: [
+      'EU4 HTA joint clinical assessment evidence standards',
+      'DG SANTE market access harmonization'
+    ],
+    regulatory: [
+      'EMA labelling harmonisation SmPC requirements',
+      'Paediatric Investigation Plan PIP compliance'
+    ],
+  },
+  UK: {
+    marketAccess: [
+      'NICE technology appraisal cost effectiveness thresholds',
+      'SMC reimbursement dossier real-world data expectations'
+    ],
+    regulatory: [
+      'MHRA accelerated access pathway criteria',
+      'Innovative Licensing and Access Pathway dossier'
+    ],
+  },
+  FR: {
+    marketAccess: [
+      'HAS clinical benefit SMR ASMR scoring requirements',
+      'CEPS price negotiation health economics dossier'
+    ],
+    regulatory: [
+      'ANSM label variations pharmacovigilance commitments'
+    ],
+  },
+  ES: {
+    marketAccess: [
+      'AEMPS reimbursement therapeutic positioning report',
+      'interterritorial pricing reference system Spain'
+    ],
+    regulatory: [
+      'AEMPS conditional approval post-authorisation study'
+    ],
+  },
+  IT: {
+    marketAccess: [
+      'AIFA innovativeness evaluation HTA dossier',
+      'regional formularies Italy market access'
+    ],
+    regulatory: [
+      'AIFA label harmonisation safety monitoring'
+    ],
+  },
+  JP: {
+    marketAccess: [
+      'Chuikyo reimbursement price listing dossier',
+      'MHLW cost-effectiveness evaluation pilot'
+    ],
+    regulatory: [
+      'PMDA bridging study requirements Asian population',
+      'post-marketing surveillance GPSP obligations Japan'
+    ],
+  },
+  US: {
+    marketAccess: [
+      'CMS coverage with evidence development requirements',
+      'ICER cost effectiveness threshold analysis US'
+    ],
+    regulatory: [
+      'FDA label negotiation advisory committee preparation',
+      'Risk Evaluation and Mitigation Strategy REMS planning'
+    ],
+  },
+  CA: {
+    marketAccess: [
+      'CADTH reimbursement recommendation drivers',
+      'pCPA national price negotiation Canada'
+    ],
+    regulatory: [
+      'Health Canada labelling and post-market commitments'
+    ],
+  },
+  CN: {
+    marketAccess: [
+      'NRDL inclusion pharmacoeconomic thresholds China',
+      'provincial reimbursement NRDL negotiations'
+    ],
+    regulatory: [
+      'NMPA priority review evidence package China',
+      'Hainan Boao pilot real-world evidence policy'
+    ],
+  },
+  BR: {
+    marketAccess: [
+      'CONITEC HTA recommendation requirements Brazil',
+      'ANS supplementary health coverage decisions'
+    ],
+    regulatory: [
+      'ANVISA registration pharmacovigilance guidance'
+    ],
+  },
+  MX: {
+    marketAccess: [
+      'COFEPRIS HTA Consejo de Salubridad General evaluation',
+      'IMSS formulary inclusion economic study Mexico'
+    ],
+    regulatory: [
+      'COFEPRIS label approval accelerated pathways'
+    ],
+  },
+  AR: {
+    marketAccess: [
+      'CONETEC HTA dossier Argentina',
+      'PAMI reimbursement negotiation Argentina'
+    ],
+    regulatory: [
+      'ANMAT approval post-marketing surveillance Argentina'
+    ],
+  },
+  CO: {
+    marketAccess: [
+      'IETS HTA recommendation Colombia',
+      'INVIMA price regulation circular 03'
+    ],
+    regulatory: [
+      'INVIMA accelerated approval evidence requirements'
+    ],
+  },
+  CL: {
+    marketAccess: [
+      'ISP Chile HTA dossier DEIS',
+      'GES/AUGE guaranteed health benefits inclusion'
+    ],
+    regulatory: [
+      'ISP conditional approval pharmacovigilance Chile'
+    ],
+  },
+  IN: {
+    marketAccess: [
+      'NPPA price control schedule India',
+      'HTAIn India cost-effectiveness thresholds'
+    ],
+    regulatory: [
+      'CDSCO approval bridging study requirements India'
+    ],
+  },
+};
+
 interface StrategyContext {
   drugName: string;
   indication: string;
@@ -108,7 +264,7 @@ export class ResearchStrategyGenerator {
 
       // Add strategic goal-specific searches
       for (const goal of strategicGoals) {
-        searches.push(this.getStrategicGoalSearch(goal, indication));
+        searches.push(...this.getStrategicGoalSearch(goal, indication, geography));
       }
 
       return {
@@ -432,7 +588,7 @@ export class ResearchStrategyGenerator {
 
     // Add strategic goal-specific searches
     for (const goal of strategicGoals) {
-      searches.push(this.getStrategicGoalSearch(goal, indication));
+      searches.push(...this.getStrategicGoalSearch(goal, indication, geography));
     }
 
     return searches;
@@ -449,7 +605,7 @@ export class ResearchStrategyGenerator {
     };
   }
 
-  private getStrategicGoalSearch(goal: string, indication: string): SearchItem {
+  private getStrategicGoalSearch(goal: string, indication: string, geography: string[]): SearchItem[] {
     const goalSearchMap: Record<string, { query: string, priority: number, rationale: string }> = {
       expand_label: {
         query: `${indication} label expansion clinical evidence regulatory pathway FDA EMA`,
@@ -519,14 +675,58 @@ export class ResearchStrategyGenerator {
       rationale: `Strategic intelligence for ${goal} objective`
     };
 
-    return {
-      id: uuidv4(),
-      query: searchInfo.query,
-      type: 'strategic',
-      priority: searchInfo.priority,
-      rationale: searchInfo.rationale,
-      enabled: true,
-      userModified: false
-    };
+    const results: SearchItem[] = [
+      {
+        id: uuidv4(),
+        query: searchInfo.query,
+        type: 'strategic',
+        priority: searchInfo.priority,
+        rationale: searchInfo.rationale,
+        enabled: true,
+        userModified: false
+      }
+    ];
+
+    const normalizedGeographies = geography.map((g) => g.toUpperCase());
+    const category: GeographyCategory | null = (() => {
+      switch (goal) {
+        case 'facilitate_market_access':
+          return 'marketAccess';
+        case 'expand_label':
+        case 'secure_initial_approval':
+        case 'gain_approval':
+          return 'regulatory';
+        default:
+          return null;
+      }
+    })();
+
+    if (category) {
+      const seen = new Set<string>();
+      const derivedType = category === 'marketAccess' ? 'strategic' : 'regulatory';
+      const basePriority = searchInfo.priority;
+      const derivedPriority = Math.max(5, Math.min(10, basePriority - 1));
+
+      for (const geo of normalizedGeographies) {
+        const intelligence = GEOGRAPHY_INTELLIGENCE[geo]?.[category];
+        if (!intelligence) continue;
+        for (const query of intelligence) {
+          const key = `${geo}:${query}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          results.push({
+            id: uuidv4(),
+            query: `${indication} ${query}`,
+            type: derivedType,
+            priority: derivedPriority,
+            rationale: `Geography-specific ${category === 'marketAccess' ? 'market access' : 'regulatory'} intelligence for ${geo}`,
+            enabled: true,
+            userModified: false,
+          });
+        }
+      }
+    }
+
+    return results;
   }
 }

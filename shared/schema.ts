@@ -146,6 +146,12 @@ export const generateConceptRequestSchema = z.object({
     date: z.string()
   })).optional(),
   hasPatentExtensionPotential: z.boolean().optional(),
+  vendorSelections: z.array(z.string()).optional(),
+  regionalDeploymentMix: z.array(z.object({
+    regionId: z.string(),
+    weight: z.number().min(0).max(1)
+  })).optional(),
+  scenarioPreference: z.enum(["base", "optimistic", "pessimistic"]).optional(),
   numberOfConcepts: z.number().min(1).max(10).default(3),
   
   // Research strategy integration

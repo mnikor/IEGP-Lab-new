@@ -1,5 +1,5 @@
 import React from 'react';
-import { FeasibilityData } from '@/lib/types';
+import { FeasibilityData, RegionalCostBreakdown, VendorSpendSummary, ScenarioOutcome } from '@/lib/types';
 import { 
   PieChart, 
   Pie, 
@@ -59,6 +59,19 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
     }).format(value);
   };
 
+  const formatCurrencyBy = (value: number | undefined, currency: 'EUR' | 'USD') => {
+    if (value === undefined || value === null) {
+      return currency === 'USD' ? '$0' : '€0';
+    }
+    const formatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    });
+    return formatter.format(value);
+  };
+
   const formatPercentage = (value: number | undefined) => {
     if (value === undefined || value === null) return '0%';
     return `${Math.round(value * 100)}%`;
@@ -73,12 +86,13 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
 
   // Prepare cost breakdown data for pie chart with proper number parsing
   const costBreakdownData = [
-    { name: 'Site Costs', value: parseNumber(feasibilityData.siteCosts, 0), color: '#8884d8' },
-    { name: 'Personnel', value: parseNumber(feasibilityData.personnelCosts, 0), color: '#82ca9d' },
-    { name: 'Materials', value: parseNumber(feasibilityData.materialCosts, 0), color: '#ffc658' },
-    { name: 'Monitoring', value: parseNumber(feasibilityData.monitoringCosts, 0), color: '#ff7c7c' },
-    { name: 'Data Management', value: parseNumber(feasibilityData.dataCosts, 0), color: '#8dd1e1' },
-    { name: 'Regulatory', value: parseNumber(feasibilityData.regulatoryCosts, 0), color: '#d084d0' }
+    { name: 'Site Activation & Maintenance', value: parseNumber(feasibilityData.siteCosts, 0), color: '#8884d8' },
+    { name: 'Personnel (FTE Support)', value: parseNumber(feasibilityData.personnelCosts, 0), color: '#82ca9d' },
+    { name: 'Study Materials & IMP', value: parseNumber(feasibilityData.materialCosts, 0), color: '#ffc658' },
+    { name: 'Monitoring & Oversight', value: parseNumber(feasibilityData.monitoringCosts, 0), color: '#ff7c7c' },
+    { name: 'Data & Analytics', value: parseNumber(feasibilityData.dataCosts, 0), color: '#8dd1e1' },
+    { name: 'Regulatory & Compliance', value: parseNumber(feasibilityData.regulatoryCosts, 0), color: '#d084d0' },
+    { name: 'Vendor Overlays', value: parseNumber(feasibilityData.vendorCosts, 0), color: '#6c5ce7' }
   ].filter(item => item.value > 0);
 
   // Risk vs ROI scatter plot data with reference points for context
@@ -164,10 +178,56 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
   const recruitmentProgress = parseNumber(feasibilityData.recruitmentRate, 0) * 100;
   const completionRisk = parseNumber(feasibilityData.completionRisk, 0) * 100;
 
+  const regionalBreakdown = (feasibilityData.regionalCostBreakdown || []).map((region: RegionalCostBreakdown, index: number) => {
+    const operationalCost = parseNumber(region.patientVisitCost, 0) + parseNumber(region.siteStartupCost, 0) + parseNumber(region.monitoringCost, 0) + parseNumber(region.regulatoryCost, 0) + parseNumber(region.patientIncentives, 0);
+    const vendorSpend = parseNumber(region.vendorSpend, 0);
+    const total = parseNumber(region.totalCost, operationalCost + vendorSpend);
+    return {
+      key: `${region.regionId}-${index}`,
+      displayName: region.displayName,
+      patients: parseNumber(region.patients, 0),
+      sites: parseNumber(region.sites, 0),
+      share: parseNumber(region.patientShare, 0),
+      operationalCost,
+      vendorSpend,
+      total,
+      notes: region.notes,
+    };
+  });
+
+  const vendorBreakdown = (feasibilityData.vendorSpendSummary || []).map((vendor: VendorSpendSummary) => ({
+    vendorId: vendor.vendorId,
+    displayName: vendor.displayName,
+    category: vendor.category,
+    totalSpend: parseNumber(vendor.totalSpend, 0),
+    markupSpend: parseNumber(vendor.markupSpend, 0),
+    retainerSpend: parseNumber(vendor.retainerSpend, 0),
+    fxBufferSpend: parseNumber(vendor.fxBufferSpend, 0),
+  })).filter((vendor) => vendor.totalSpend > 0);
+
+  const scenarioAnalysis = (feasibilityData.scenarioAnalysis || []).map((scenario: ScenarioOutcome) => ({
+    scenario: scenario.scenario,
+    estimatedCost: parseNumber(scenario.estimatedCost, 0),
+    timeline: parseNumber(scenario.timeline, 0),
+    projectedROI: parseNumber(scenario.projectedROI, 0),
+    incrementalSalesUsd: parseNumber(scenario.incrementalSalesUsd, 0),
+    incrementalSalesEur: parseNumber(scenario.incrementalSalesEur, 0),
+    eNpvUsd: parseNumber(scenario.eNpvUsd, 0),
+    eNpvEur: parseNumber(scenario.eNpvEur, 0),
+  }));
+
+  const totalIncrementalSalesUsd = parseNumber(feasibilityData.totalIncrementalSalesUsd, 0);
+  const totalIncrementalSalesEur = parseNumber(feasibilityData.totalIncrementalSalesEur, 0);
+  const economicNetPresentValueUsd = parseNumber(feasibilityData.economicNetPresentValueUsd, 0);
+  const economicNetPresentValueEur = parseNumber(feasibilityData.economicNetPresentValueEur, 0);
+  const riskAdjustedEnpvUsd = parseNumber(feasibilityData.riskAdjustedENpvUsd, economicNetPresentValueUsd);
+  const riskAdjustedEnpvEur = parseNumber(feasibilityData.riskAdjustedENpvEur, economicNetPresentValueEur);
+  const regionalRevenueForecast = feasibilityData.regionalRevenueForecast || [];
+
   return (
     <div className={`${className} space-y-6`}>
       {/* Key Metrics Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         {/* Total Cost */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -223,6 +283,34 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
             </p>
           </CardContent>
         </Card>
+
+        {/* Incremental Sales */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Incremental Sales</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrencyBy(totalIncrementalSalesEur, 'EUR')}</div>
+            <p className="text-xs text-muted-foreground">
+              {formatCurrencyBy(totalIncrementalSalesUsd, 'USD')} risk-adjusted opportunity
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Risk-adjusted eNPV */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Risk-adjusted eNPV</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrencyBy(riskAdjustedEnpvEur, 'EUR')}</div>
+            <p className="text-xs text-muted-foreground">
+              {formatCurrencyBy(riskAdjustedEnpvUsd, 'USD')} discounted over 5 years
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Second Row - Study Structure */}
@@ -271,6 +359,27 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
           </CardContent>
         </Card>
       </div>
+
+      {/* Commercial Outlook Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-medium">Commercial Outlook</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="border rounded-md p-3">
+              <div className="text-sm font-medium text-neutral-medium">Total Incremental Sales</div>
+              <div className="text-xl font-bold text-primary mt-1">{formatCurrencyBy(totalIncrementalSalesEur, 'EUR')}</div>
+              <div className="text-xs text-neutral-medium">Equivalent to {formatCurrencyBy(totalIncrementalSalesUsd, 'USD')}</div>
+            </div>
+            <div className="border rounded-md p-3">
+              <div className="text-sm font-medium text-neutral-medium">Economic NPV (Base)</div>
+              <div className="text-xl font-bold text-primary mt-1">{formatCurrencyBy(economicNetPresentValueEur, 'EUR')}</div>
+              <div className="text-xs text-neutral-medium">{formatCurrencyBy(economicNetPresentValueUsd, 'USD')} before risk adjustments</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -354,6 +463,25 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
                   ))}
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium">Cost Drivers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {costBreakdownData.map((item) => (
+                <div key={item.name} className="flex items-center justify-between border rounded px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }} />
+                    <span className="text-sm font-medium text-neutral-dark">{item.name}</span>
+                  </div>
+                  <span className="text-sm font-semibold text-primary">{formatCurrency(item.value)}</span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -459,6 +587,137 @@ const FeasibilityDashboard: React.FC<FeasibilityDashboardProps> = ({ feasibility
           </div>
         </CardContent>
       </Card>
+
+      {regionalBreakdown.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium">Regional Deployment Mix</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-neutral-lightest">
+                  <tr className="text-left text-neutral-medium">
+                    <th className="px-4 py-2 font-medium">Region</th>
+                    <th className="px-4 py-2 font-medium">Patients</th>
+                    <th className="px-4 py-2 font-medium">Sites</th>
+                    <th className="px-4 py-2 font-medium">Patient Mix</th>
+                    <th className="px-4 py-2 font-medium">Operational Spend</th>
+                    <th className="px-4 py-2 font-medium">Vendor Spend</th>
+                    <th className="px-4 py-2 font-medium">Total Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {regionalBreakdown.map((region) => (
+                    <tr key={region.key} className="border-b last:border-b-0">
+                      <td className="px-4 py-2 text-neutral-dark">
+                        <div className="font-medium">{region.displayName}</div>
+                        {region.notes && <div className="text-xs text-neutral-medium mt-1">{region.notes}</div>}
+                      </td>
+                      <td className="px-4 py-2 text-neutral-dark">{region.patients.toLocaleString()}</td>
+                      <td className="px-4 py-2 text-neutral-dark">{region.sites.toLocaleString()}</td>
+                      <td className="px-4 py-2 text-neutral-dark">{Math.round(region.share * 100)}%</td>
+                      <td className="px-4 py-2 text-primary">{formatCurrency(region.operationalCost)}</td>
+                      <td className="px-4 py-2 text-primary">{formatCurrency(region.vendorSpend)}</td>
+                      <td className="px-4 py-2 text-primary font-semibold">{formatCurrency(region.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {vendorBreakdown.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium">Vendor Impact</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-neutral-lightest">
+                  <tr className="text-left text-neutral-medium">
+                    <th className="px-4 py-2 font-medium">Vendor</th>
+                    <th className="px-4 py-2 font-medium">Category</th>
+                    <th className="px-4 py-2 font-medium">Total Spend</th>
+                    <th className="px-4 py-2 font-medium">Markup</th>
+                    <th className="px-4 py-2 font-medium">Retainers</th>
+                    <th className="px-4 py-2 font-medium">FX Buffer</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vendorBreakdown.map((vendor) => (
+                    <tr key={vendor.vendorId} className="border-b last:border-b-0">
+                      <td className="px-4 py-2 text-neutral-dark font-medium">{vendor.displayName}</td>
+                      <td className="px-4 py-2 text-neutral-dark capitalize">{vendor.category.replace(/_/g, ' ')}</td>
+                      <td className="px-4 py-2 text-primary font-semibold">{formatCurrency(vendor.totalSpend)}</td>
+                      <td className="px-4 py-2 text-primary">{formatCurrency(vendor.markupSpend)}</td>
+                      <td className="px-4 py-2 text-primary">{formatCurrency(vendor.retainerSpend)}</td>
+                      <td className="px-4 py-2 text-primary">{formatCurrency(vendor.fxBufferSpend)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {scenarioAnalysis.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium">Scenario Outlook</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {scenarioAnalysis.map((scenario) => (
+                <div key={scenario.scenario} className="border rounded-md p-4 space-y-2">
+                  <div className="text-sm font-semibold text-neutral-medium uppercase">{scenario.scenario}</div>
+                  <div className="text-2xl font-bold text-primary">{formatCurrency(scenario.estimatedCost)}</div>
+                  <div className="text-sm text-neutral-medium">Timeline: <span className="font-semibold text-neutral-dark">{scenario.timeline} months</span></div>
+                  <div className="text-sm text-neutral-medium">ROI: <span className="font-semibold text-neutral-dark">{scenario.projectedROI.toFixed(1)}x</span></div>
+                  <div className="text-sm text-neutral-medium">Incremental Sales: <span className="font-semibold text-neutral-dark">{formatCurrencyBy(scenario.incrementalSalesEur, 'EUR')}</span></div>
+                  <div className="text-sm text-neutral-medium">eNPV: <span className="font-semibold text-neutral-dark">{formatCurrencyBy(scenario.eNpvEur, 'EUR')}</span></div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {regionalRevenueForecast.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium">Regional Revenue Outlook</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-neutral-lightest">
+                  <tr className="text-left text-neutral-medium">
+                    <th className="px-4 py-2 font-medium">Region</th>
+                    <th className="px-4 py-2 font-medium">Window (yrs)</th>
+                    <th className="px-4 py-2 font-medium">Incremental Sales (EUR)</th>
+                    <th className="px-4 py-2 font-medium">Incremental Sales (USD)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {regionalRevenueForecast.map((region) => (
+                    <tr key={region.regionId} className="border-b last:border-b-0">
+                      <td className="px-4 py-2 text-neutral-dark font-medium">{region.displayName}</td>
+                      <td className="px-4 py-2 text-neutral-dark">{region.windowYears.toFixed(1)}</td>
+                      <td className="px-4 py-2 text-primary font-semibold">{formatCurrencyBy(region.incrementalSalesEur, 'EUR')}</td>
+                      <td className="px-4 py-2 text-primary">{formatCurrencyBy(region.incrementalSalesUsd, 'USD')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

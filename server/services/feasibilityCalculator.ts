@@ -1,12 +1,34 @@
 import { StudyConcept, GenerateConceptRequest } from "@shared/schema";
-import { FeasibilityData, RegionalLoeData } from "@/lib/types";
+import { FeasibilityData, RegionalLoeData, RegionalRevenueForecast, ScenarioOutcome } from "@/lib/types";
 import { calculateSampleSizeWithAI, calculateSampleSizeTraditional } from "./sampleSizeCalculator";
 import { analyzeTherapeuticArea, adjustSampleSizeForTherapeuticArea, getTherapeuticAreaCostMultiplier } from "./therapeuticAreaEngine";
+import { BASELINE_REGIONAL_BENCHMARK, getRegionalBenchmarks } from "../data/regionalCostBenchmarks";
+import { BASELINE_VENDOR_PROFILE, calculateVendorScenario } from "./vendorCostEngine";
+import type { RegionalCostBenchmark } from "../data/regionalCostBenchmarks";
+import type { VendorScenarioResult, SupportedStudyPhase } from "./vendorCostEngine";
+import { REGIONAL_MARKET_DATA } from "./commercialIntelligence";
 
 // TypeScript interface for the extended request type including anticipatedFpiDate
-interface ExtendedGenerateConceptRequest extends GenerateConceptRequest {
+type RegionalDeploymentMix = {
+  regionId: string;
+  weight: number;
+};
+
+type ExtendedGenerateConceptRequest = GenerateConceptRequest & {
   anticipatedFpiDate?: string;
-}
+  globalLoeDate?: string;
+  regionalLoeDates?: {
+    region: string;
+    date: string;
+  }[];
+  hasPatentExtensionPotential?: boolean;
+  budgetCeilingEur?: number;
+  timelineCeilingMonths?: number;
+  strategicGoals?: string[];
+  regionalDeploymentMix?: RegionalDeploymentMix[];
+  vendorSelections?: string[];
+  scenarioPreference?: "base" | "optimistic" | "pessimistic";
+};
 
 // Type assertion helper for feasibilityData
 export type ConceptWithFeasibility = Partial<StudyConcept> & {
@@ -67,8 +89,8 @@ function detectBiologicsOrHighCostTherapy(concept: ConceptWithFeasibility): bool
   
   // Strategic goals indicating high-cost studies
   const strategicGoals = concept.strategicGoals || [];
-  const hasHighCostGoals = strategicGoals.some(goal => 
-    ['expand_label', 'defend_share', 'accelerate_uptake'].includes(goal));
+  const hasHighCostGoals = strategicGoals.some((goal: string) => 
+    ['expand_label', 'defend_market_share', 'accelerate_uptake'].includes(goal));
   
   return hasBiologicDrug || hasHighCostIndication || hasHighCostTherapeuticArea || 
          (hasComplexPhase && hasHighCostGoals);
@@ -93,20 +115,22 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
                     (concept.indication || '').toLowerCase().includes('leukemia') ||
                     (concept.indication || '').toLowerCase().includes('lymphoma');
   
-  // Calculate number of countries based on geography array
-  // Special handling for EU - it represents multiple countries
-  let geographyCount = 0;
-  if (concept.geography) {
-    for (const region of concept.geography) {
-      if (region === 'EU' || region.toLowerCase() === 'europe' || region.toLowerCase() === 'european union') {
-        // EU represents approximately 27 member countries
-        geographyCount += 10; // Assuming a typical study won't run in all EU countries, but in ~10
-      } else {
-        geographyCount += 1;
-      }
-    }
-  }
-  geographyCount = geographyCount || 1; // Ensure at least 1 country
+  // Determine regional deployment baseline
+  const requestedRegions: string[] = requestData.regionalDeploymentMix?.map((mix: RegionalDeploymentMix) => mix.regionId)
+    ?? concept.geography
+    ?? [];
+  const regionalBenchmarks: RegionalCostBenchmark[] = getRegionalBenchmarks(requestedRegions);
+  const hasCustomRegionalData = Array.isArray(requestData.regionalDeploymentMix) && requestData.regionalDeploymentMix.length > 0;
+
+  const effectiveRegionalMix: RegionalDeploymentMix[] = hasCustomRegionalData
+    ? requestData.regionalDeploymentMix!
+    : [{ regionId: BASELINE_REGIONAL_BENCHMARK.regionId, weight: 1 }];
+
+  const geographyCount = requestedRegions.length > 0
+    ? requestedRegions.length
+    : concept.geography && concept.geography.length > 0
+      ? concept.geography.length
+      : 1;
   
   const hasTargetSubpopulation = !!concept.targetSubpopulation;
   const comparatorCount = concept.comparatorDrugs?.length || 0;
@@ -184,7 +208,7 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
   });
   
   // Step 4: Calculate cost based on statistical sample size and study complexity
-  // Base cost per patient varies by endpoint complexity and phase requirements
+  // Base cost per patient varies by endpoint complexity, phase requirements, and regional mix
   let costPerPatient: number;
   
   // Adjust base cost by endpoint type from sample size calculation - UPDATED FOR BIOLOGICS
@@ -235,7 +259,41 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
   if (calculatedEndpointType === 'survival') siteSetupCost *= 1.2; // Survival studies need more site infrastructure
   if (comparatorCount > 0) siteSetupCost *= 1.1; // Complex study designs
   
-  let estimatedCost = (patientCount * costPerPatient) + (totalSites * siteSetupCost);
+  // Calculate regionalized patient distribution
+  const regionalCostBreakdown = effectiveRegionalMix.map((mix: RegionalDeploymentMix) => {
+    const benchmark = regionalBenchmarks.find((region) => region.regionId === mix.regionId) || BASELINE_REGIONAL_BENCHMARK;
+    const patientShare = mix.weight;
+    const patientsInRegion = Math.round(patientCount * patientShare);
+    const sitesInRegion = Math.max(2, Math.round(totalSites * patientShare));
+
+    const phaseMultiplier = benchmark.baseCostBand.phaseMultipliers[studyPhase as keyof typeof benchmark.baseCostBand.phaseMultipliers] ?? 1;
+    const regionalCostPerPatient = benchmark.baseCostBand.baseEur * phaseMultiplier * benchmark.operationalAdjustments.visitCostMultiplier;
+    const patientVisitCost = patientsInRegion * regionalCostPerPatient;
+    const siteStartupCost = sitesInRegion * siteSetupCost * benchmark.operationalAdjustments.siteStartupMultiplier;
+    const monitoringCost = sitesInRegion * benchmark.operationalAdjustments.monitoringOversightPerSite;
+    const regulatoryCost = benchmark.operationalAdjustments.regulatoryFilingCost;
+    const patientIncentives = patientsInRegion * benchmark.operationalAdjustments.patientIncentivePerPatient;
+
+    return {
+      regionId: benchmark.regionId,
+      displayName: benchmark.displayName,
+      patients: patientsInRegion,
+      sites: sitesInRegion,
+      patientShare,
+      siteStartupCost: Math.round(siteStartupCost),
+      patientVisitCost: Math.round(patientVisitCost),
+      monitoringCost: Math.round(monitoringCost),
+      regulatoryCost: Math.round(regulatoryCost),
+      patientIncentives: Math.round(patientIncentives),
+      vendorSpend: 0,
+      totalCost: 0,
+      startupLagMonths: benchmark.operationalAdjustments.startupLagMonths,
+      notes: benchmark.notes,
+    };
+  });
+
+  const baselineEstimatedCost = (patientCount * costPerPatient) + (totalSites * siteSetupCost);
+  let estimatedCost = baselineEstimatedCost;
   
   // Additional costs for study complexity
   if (comparatorCount > 0) {
@@ -259,7 +317,7 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
   // Calculate total regulatory costs with diminishing returns for additional countries
   const regulatoryCost = regulatoryCostBase + (Math.log2(geographyCount) * regulatoryCostBase * 0.5);
   estimatedCost += regulatoryCost;
-  
+
   // Step 5: Calculate timeline based on statistical power-informed recruitment
   // Monthly recruitment rate per site varies by phase and indication complexity
   let monthlyRecruitmentPerSite = 1.5; // Base rate
@@ -301,8 +359,15 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
   // Database lock and analysis period
   const analysisProcessingTime = studyPhase === 'III' ? 6 : 4;
   
+  const baselineStudyDurationMonths = Math.max(1, recruitmentPeriod + followUpPeriod + analysisProcessingTime);
+
   // Total timeline from FPI to final report
-  let timeline = recruitmentPeriod + followUpPeriod + analysisProcessingTime;
+  let timeline = baselineStudyDurationMonths;
+
+  if (regionalCostBreakdown.length > 0) {
+    const maxStartupLag = Math.max(...regionalCostBreakdown.map((region) => region.startupLagMonths || 0));
+    timeline += maxStartupLag;
+  }
   
   // Adjust timeline for multi-geography studies (regulatory and coordination delays)
   if (geographyCount > 1) {
@@ -314,7 +379,34 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
   if (comparatorCount > 0) {
     timeline += comparatorCount * 2; // Additional time for complex study designs
   }
-  
+
+  // Vendor scenario modeling
+  const vendorIds = requestData.vendorSelections && requestData.vendorSelections.length > 0
+    ? requestData.vendorSelections
+    : [BASELINE_VENDOR_PROFILE.id];
+
+  const vendorScenarioResults: VendorScenarioResult[] = calculateVendorScenario({
+    selectedVendors: vendorIds,
+    studyPhase: (studyPhase as SupportedStudyPhase) ?? "any",
+    baseOperationalSpend: estimatedCost,
+    studyDurationMonths: Math.round(Math.max(1, timeline)),
+  });
+
+  const totalVendorSpend = vendorScenarioResults.reduce((sum, result) => sum + result.totalSpend, 0);
+  estimatedCost += totalVendorSpend;
+
+  // Update regional breakdown with vendor spend proportional allocation
+  if (regionalCostBreakdown.length > 0) {
+    const totalRegionalSpend = regionalCostBreakdown.reduce((sum, region) => sum + region.patientVisitCost + region.siteStartupCost + region.monitoringCost + region.regulatoryCost + region.patientIncentives, 0);
+    const allocationBaseline = totalRegionalSpend > 0 ? totalRegionalSpend : baselineEstimatedCost;
+    regionalCostBreakdown.forEach((region) => {
+      const operationalCost = region.patientVisitCost + region.siteStartupCost + region.monitoringCost + region.regulatoryCost + region.patientIncentives;
+      const vendorAllocation = allocationBaseline > 0 ? Math.round(totalVendorSpend * (operationalCost / allocationBaseline)) : Math.round(totalVendorSpend / regionalCostBreakdown.length);
+      region.vendorSpend = vendorAllocation;
+      region.totalCost = Math.round(operationalCost + vendorAllocation);
+    });
+  }
+
   // Step 6: Calculate recruitment rate (0-1 scale)
   const recruitmentRate = calculateRecruitmentRate(concept, studyPhase);
   
@@ -363,10 +455,18 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
   const completionRisk = calculateCompletionRisk(conceptWithFeasibility, studyPhase, requestData);
   
   // Step 8: Calculate projected ROI
-  const projectedROI = calculateProjectedROI(conceptWithFeasibility, requestData);
+  const commercialOutlook = calculateCommercialOutlook({
+    concept: conceptWithFeasibility,
+    feasibility: initialFeasibilityData,
+    requestData,
+    regionalBenchmarks,
+    effectiveRegionalMix,
+    scenarioPreference: requestData.scenarioPreference,
+  });
+  const projectedROI = commercialOutlook.baseRoi;
   
   // Extract AI analysis from sample size calculation
-  const aiAnalysis = sampleSizeCalculation.aiAnalysis || null;
+  const aiAnalysis = (sampleSizeCalculation as any).aiAnalysis || null;
 
   // Enforce any budget ceilings by adjusting scope if necessary
   if (requestData.budgetCeilingEur && estimatedCost > requestData.budgetCeilingEur) {
@@ -424,7 +524,7 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
   // Verify total cost equals sum of components
   const calculatedTotalCost = finalSiteCosts + finalPersonnelCosts + finalMaterialCosts + 
                               finalMonitoringCosts + finalDataCosts + finalRegulatoryCosts;
-  const finalTotalCost = Math.max(totalCost, calculatedTotalCost);
+  const finalTotalCost = Math.max(totalCost, calculatedTotalCost + totalVendorSpend);
   
   console.log("Final cost breakdown:", {
     totalCost: finalTotalCost,
@@ -434,7 +534,15 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
     monitoringCosts: finalMonitoringCosts,
     dataCosts: finalDataCosts,
     regulatoryCosts: finalRegulatoryCosts,
+    vendorCosts: Math.round(totalVendorSpend),
     sum: calculatedTotalCost
+  });
+
+  const scenarioAnalysis = buildScenarioAnalysis({
+    baseCost: finalTotalCost,
+    baseTimeline: timeline,
+    baseRoi: projectedROI,
+    commercialOutlook,
   });
 
   return {
@@ -479,9 +587,223 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
     dropoutRate: parseFloat(dropoutRate.toFixed(2)),
     complexityFactor: parseFloat(complexityFactor.toFixed(2)),
     
+    // Extended reporting
+    regionalCostBreakdown: regionalCostBreakdown.map((region) => ({
+      ...region,
+      totalCost: region.totalCost || Math.round(region.patientVisitCost + region.siteStartupCost + region.monitoringCost + region.regulatoryCost + region.patientIncentives + region.vendorSpend),
+    })),
+    vendorSpendSummary: vendorScenarioResults.map((result) => ({
+      vendorId: result.vendorId,
+      displayName: result.metadata.displayName,
+      category: result.metadata.category,
+      totalSpend: Math.round(result.totalSpend),
+      markupSpend: Math.round(result.markupSpend),
+      retainerSpend: Math.round(result.retainerSpend),
+      fxBufferSpend: Math.round(result.fxBufferSpend),
+    })),
+    scenarioAnalysis,
+    totalIncrementalSalesUsd: Math.round(commercialOutlook.totalIncrementalSalesUsd),
+    totalIncrementalSalesEur: Math.round(commercialOutlook.totalIncrementalSalesEur),
+    economicNetPresentValueUsd: Math.round(commercialOutlook.baseENpvUsd),
+    economicNetPresentValueEur: Math.round(commercialOutlook.baseENpvEur),
+    riskAdjustedENpvUsd: Math.round(commercialOutlook.riskAdjustedENpvUsd),
+    riskAdjustedENpvEur: Math.round(commercialOutlook.riskAdjustedENpvEur),
+    regionalRevenueForecast: commercialOutlook.regionalRevenueForecast,
+
     // AI Analysis - include comprehensive statistical justification data
-    aiAnalysis: aiAnalysis || null
+    aiAnalysis,
   };
+}
+
+function buildScenarioAnalysis(params: { baseCost: number; baseTimeline: number; baseRoi: number; commercialOutlook: CommercialOutlook }): ScenarioOutcome[] {
+  const { baseCost, baseTimeline, baseRoi, commercialOutlook } = params;
+  const { scenarios } = commercialOutlook;
+
+  const base: ScenarioOutcome = {
+    scenario: "base",
+    estimatedCost: Math.round(baseCost),
+    timeline: Math.round(baseTimeline),
+    projectedROI: parseFloat(baseRoi.toFixed(1)),
+    incrementalSalesUsd: Math.round(scenarios.base.incrementalSalesUsd),
+    incrementalSalesEur: Math.round(scenarios.base.incrementalSalesEur),
+    eNpvUsd: Math.round(scenarios.base.eNpvUsd),
+    eNpvEur: Math.round(scenarios.base.eNpvEur),
+  };
+
+  const optimistic: ScenarioOutcome = {
+    scenario: "optimistic",
+    estimatedCost: Math.round(baseCost * 0.92),
+    timeline: Math.max(1, Math.round(baseTimeline * 0.9)),
+    projectedROI: parseFloat((baseRoi * 1.15).toFixed(1)),
+    incrementalSalesUsd: Math.round(scenarios.optimistic.incrementalSalesUsd),
+    incrementalSalesEur: Math.round(scenarios.optimistic.incrementalSalesEur),
+    eNpvUsd: Math.round(scenarios.optimistic.eNpvUsd),
+    eNpvEur: Math.round(scenarios.optimistic.eNpvEur),
+  };
+
+  const pessimistic: ScenarioOutcome = {
+    scenario: "pessimistic",
+    estimatedCost: Math.round(baseCost * 1.12),
+    timeline: Math.round(baseTimeline * 1.15),
+    projectedROI: parseFloat(Math.max(0.5, baseRoi * 0.75).toFixed(1)),
+    incrementalSalesUsd: Math.round(scenarios.pessimistic.incrementalSalesUsd),
+    incrementalSalesEur: Math.round(scenarios.pessimistic.incrementalSalesEur),
+    eNpvUsd: Math.round(scenarios.pessimistic.eNpvUsd),
+    eNpvEur: Math.round(scenarios.pessimistic.eNpvEur),
+  };
+
+  return [base, optimistic, pessimistic];
+}
+
+interface CommercialOutlook {
+  totalIncrementalSalesUsd: number;
+  totalIncrementalSalesEur: number;
+  baseENpvUsd: number;
+  baseENpvEur: number;
+  riskAdjustedENpvUsd: number;
+  riskAdjustedENpvEur: number;
+  baseRoi: number;
+  regionalRevenueForecast: RegionalRevenueForecast[];
+  scenarios: {
+    base: { incrementalSalesUsd: number; incrementalSalesEur: number; eNpvUsd: number; eNpvEur: number; roi: number; };
+    optimistic: { incrementalSalesUsd: number; incrementalSalesEur: number; eNpvUsd: number; eNpvEur: number; roi: number; };
+    pessimistic: { incrementalSalesUsd: number; incrementalSalesEur: number; eNpvUsd: number; eNpvEur: number; roi: number; };
+  };
+}
+
+function calculateCommercialOutlook(params: {
+  concept: ConceptWithFeasibility;
+  feasibility: FeasibilityData;
+  requestData: Partial<ExtendedGenerateConceptRequest>;
+  regionalBenchmarks: RegionalCostBenchmark[];
+  effectiveRegionalMix: RegionalDeploymentMix[];
+  scenarioPreference?: "base" | "optimistic" | "pessimistic";
+}): CommercialOutlook {
+  const { concept, feasibility, requestData, regionalBenchmarks, effectiveRegionalMix } = params;
+  const studyPhase = concept.studyPhase || "any";
+  const timelineMonths = feasibility.timeline || 36;
+  const timelineYears = timelineMonths / 12;
+  const timeToImpactYears = Math.max(0.5, timelineYears + ((requestData?.scenarioPreference === "pessimistic") ? 0.5 : 0));
+
+  const discountRate = 0.1;
+  const usdToEur = 0.92;
+
+  const therapeuticMultiplier = getTherapeuticRevenueMultiplier(concept);
+
+  const regionalRevenueForecast: RegionalRevenueForecast[] = effectiveRegionalMix.map((mix) => {
+    const benchmark = regionalBenchmarks.find((region) => region.regionId === mix.regionId) || BASELINE_REGIONAL_BENCHMARK;
+    const marketData = REGIONAL_MARKET_DATA[mix.regionId as keyof typeof REGIONAL_MARKET_DATA];
+    const deploymentWeight = mix.weight || 0;
+
+    const baseMarketSizeUsd = marketData ? marketData.marketSize : 500000000;
+    const marketShare = estimateRegionalMarketShare(concept, marketData, deploymentWeight);
+    const windowYears = calculateWindowOfOpportunityYears(feasibility, timelineMonths);
+
+    const incrementalSalesUsd = baseMarketSizeUsd * (marketShare / 100) * Math.min(windowYears / 5, 1.5) * therapeuticMultiplier;
+    const incrementalSalesEur = incrementalSalesUsd * usdToEur * (benchmark.fxRateToEur || 1);
+
+    return {
+      regionId: mix.regionId,
+      displayName: benchmark.displayName,
+      incrementalSalesUsd,
+      incrementalSalesEur,
+      windowYears,
+    } satisfies RegionalRevenueForecast;
+  });
+
+  const totalIncrementalSalesUsd = regionalRevenueForecast.reduce((sum, region) => sum + region.incrementalSalesUsd, 0);
+  const totalIncrementalSalesEur = regionalRevenueForecast.reduce((sum, region) => sum + region.incrementalSalesEur, 0);
+
+  const baseENpvUsd = calculateENpv(totalIncrementalSalesUsd, feasibility.estimatedCost, timeToImpactYears, discountRate);
+  const baseENpvEur = baseENpvUsd * usdToEur;
+  const riskMultiplier = 1 - (feasibility.completionRisk || 0.3) * 0.6;
+  const riskAdjustedENpvUsd = baseENpvUsd * riskMultiplier;
+  const riskAdjustedENpvEur = riskAdjustedENpvUsd * usdToEur;
+
+  const baseRoi = calculateProjectedROI(concept, requestData);
+
+  const optimisticMultiplier = 1.25;
+  const pessimisticMultiplier = 0.65;
+  const optimisticDelay = -0.5;
+  const pessimisticDelay = 0.75;
+
+  const optimisticIncrementalUsd = totalIncrementalSalesUsd * optimisticMultiplier;
+  const optimisticENpvUsd = calculateENpv(optimisticIncrementalUsd, feasibility.estimatedCost, Math.max(0.25, timeToImpactYears + optimisticDelay), discountRate);
+  const pessimisticIncrementalUsd = totalIncrementalSalesUsd * pessimisticMultiplier;
+  const pessimisticENpvUsd = calculateENpv(pessimisticIncrementalUsd, feasibility.estimatedCost, timeToImpactYears + pessimisticDelay, discountRate);
+
+  return {
+    totalIncrementalSalesUsd,
+    totalIncrementalSalesEur,
+    baseENpvUsd,
+    baseENpvEur,
+    riskAdjustedENpvUsd,
+    riskAdjustedENpvEur,
+    baseRoi,
+    regionalRevenueForecast,
+    scenarios: {
+      base: {
+        incrementalSalesUsd: totalIncrementalSalesUsd,
+        incrementalSalesEur: totalIncrementalSalesEur,
+        eNpvUsd: baseENpvUsd,
+        eNpvEur: baseENpvEur,
+        roi: baseRoi,
+      },
+      optimistic: {
+        incrementalSalesUsd: optimisticIncrementalUsd,
+        incrementalSalesEur: optimisticIncrementalUsd * usdToEur,
+        eNpvUsd: optimisticENpvUsd,
+        eNpvEur: optimisticENpvUsd * usdToEur,
+        roi: baseRoi * 1.2,
+      },
+      pessimistic: {
+        incrementalSalesUsd: pessimisticIncrementalUsd,
+        incrementalSalesEur: pessimisticIncrementalUsd * usdToEur,
+        eNpvUsd: pessimisticENpvUsd,
+        eNpvEur: pessimisticENpvUsd * usdToEur,
+        roi: Math.max(0.5, baseRoi * 0.7),
+      },
+    },
+  } satisfies CommercialOutlook;
+}
+
+function calculateENpv(totalSalesUsd: number, investment: number, timeToImpactYears: number, discountRate: number): number {
+  const years = 5;
+  let npv = -investment;
+  const annualRevenue = totalSalesUsd / years;
+  for (let year = 1; year <= years; year++) {
+    const delay = timeToImpactYears + year - 1;
+    const discountedRevenue = annualRevenue / Math.pow(1 + discountRate, delay);
+    npv += discountedRevenue;
+  }
+  return npv;
+}
+
+function estimateRegionalMarketShare(concept: ConceptWithFeasibility, marketData: any, deploymentWeight: number): number {
+  let share = 10 * deploymentWeight;
+  const goals = concept.strategicGoals || [];
+  if (goals.includes("expand_label")) share += 3;
+  if (goals.includes("accelerate_uptake")) share += 2;
+  if (goals.includes("defend_market_share")) share += 1;
+  if (concept.studyPhase === "III") share += 3;
+  if (concept.studyPhase === "IV" || concept.studyPhase === "any") share += 1;
+  if (marketData && marketData.competitiveIntensity >= 4) share -= 2;
+  return Math.max(2, Math.min(35, share));
+}
+
+function calculateWindowOfOpportunityYears(feasibility: FeasibilityData, timelineMonths: number): number {
+  const monthsUntilLoe = feasibility.timeToLoe ?? 60;
+  const remainingWindowMonths = Math.max(0, monthsUntilLoe - timelineMonths);
+  return Math.max(1, remainingWindowMonths / 12);
+}
+
+function getTherapeuticRevenueMultiplier(concept: ConceptWithFeasibility): number {
+  const indication = (concept.indication || "").toLowerCase();
+  if (indication.includes("onc") || indication.includes("cancer")) return 1.4;
+  if (indication.includes("immun")) return 1.2;
+  if (indication.includes("neuro")) return 1.3;
+  if (indication.includes("cardio")) return 0.9;
+  return 1.0;
 }
 
 /**

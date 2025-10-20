@@ -6,7 +6,8 @@ import {
   generateConceptRequestSchema, 
   validateSynopsisRequestSchema,
   StudyConcept,
-  SynopsisValidation
+  SynopsisValidation,
+  GenerateConceptRequest
 } from "@shared/schema";
 // Import tournament routes
 import tournamentRoutes from "./routes/tournament";
@@ -27,6 +28,97 @@ import {
   amendStrategyRequestSchema, 
   executeStrategyRequestSchema 
 } from "@shared/schema";
+
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
+
+function formatGoal(goal: string): string {
+  return goal.replace(/_/g, " ");
+}
+
+function buildDesignRationale(
+  concept: Partial<StudyConcept>,
+  feasibilityData: any,
+  mcdaScores: any,
+  requestData: GenerateConceptRequest
+) {
+  const bullets: string[] = [];
+  const rawGoals = Array.isArray(concept.strategicGoals) && concept.strategicGoals.length > 0
+    ? concept.strategicGoals
+    : requestData.strategicGoals;
+  if (rawGoals && rawGoals.length > 0) {
+    const goalText = rawGoals.map(formatGoal).join(", ");
+    const knowledgeGap = concept.knowledgeGapAddressed || concept.innovationJustification;
+    bullets.push(`Aligns with ${goalText} objectives${knowledgeGap ? ` by ${knowledgeGap}` : " by targeting critical evidence gaps"}.`);
+  }
+
+  const studyPhase = concept.studyPhase || requestData.studyPhasePref;
+  if (studyPhase) {
+    const isAdaptive = typeof concept.title === "string" && concept.title.toLowerCase().includes("adaptive");
+    const targetText = concept.targetSubpopulation ? ` focusing on ${concept.targetSubpopulation}` : "";
+    bullets.push(`Uses a Phase ${studyPhase}${isAdaptive ? " adaptive" : ""} design${targetText} to support ${concept.indication || requestData.indication}.`);
+  }
+
+  const comparatorList = Array.isArray(concept.comparatorDrugs) ? concept.comparatorDrugs.filter(Boolean) : [];
+  if (comparatorList.length > 0) {
+    bullets.push(`Includes comparator arm(s): ${comparatorList.join(", ")} to benchmark against current practice.`);
+  } else {
+    bullets.push("Single-arm structure relies on historical or real-world comparators—ensure payer expectations are addressed.");
+  }
+
+  if (feasibilityData) {
+    if (typeof feasibilityData.estimatedCost === "number") {
+      const formattedCost = currencyFormatter.format(feasibilityData.estimatedCost);
+      if (typeof requestData.budgetCeilingEur === "number") {
+        const formattedCeiling = currencyFormatter.format(requestData.budgetCeilingEur);
+        if (feasibilityData.estimatedCost <= requestData.budgetCeilingEur) {
+          bullets.push(`Projected budget ${formattedCost} stays within the ceiling (${formattedCeiling}).`);
+        } else {
+          bullets.push(`Projected budget ${formattedCost} exceeds the ceiling (${formattedCeiling}); scope trade-offs may be required.`);
+        }
+      } else {
+        bullets.push(`Projected budget ${formattedCost} with ROI ${(typeof feasibilityData.projectedROI === "number") ? feasibilityData.projectedROI.toFixed(1) : "n/a"}x.`);
+      }
+    }
+
+    if (typeof feasibilityData.timeline === "number") {
+      if (typeof requestData.timelineCeilingMonths === "number") {
+        if (feasibilityData.timeline <= requestData.timelineCeilingMonths) {
+          bullets.push(`Estimated timeline ${Math.round(feasibilityData.timeline)} months fits the ceiling (${requestData.timelineCeilingMonths} months).`);
+        } else {
+          bullets.push(`Estimated timeline ${Math.round(feasibilityData.timeline)} months exceeds the ceiling (${requestData.timelineCeilingMonths} months).`);
+        }
+      } else {
+        bullets.push(`Estimated execution timeline of ${Math.round(feasibilityData.timeline)} months balances speed and rigor.`);
+      }
+    }
+
+    if (typeof feasibilityData.completionRisk === "number") {
+      bullets.push(`Completion risk estimated at ${(feasibilityData.completionRisk * 100).toFixed(0)}% reflects operational assumptions across selected geographies.`);
+    }
+
+    if (typeof feasibilityData.recruitmentRate === "number") {
+      bullets.push(`Recruitment velocity ${(feasibilityData.recruitmentRate * 100).toFixed(0)} patients per 100 eligible per month supports enrollment projections.`);
+    }
+  }
+
+  if (mcdaScores && typeof mcdaScores.overall === "number") {
+    bullets.push(`MCDA overall score ${mcdaScores.overall.toFixed(1)}/5 indicates balanced scientific, clinical, and commercial value.`);
+  }
+
+  const uniqueBullets = Array.from(new Set(bullets.filter(Boolean)));
+  if (uniqueBullets.length === 0) {
+    uniqueBullets.push("Design rationale requires further reviewer input.");
+  }
+
+  return {
+    summary: concept.title ? `${concept.title} design rationale` : "Study concept design rationale",
+    bullets: uniqueBullets,
+  };
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure multer for file uploads
@@ -164,25 +256,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         const feasibilityData = await calculateFeasibility(concept as any, data);
-        
-        // Debug the calculated feasibility data
-        console.log("Calculated feasibility data - ROI Debug:", {
-          estimatedCost: feasibilityData.estimatedCost,
-          projectedROI: feasibilityData.projectedROI,
-          projectedROIType: typeof feasibilityData.projectedROI,
-          completionRisk: feasibilityData.completionRisk,
-          recruitmentRate: feasibilityData.recruitmentRate,
-          timeline: feasibilityData.timeline,
-          strategicGoals: concept.strategicGoals,
-          studyPhase: concept.studyPhase
-        });
-        
-        // Add more debugging for LOE date
-        console.log("After calculation - feasibilityData.estimatedFpiDate:", feasibilityData.estimatedFpiDate);
-        console.log("After calculation - feasibilityData.globalLoeDate:", feasibilityData.globalLoeDate);
-        
+
         const mcdaScores = scoreMcda(concept, data);
         const swotAnalysis = generateSwot(concept, searchResults);
+
+        const designRationale = buildDesignRationale(concept, feasibilityData, mcdaScores, data);
+
+        const feasibilityAiAnalysis = (feasibilityData as any)?.aiAnalysis;
+        const conceptAiAnalysis = (concept as any)?.aiAnalysis;
+        const combinedAiAnalysis = {
+          ...(typeof conceptAiAnalysis === "object" && conceptAiAnalysis !== null ? conceptAiAnalysis : {}),
+          ...(typeof feasibilityAiAnalysis === "object" && feasibilityAiAnalysis !== null ? feasibilityAiAnalysis : {}),
+          designRationale,
+        };
         
         // Format citations with sources
         const currentEvidence = {
@@ -230,7 +316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             globalLoeDate: data.globalLoeDate || feasibilityData.globalLoeDate
           },
           // Store comprehensive AI analysis data for transparency
-          aiAnalysis: (feasibilityData as any)?.aiAnalysis || null,
+          aiAnalysis: combinedAiAnalysis,
           mcdaScores,
           swotAnalysis,
           currentEvidence
@@ -241,6 +327,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const savedConcepts = await Promise.all(
         enrichedConcepts.map((concept: any) => storage.createStudyConcept(concept))
       );
+
+      // Step 4b: Apply deterministic ranking based on ROI, feasibility, and strategic alignment
+      const toNumber = (value: unknown): number | null => {
+        if (typeof value === "number" && Number.isFinite(value)) {
+          return value;
+        }
+        if (typeof value === "string") {
+          const parsed = parseFloat(value);
+          return Number.isFinite(parsed) ? parsed : null;
+        }
+        return null;
+      };
+
+      const createRange = (values: Array<number | null>) => {
+        const valid = values.filter(
+          (val): val is number => val !== null && Number.isFinite(val)
+        );
+        if (valid.length === 0) {
+          return null;
+        }
+        return {
+          min: Math.min(...valid),
+          max: Math.max(...valid),
+        } as const;
+      };
+
+      const normalizeMetric = (
+        value: number | null,
+        range: ReturnType<typeof createRange>,
+        { inverse = false, defaultValue = 0.5 }: { inverse?: boolean; defaultValue?: number } = {}
+      ): number => {
+        if (value === null || !Number.isFinite(value) || !range) {
+          return defaultValue;
+        }
+        const { min, max } = range;
+        if (max === min) {
+          return 1;
+        }
+        const ratio = (value - min) / (max - min);
+        const normalized = inverse ? 1 - ratio : ratio;
+        return Math.min(1, Math.max(0, normalized));
+      };
+
+      const requestedGoals = new Set(data.strategicGoals ?? []);
+
+      const metricInputs = savedConcepts.map((concept) => {
+        const feasibility = (concept as any)?.feasibilityData ?? {};
+        return {
+          concept,
+          roi: toNumber(feasibility?.projectedROI),
+          estimatedCost: toNumber(feasibility?.estimatedCost),
+          timeline: toNumber(feasibility?.timeline),
+          completionRisk: toNumber(feasibility?.completionRisk),
+          recruitmentRate: toNumber(feasibility?.recruitmentRate),
+        };
+      });
+
+      const roiRange = createRange(metricInputs.map((m) => m.roi));
+      const costRange = createRange(metricInputs.map((m) => m.estimatedCost));
+      const timelineRange = createRange(metricInputs.map((m) => m.timeline));
+      const completionRiskRange = createRange(metricInputs.map((m) => m.completionRisk));
+      const recruitmentRange = createRange(metricInputs.map((m) => m.recruitmentRate));
+
+      const round = (value: number): number => Number(value.toFixed(3));
+
+      const scoredConcepts = metricInputs
+        .map(({ concept, roi, estimatedCost, timeline, completionRisk, recruitmentRate }) => {
+          const roiScore = normalizeMetric(roi, roiRange);
+
+          const feasibilityComponents: number[] = [];
+          feasibilityComponents.push(normalizeMetric(estimatedCost, costRange, { inverse: true }));
+          feasibilityComponents.push(normalizeMetric(timeline, timelineRange, { inverse: true }));
+          feasibilityComponents.push(
+            normalizeMetric(completionRisk, completionRiskRange, {
+              inverse: true,
+            })
+          );
+          feasibilityComponents.push(
+            normalizeMetric(recruitmentRate, recruitmentRange, {
+              inverse: false,
+            })
+          );
+
+          const validFeasibilityComponents = feasibilityComponents.filter((component) =>
+            Number.isFinite(component)
+          );
+          const feasibilityScore =
+            validFeasibilityComponents.length > 0
+              ? validFeasibilityComponents.reduce((sum, val) => sum + val, 0) /
+                validFeasibilityComponents.length
+              : 0.5;
+
+          const conceptGoals = Array.isArray(concept.strategicGoals)
+            ? concept.strategicGoals
+            : [];
+          const matchedGoals = conceptGoals.filter((goal) => requestedGoals.has(goal as any)).length;
+          const alignmentScore = requestedGoals.size > 0 ? matchedGoals / requestedGoals.size : 1;
+
+          const totalScore =
+            0.4 * roiScore +
+            0.35 * feasibilityScore +
+            0.25 * Math.min(1, Math.max(0, alignmentScore));
+
+          return {
+            ...concept,
+            rankScore: round(totalScore),
+            rankBreakdown: {
+              roi: round(roiScore),
+              feasibility: round(feasibilityScore),
+              alignment: round(Math.min(1, Math.max(0, alignmentScore))),
+            },
+          };
+        })
+        .sort((a, b) => (b.rankScore ?? 0) - (a.rankScore ?? 0));
 
       // Step 5: Automatically save as a study proposal for persistence
       if (savedConcepts.length > 0) {
@@ -268,7 +468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             geography: data.geography || ['US', 'EU'],
             researchStrategyId: data.researchStrategyId || null,
             researchResults: researchResults, // Include the formatted research results
-            generatedConcepts: savedConcepts,
+            generatedConcepts: scoredConcepts,
             userInputs: {
               drugName: data.drugName,
               indication: data.indication,
@@ -296,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      res.json(savedConcepts);
+      res.json(scoredConcepts);
     } catch (error) {
       console.error("Error generating study concepts:", error);
       

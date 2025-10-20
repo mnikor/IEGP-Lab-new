@@ -55,6 +55,52 @@ export interface RegionalLoeData {
   notes?: string;            // Any additional information about the LOE
 }
 
+export interface RegionalCostBreakdown {
+  regionId: string;
+  displayName: string;
+  patients: number;
+  sites: number;
+  patientShare: number;
+  siteStartupCost: number;
+  patientVisitCost: number;
+  monitoringCost: number;
+  regulatoryCost: number;
+  patientIncentives: number;
+  vendorSpend: number;
+  totalCost: number;
+  startupLagMonths?: number;
+  notes?: string;
+}
+
+export interface VendorSpendSummary {
+  vendorId: string;
+  displayName: string;
+  category: string;
+  totalSpend: number;
+  markupSpend: number;
+  retainerSpend: number;
+  fxBufferSpend: number;
+}
+
+export interface RegionalRevenueForecast {
+  regionId: string;
+  displayName: string;
+  incrementalSalesUsd: number;
+  incrementalSalesEur: number;
+  windowYears: number;
+}
+
+export interface ScenarioOutcome {
+  scenario: "base" | "optimistic" | "pessimistic";
+  estimatedCost: number;
+  timeline: number;
+  projectedROI: number;
+  incrementalSalesUsd?: number;
+  incrementalSalesEur?: number;
+  eNpvUsd?: number;
+  eNpvEur?: number;
+}
+
 export interface SwotAnalysis {
   strengths: string[];
   weaknesses: string[];
@@ -105,6 +151,22 @@ export interface FeasibilityData {
   // Risk factors
   dropoutRate: number;
   complexityFactor: number;
+
+  // Extended commercial intelligence
+  vendorCosts?: number;
+  incrementalRevenue?: number;
+  marketShareDefenseValue?: number;
+  regionalCostBreakdown?: RegionalCostBreakdown[];
+  vendorSpendSummary?: VendorSpendSummary[];
+  scenarioAnalysis?: ScenarioOutcome[];
+  aiAnalysis?: any;
+  totalIncrementalSalesUsd?: number;
+  totalIncrementalSalesEur?: number;
+  economicNetPresentValueUsd?: number;
+  economicNetPresentValueEur?: number;
+  riskAdjustedENpvUsd?: number;
+  riskAdjustedENpvEur?: number;
+  regionalRevenueForecast?: RegionalRevenueForecast[];
 }
 
 export interface EvidenceSource {
@@ -176,6 +238,12 @@ export interface StudyConcept {
   currentEvidence?: CurrentEvidence;
   globalLoeDate?: string;    // Top-level LOE date for quicker access
   timeToLoe?: number;        // Top-level time to LOE for quicker access
+  rankScore?: number;
+  rankBreakdown?: {
+    roi: number;
+    feasibility: number;
+    alignment: number;
+  };
   createdAt?: string;
 }
 
@@ -203,6 +271,12 @@ export interface GenerateConceptRequest {
     date: string;              // ISO date string
   }[];
   hasPatentExtensionPotential?: boolean; // Whether the study could extend exclusivity
+  vendorSelections?: string[];
+  regionalDeploymentMix?: {
+    regionId: string;
+    weight: number;
+  }[];
+  scenarioPreference?: "base" | "optimistic" | "pessimistic";
 }
 
 export interface EvidenceFile {
