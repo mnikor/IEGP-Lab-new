@@ -61,7 +61,15 @@ const formSchema = z.object({
   hasPatentExtensionPotential: z.boolean().optional().default(false),
   
   // AI model selection
-  aiModel: z.enum(["gpt-4o", "gpt-4-turbo", "o3-mini", "o3"]).default("gpt-4o"),
+  aiModel: z.enum([
+    "gpt-4o",
+    "gpt-4-turbo",
+    "gpt-4.1",
+    "gpt-5-medium-reasoning",
+    "gpt-5-high-reasoning",
+    "o3-mini",
+    "o3"
+  ]).default("gpt-4o"),
 });
 
 const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({ 
@@ -690,6 +698,9 @@ const StudyIdeaUploader: React.FC<StudyIdeaUploaderProps> = ({
                           <SelectContent>
                             <SelectItem value="gpt-4o">GPT-4o (Latest)</SelectItem>
                             <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                            <SelectItem value="gpt-4.1">GPT-4.1</SelectItem>
+                            <SelectItem value="gpt-5-medium-reasoning">GPT-5 Medium Reasoning</SelectItem>
+                            <SelectItem value="gpt-5-high-reasoning">GPT-5 High Reasoning</SelectItem>
                             <SelectItem value="o3-mini">o3-mini (Reasoning)</SelectItem>
                             <SelectItem value="o3">o3 (Advanced Reasoning)</SelectItem>
                           </SelectContent>

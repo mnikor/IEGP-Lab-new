@@ -53,7 +53,7 @@ export interface TherapeuticAreaCommercialData {
 export const REGIONAL_MARKET_DATA: Record<string, RegionalMarketData> = {
   'us': {
     region: 'United States',
-    marketSize: 1200000, // $1.2B baseline
+    marketSize: 1200000000, // $1.2B baseline
     growthRate: 8.5,
     penetrationRate: 85,
     pricingMultiplier: 1.0,
@@ -64,7 +64,7 @@ export const REGIONAL_MARKET_DATA: Record<string, RegionalMarketData> = {
   },
   'emea': {
     region: 'Europe, Middle East & Africa',
-    marketSize: 980000, // $980M
+    marketSize: 980000000, // $980M
     growthRate: 6.2,
     penetrationRate: 72,
     pricingMultiplier: 0.75,
@@ -75,7 +75,7 @@ export const REGIONAL_MARKET_DATA: Record<string, RegionalMarketData> = {
   },
   'asia_pacific': {
     region: 'Asia Pacific',
-    marketSize: 540000, // $540M
+    marketSize: 540000000, // $540M
     growthRate: 12.3,
     penetrationRate: 45,
     pricingMultiplier: 0.45,
@@ -86,7 +86,7 @@ export const REGIONAL_MARKET_DATA: Record<string, RegionalMarketData> = {
   },
   'china': {
     region: 'China',
-    marketSize: 450000, // $450M
+    marketSize: 450000000, // $450M
     growthRate: 15.8,
     penetrationRate: 38,
     pricingMultiplier: 0.35,
@@ -97,7 +97,7 @@ export const REGIONAL_MARKET_DATA: Record<string, RegionalMarketData> = {
   },
   'japan': {
     region: 'Japan',
-    marketSize: 280000, // $280M
+    marketSize: 280000000, // $280M
     growthRate: 4.1,
     penetrationRate: 78,
     pricingMultiplier: 0.85,
@@ -108,7 +108,7 @@ export const REGIONAL_MARKET_DATA: Record<string, RegionalMarketData> = {
   },
   'latin_america': {
     region: 'Latin America',
-    marketSize: 160000, // $160M
+    marketSize: 160000000, // $160M
     growthRate: 9.7,
     penetrationRate: 25,
     pricingMultiplier: 0.25,

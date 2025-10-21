@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,15 +12,16 @@ import { X, InfoIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { EvidenceUploader } from "@/components/shared/EvidenceUploader";
-import { StudyConcept, EvidenceFile, GenerateConceptRequest, StrategicGoal, strategicGoalLabels } from "@/lib/types";
+import { StudyConcept, GenerateConceptRequest, PortfolioSummary, GenerateConceptResponse, EvidenceFile, StrategicGoal } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { STRATEGIC_GOALS } from "@shared/strategicGoals";
 import { ResearchStrategySection } from "@/components/concept/ResearchStrategySection";
 import type { ResearchStrategy } from "@shared/schema";
+import { GenerationProgress, GenerationProgressState } from "@/components/concept/GenerationProgress";
 
 interface ConceptFormProps {
-  onGenerateSuccess: (concepts: StudyConcept[], researchStrategyId?: number) => void;
+  onGenerateSuccess: (concepts: StudyConcept[], portfolioSummary: PortfolioSummary | null, researchStrategyId?: number) => void;
   isGenerating: boolean;
   setIsGenerating: (isGenerating: boolean) => void;
 }
@@ -68,7 +69,15 @@ const formSchema = z.object({
   globalLoeDate: z.string().optional(),
   hasPatentExtensionPotential: z.boolean().optional().default(false),
   numberOfConcepts: z.number().min(1, "Must generate at least 1 concept").max(10, "Maximum 10 concepts allowed").default(3),
-  aiModel: z.enum(["gpt-4o", "gpt-4-turbo", "o3-mini", "o3"]).default("gpt-4o"),
+  aiModel: z.enum([
+    "gpt-4o",
+    "gpt-4-turbo",
+    "gpt-4.1",
+    "gpt-5-medium-reasoning",
+    "gpt-5-high-reasoning",
+    "o3-mini",
+    "o3"
+  ]).default("gpt-4o"),
 });
 
 const ConceptForm: React.FC<ConceptFormProps> = ({ 
@@ -86,6 +95,12 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
   const [regionalLoeDates, setRegionalLoeDates] = useState<{region: string; date: string}[]>([]);
   const [researchStrategy, setResearchStrategy] = useState<ResearchStrategy | null>(null);
   const [showResearchStrategy, setShowResearchStrategy] = useState<boolean>(false);
+  const [progressState, setProgressState] = useState<GenerationProgressState>("idle");
+  const [progressPercent, setProgressPercent] = useState<number>(0);
+  const [progressStep, setProgressStep] = useState<number>(0);
+  const [progressMessage, setProgressMessage] = useState<string | null>(null);
+  const [progressToken, setProgressToken] = useState<string | null>(null);
+  const progressSourceRef = useRef<EventSource | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -108,9 +123,64 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
     },
   });
 
+  const progressSteps = useMemo(
+    () => [
+      { label: "Validating inputs" },
+      { label: "Analyzing existing evidence" },
+      { label: "Generating concept drafts" },
+      { label: "Calculating feasibility & MCDA" },
+      { label: "Ranking portfolio & summarizing" },
+    ],
+    []
+  );
+
+  useEffect(() => {
+    return () => {
+      if (progressSourceRef.current) {
+        progressSourceRef.current.close();
+        progressSourceRef.current = null;
+      }
+    };
+  }, []);
+
+  const attachProgressStream = (token: string) => {
+    if (progressSourceRef.current) {
+      progressSourceRef.current.close();
+    }
+
+    const source = new EventSource(`/api/progress/${token}`);
+    progressSourceRef.current = source;
+
+    source.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (!payload) {
+          return;
+        }
+        setProgressState(payload.state ?? "running");
+        setProgressPercent(typeof payload.percent === "number" ? payload.percent : 0);
+        setProgressStep(typeof payload.step === "number" ? payload.step : 0);
+        setProgressMessage(payload.status ?? null);
+
+        if (payload.state === "completed" || payload.state === "failed") {
+          source.close();
+          progressSourceRef.current = null;
+        }
+      } catch (err) {
+        console.error("Failed to parse progress event", err);
+      }
+    };
+
+    source.onerror = (err) => {
+      console.error("Progress stream error", err);
+      source.close();
+      progressSourceRef.current = null;
+    };
+  };
+
   const addComparatorDrug = () => {
     if (newComparatorDrug.trim() && !comparatorDrugs.includes(newComparatorDrug.trim())) {
-      setComparatorDrugs([...comparatorDrugs, newComparatorDrug.trim()]);
+      setComparatorDrugs((prev) => [...prev, newComparatorDrug.trim()]);
       setNewComparatorDrug("");
     }
   };
@@ -205,6 +275,16 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
 
     try {
       setIsGenerating(true);
+      setProgressState("running");
+      setProgressPercent(0);
+      setProgressStep(0);
+      setProgressMessage(null);
+
+      const token = (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function")
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      setProgressToken(token);
+      attachProgressStream(token);
 
       // Prepare regional LOE dates based on selected geographies if global LOE date is set
       let processedRegionalLoeDates;
@@ -266,8 +346,8 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
         globalLoeDate: formattedGlobalLoeDate, // Ensure we send the exact date the user provided
         regionalLoeDates: values.globalLoeDate ? processedRegionalLoeDates : undefined,
         anticipatedFpiDate: formattedFpiDate,
+        progressToken: token,
         // Include research strategy data if available
-        researchStrategyId: researchStrategy?.id
       };
       
       // More detailed logging for the request
@@ -280,16 +360,23 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
       console.log("Final request data:", requestData);
 
       const response = await apiRequest("POST", "/api/study-concepts/generate", requestData);
-      const conceptsData = await response.json();
+      const conceptsResponse: GenerateConceptResponse = await response.json();
+      const conceptsData = conceptsResponse.concepts;
+      const portfolioSummary = conceptsResponse.portfolioSummary ?? null;
 
       toast({
         title: "Concepts Generated",
         description: `Successfully generated ${conceptsData.length} study concepts.`,
       });
 
-      onGenerateSuccess(conceptsData, researchStrategy?.id);
+      onGenerateSuccess(conceptsData, portfolioSummary, researchStrategy?.id);
+      setProgressState("completed");
+      setProgressPercent(100);
+      setProgressStep(progressSteps.length - 1);
     } catch (error) {
       console.error("Failed to generate concepts:", error);
+      setProgressState("failed");
+      setProgressMessage(error instanceof Error ? error.message : "Unknown error");
       toast({
         title: "Generation Failed",
         description: error instanceof Error ? error.message : "An unknown error occurred",
@@ -297,6 +384,10 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
       });
     } finally {
       setIsGenerating(false);
+      if (progressSourceRef.current && (progressState === "completed" || progressState === "failed")) {
+        progressSourceRef.current.close();
+        progressSourceRef.current = null;
+      }
     }
   };
 
@@ -328,6 +419,13 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
             <CardTitle>Study Parameters</CardTitle>
           </CardHeader>
           <CardContent>
+            <GenerationProgress
+              steps={progressSteps}
+              activeStep={progressStep}
+              percent={progressPercent}
+              state={progressState}
+              message={progressMessage}
+            />
             <Form {...form}>
               <form onSubmit={(e) => {
                 console.log("Form submit event triggered");
@@ -404,7 +502,7 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                   <div className="flex flex-wrap gap-2 mt-1 mb-2">
                     {selectedStrategicGoals.map(goalId => {
                       const goal = STRATEGIC_GOALS.find(g => g.id === goalId) || 
-                        { id: goalId, label: strategicGoalLabels[goalId as StrategicGoal], description: "", tooltip: "" };
+                        { id: goalId, label: goalId, description: "", tooltip: "" };
                       
                       return (
                         <Badge key={goalId} variant="secondary" className="bg-blue-100 text-primary hover:bg-blue-200">
@@ -551,6 +649,9 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
                           <SelectContent>
                             <SelectItem value="gpt-4o">GPT-4o (Latest)</SelectItem>
                             <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                            <SelectItem value="gpt-4.1">GPT-4.1</SelectItem>
+                            <SelectItem value="gpt-5-medium-reasoning">GPT-5 Medium Reasoning</SelectItem>
+                            <SelectItem value="gpt-5-high-reasoning">GPT-5 High Reasoning</SelectItem>
                             <SelectItem value="o3-mini">o3-mini (Reasoning)</SelectItem>
                             <SelectItem value="o3">o3 (Advanced Reasoning)</SelectItem>
                           </SelectContent>

@@ -28,31 +28,77 @@ interface ConceptCardProps {
   onConceptUpdate?: (updatedConcept: StudyConcept) => void;
 }
 
+const studyImpactLabels: Record<NonNullable<StudyConcept["studyImpact"]>, string> = {
+  label_expansion: "Label expansion",
+  market_access_enabler: "Market access enabler",
+  clinical_guideline_shift: "Clinical guideline shift",
+  practice_evolution: "Practice evolution",
+  market_defense: "Market defense",
+  evidence_gap_fill: "Evidence gap fill",
+  limited_impact: "Limited impact",
+  no_material_change: "No material change",
+};
+
 const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index, onConceptUpdate }) => {
   const [showFeasibilityDetails, setShowFeasibilityDetails] = useState(false);
-  
+  const recommendation = concept.mcdaScores?.commercialRecommendation;
+  const alerts = concept.mcdaScores?.commercialAlerts ?? [];
+  const financialSignals = concept.mcdaScores?.financialSignals;
+  const windowMonths = typeof financialSignals?.windowToLoeMonths === "number" ? financialSignals.windowToLoeMonths : concept.feasibilityData?.windowToLoeMonths;
+  const advisoryRoi = typeof financialSignals?.projectedROI === "number" ? financialSignals.projectedROI : null;
+  const feasibilityRoi = typeof concept.feasibilityData?.projectedROI === "number" ? concept.feasibilityData.projectedROI : null;
+
   return (
-    <Card className="border border-neutral-light rounded-lg overflow-hidden">
-      <CardHeader className="bg-neutral-lightest p-4 border-b border-neutral-light flex flex-row items-center justify-between">
-        <div className="flex items-center">
-          <span className="text-lg font-medium text-primary">Concept {index}</span>
-          <Badge variant="secondary" className="ml-3 bg-blue-100 text-primary">
-            Phase {concept.studyPhase === "any" ? "Any" : concept.studyPhase}
-          </Badge>
-        </div>
-        <div className="flex items-center space-x-4">
-          <ConfidenceLevel 
-            feasibilityData={concept.feasibilityData}
-            mcdaScores={concept.mcdaScores}
-            className="flex-shrink-0"
-          />
-          <div className="flex items-center">
-            <Star className="h-5 w-5 text-yellow-400 fill-current" />
-            <span className="ml-1 text-sm font-medium text-neutral-dark">
-              {concept.mcdaScores && concept.mcdaScores.overall != null 
-                ? concept.mcdaScores.overall.toFixed(1) + '/5'
-                : 'N/A'}
-            </span>
+    <Card id={concept.id ? `concept-${concept.id}` : undefined} className="border border-neutral-light rounded-lg overflow-hidden">
+      <CardHeader className="pb-4">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary">Concept {index + 1}</Badge>
+              {concept.studyImpact && studyImpactLabels[concept.studyImpact] && (
+                <Badge variant="outline" className="text-xs">
+                  {studyImpactLabels[concept.studyImpact]}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {concept.mcdaScores?.overall !== undefined && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                  <button className="ml-1 inline-flex text-neutral-medium cursor-help">
+                    <HelpCircle className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="font-semibold">Multi-Criteria Decision Analysis</p>
+                  <p className="text-xs mt-1">Evaluates study concepts across multiple dimensions:</p>
+                  <ul className="text-xs mt-1 list-disc pl-4 space-y-1">
+                    <li><span className="font-medium">Scientific Validity:</span> Soundness of methodology and design</li>
+                    <li><span className="font-medium">Clinical Impact:</span> Potential effect on patient outcomes</li>
+                    <li><span className="font-medium">Commercial Value:</span> Business implications and ROI</li>
+                    <li><span className="font-medium">Feasibility:</span> Practicality of execution</li>
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
+              )}
+              <div className="flex items-center">
+                <Star className="h-5 w-5 text-yellow-400 fill-current" />
+                <span className="ml-1 text-sm font-medium text-neutral-dark">
+                  {concept.mcdaScores && concept.mcdaScores.overall != null 
+                    ? concept.mcdaScores.overall.toFixed(1) + '/5'
+                    : 'N/A'}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <ConfidenceLevel 
+                feasibilityData={concept.feasibilityData}
+                mcdaScores={concept.mcdaScores}
+                className="flex-shrink-0"
+              />
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -74,6 +120,65 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index, onConceptUpda
         {concept.reasonsToBelieve && (
           <div className="mb-4">
             <ReasonsToBelieve reasonsToBelieve={concept.reasonsToBelieve} />
+          </div>
+        )}
+
+        {recommendation && (
+          <div className="mb-4 border border-blue-200 bg-blue-50 rounded-md p-3">
+            <h4 className="text-sm font-semibold text-blue-800">AI Commercial Recommendation</h4>
+            <p className="text-sm text-blue-700 mt-1">
+              Confidence: {recommendation.confidence}
+            </p>
+            {recommendation.windowAssessment && (
+              <p className="text-sm text-blue-700 mt-1">{recommendation.windowAssessment}</p>
+            )}
+            {recommendation.rationale?.length > 0 && (
+              <ul className="text-sm text-blue-700 mt-2 list-disc list-inside space-y-1">
+                {recommendation.rationale.slice(0, 3).map((item, idx) => (
+                  <li key={idx}>{item}</li>
+                ))}
+              </ul>
+            )}
+            {(feasibilityRoi !== null || advisoryRoi !== null) && (
+              <div className="mt-3 grid gap-2 rounded-md bg-white/60 p-3 border border-blue-100">
+                {advisoryRoi !== null && (
+                  <div className="text-xs text-blue-700">
+                    <span className="font-semibold">AI advisory ROI:</span> {advisoryRoi.toFixed(1)}x
+                  </div>
+                )}
+                {feasibilityRoi !== null && (
+                  <div className="text-xs text-blue-700">
+                    <span className="font-semibold">Deterministic feasibility ROI:</span> {feasibilityRoi.toFixed(1)}x
+                  </div>
+                )}
+                {advisoryRoi !== null && feasibilityRoi !== null && Math.abs(advisoryRoi - feasibilityRoi) > 0.2 && (
+                  <p className="text-[11px] text-blue-600">
+                    MCDA reasoning may surface upside scenarios. Use the feasibility ROI for baseline planning and treat advisory ROI as sensitivity guidance.
+                  </p>
+                )}
+              </div>
+            )}
+            {Array.isArray(recommendation.blockers) && recommendation.blockers.length > 0 && (
+              <div className="mt-2 text-sm text-blue-700">
+                <span className="font-semibold">Key blockers:</span>
+                <ul className="list-disc list-inside space-y-1">
+                  {recommendation.blockers.slice(0, 3).map((blocker, idx) => (
+                    <li key={idx}>{blocker}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {alerts.length > 0 && (
+          <div className="mb-4 border border-red-200 bg-red-50 rounded-md p-3">
+            <h4 className="text-sm font-semibold text-red-800">Commercial Alerts</h4>
+            <ul className="text-sm text-red-700 mt-1 list-disc list-inside space-y-1">
+              {alerts.map((alert, idx) => (
+                <li key={idx}>{alert}</li>
+              ))}
+            </ul>
           </div>
         )}
 
@@ -164,6 +269,27 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index, onConceptUpda
               </div>
             </div>
           </div>
+          {concept.feasibilityData?.expectedToplineDate && (
+            <div className="p-3 border border-neutral-light rounded-md">
+              <h4 className="text-sm font-medium text-neutral-dark mb-1">Expected Topline</h4>
+              <span className="text-lg font-medium text-primary">
+                {concept.feasibilityData.expectedToplineDate}
+              </span>
+              {typeof windowMonths === "number" && (
+                <span className="ml-1 text-xs text-neutral-medium">
+                  {windowMonths} months to LOE window
+                </span>
+              )}
+            </div>
+          )}
+          {concept.feasibilityData?.plannedDbLockDate && (
+            <div className="p-3 border border-neutral-light rounded-md">
+              <h4 className="text-sm font-medium text-neutral-dark mb-1">Planned DB Lock</h4>
+              <span className="text-lg font-medium text-primary">
+                {concept.feasibilityData.plannedDbLockDate}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Feasibility Analysis */}
@@ -247,7 +373,11 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, index, onConceptUpda
             regionalLoeData={concept.feasibilityData?.regionalLoeData}
             timeToLoe={concept.timeToLoe || concept.feasibilityData?.timeToLoe}
             postLoeValue={concept.feasibilityData?.postLoeValue}
-            estimatedFpiDate={concept.feasibilityData?.estimatedFpiDate}
+            estimatedFpiDate={concept.feasibilityData?.estimatedFpiDate || concept.estimatedFpiDate}
+            expectedToplineDate={concept.feasibilityData?.expectedToplineDate || concept.expectedToplineDate}
+            plannedDbLockDate={concept.feasibilityData?.plannedDbLockDate}
+            windowToLoeMonths={concept.feasibilityData?.windowToLoeMonths}
+            className="mb-6"
           />
         </div>
         

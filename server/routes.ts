@@ -17,6 +17,14 @@ import { extractTextFromDocument } from "./services/documentParser";
 import { calculateFeasibility } from "./services/feasibilityCalculator";
 import type { ConceptWithFeasibility } from "./services/feasibilityCalculator";
 import { scoreMcda } from "./services/mcdaScorer";
+import { generatePortfolioSummary } from "./services/portfolioAdvisor";
+import {
+  initializeProgressToken,
+  openProgressStream,
+  sendProgressUpdate,
+  completeProgress,
+  failProgress,
+} from "./services/progressTracker";
 import { generateSwot } from "./services/swotGenerator";
 import { generatePdfReport, generateSingleConceptPdfReport, generatePptxReport, generateValidationPdfReport, generateProposalPdfReport } from "./services/reportBuilder";
 import { ResearchStrategyGenerator } from "./services/researchStrategyGenerator";
@@ -129,6 +137,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   });
 
+  // Progress streaming endpoint (Server-Sent Events)
+  app.get("/api/progress/:token", (req, res) => {
+    const { token } = req.params;
+    if (!token) {
+      res.status(400).end();
+      return;
+    }
+    openProgressStream(token, res);
+  });
+
   // API Endpoints for study concepts
   app.get("/api/study-concepts", async (req, res) => {
     try {
@@ -167,6 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("=== CONCEPT GENERATION ENDPOINT HIT ===");
     console.log("Request body:", JSON.stringify(req.body));
     
+    let progressToken = "";
     try {
       // Validate request body
       console.log("Attempting to validate request data...");
@@ -181,12 +200,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("Request validation successful");
       const data = validationResult.data;
-      
+      progressToken = initializeProgressToken(data.progressToken);
+      sendProgressUpdate({
+        token: progressToken,
+        step: 0,
+        totalSteps: 5,
+        percent: 2,
+        status: "Validating inputs",
+        state: "running",
+      });
+
       // Log the incoming request data to debug anticipatedFpiDate
       console.log("Received request with anticipatedFpiDate:", data.anticipatedFpiDate);
       
       // Define performNewSearch function first
       const performNewSearch = async (data: any) => {
+        sendProgressUpdate({
+          token: progressToken,
+          step: 1,
+          totalSteps: 5,
+          percent: 15,
+          status: "Analyzing existing evidence",
+          state: "running",
+        });
         console.log("Performing new Perplexity search");
         const isOncology = (data.indication || '').toLowerCase().includes('cancer') || 
                            (data.indication || '').toLowerCase().includes('oncol') ||
@@ -236,6 +272,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         searchResults = await performNewSearch(data);
       }
 
+      sendProgressUpdate({
+        token: progressToken,
+        step: 2,
+        totalSteps: 5,
+        percent: 32,
+        status: "Generating concept drafts",
+        state: "running",
+      });
+
       // Step 2: Generate concepts using OpenAI with selected model
       const concepts = await analyzeWithOpenAI(searchResults, data, false, data.aiModel || "gpt-4o");
 
@@ -245,6 +290,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Request data - data.globalLoeDate:", data.globalLoeDate);
       
       const enrichedConcepts = await Promise.all(concepts.map(async (concept: Partial<StudyConcept>) => {
+        sendProgressUpdate({
+          token: progressToken,
+          step: 3,
+          totalSteps: 5,
+          percent: 55,
+          status: `Calculating feasibility & MCDA for ${concept.title ?? "concept"}`,
+          state: "running",
+        });
         // Debug each concept
         console.log("Processing concept:", concept.title);
         console.log("Concept input data:", {
@@ -257,10 +310,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const feasibilityData = await calculateFeasibility(concept as any, data);
 
-        const mcdaScores = scoreMcda(concept, data);
+        const conceptForScoring: Partial<StudyConcept> = {
+          ...concept,
+          feasibilityData,
+          globalLoeDate: data.globalLoeDate ?? concept.globalLoeDate,
+          expectedToplineDate: feasibilityData.expectedToplineDate,
+        };
+
+        const mcdaScores = scoreMcda(conceptForScoring, data);
         const swotAnalysis = generateSwot(concept, searchResults);
 
-        const designRationale = buildDesignRationale(concept, feasibilityData, mcdaScores, data);
+        const followOnPlan = (concept.feasibilityData as any)?.pivotalFollowOnPlan || (concept.aiAnalysis as any)?.pivotalFollowOnPlan;
+        const strategicGoals = Array.isArray(data.strategicGoals) ? data.strategicGoals : [];
+        const requiresPivotalEvidence = strategicGoals.some((goal) =>
+          ["accelerate_uptake", "facilitate_market_access"].includes(goal as string)
+        );
+        const recommendedPhase = typeof concept.studyPhase === "string" ? concept.studyPhase.trim().toUpperCase() : "";
+        const needsPivotalWarning =
+          requiresPivotalEvidence && (recommendedPhase === "" || recommendedPhase === "I" || recommendedPhase === "II" || recommendedPhase === "ANY");
+
+        const adjustedMcdaScores = { ...mcdaScores };
+        const phaseAlignmentNotes: string[] = [];
+        if (needsPivotalWarning) {
+          phaseAlignmentNotes.push(
+            "Strategic acceleration goals typically require pivotal (Phase III) evidence; upgrade this program or include a confirmatory trial plan with budget and timing."
+          );
+          adjustedMcdaScores.commercialValue = Math.max(1, parseFloat((adjustedMcdaScores.commercialValue - 1).toFixed(1)));
+          const weights = {
+            scientificValidity: 0.3,
+            clinicalImpact: 0.3,
+            commercialValue: 0.25,
+            feasibility: 0.15,
+          } as const;
+          const recalculatedOverall =
+            adjustedMcdaScores.scientificValidity * weights.scientificValidity +
+            adjustedMcdaScores.clinicalImpact * weights.clinicalImpact +
+            adjustedMcdaScores.commercialValue * weights.commercialValue +
+            adjustedMcdaScores.feasibility * weights.feasibility;
+          adjustedMcdaScores.overall = parseFloat(recalculatedOverall.toFixed(1));
+        }
+
+        const designRationaleBase = buildDesignRationale(concept, feasibilityData, adjustedMcdaScores, data);
+        const designRationale = {
+          ...designRationaleBase,
+          bullets: Array.from(
+            new Set(
+              [
+                ...designRationaleBase.bullets,
+                ...phaseAlignmentNotes,
+                followOnPlan ? `Proposed follow-on pivotal plan: ${followOnPlan}` : null,
+              ].filter(Boolean) as string[]
+            )
+          ),
+        };
 
         const feasibilityAiAnalysis = (feasibilityData as any)?.aiAnalysis;
         const conceptAiAnalysis = (concept as any)?.aiAnalysis;
@@ -268,8 +370,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...(typeof conceptAiAnalysis === "object" && conceptAiAnalysis !== null ? conceptAiAnalysis : {}),
           ...(typeof feasibilityAiAnalysis === "object" && feasibilityAiAnalysis !== null ? feasibilityAiAnalysis : {}),
           designRationale,
+          phaseAlignment: {
+            recommendedPhase: recommendedPhase || "UNSPECIFIED",
+            requiresPivotalEvidence,
+            warnings: phaseAlignmentNotes,
+            followOnPlan: followOnPlan || null,
+          },
         };
-        
+
         // Format citations with sources
         const currentEvidence = {
           summary: searchResults.content,
@@ -301,6 +409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           globalLoeDate: data.globalLoeDate,
           // Also ensure the timeToLoe value is preserved at the top level
           timeToLoe: feasibilityData.timeToLoe,
+          expectedToplineDate: feasibilityData.expectedToplineDate,
           // Use corrected PICO data with actual sample size
           picoData: correctedPicoData,
           // ALWAYS use calculated feasibility data, never AI-generated values
@@ -317,7 +426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           // Store comprehensive AI analysis data for transparency
           aiAnalysis: combinedAiAnalysis,
-          mcdaScores,
+          mcdaScores: adjustedMcdaScores,
           swotAnalysis,
           currentEvidence
         };
@@ -327,6 +436,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const savedConcepts = await Promise.all(
         enrichedConcepts.map((concept: any) => storage.createStudyConcept(concept))
       );
+
+      sendProgressUpdate({
+        token: progressToken,
+        step: 4,
+        totalSteps: 5,
+        percent: 75,
+        status: "Ranking portfolio",
+        state: "running",
+      });
 
       // Step 4b: Apply deterministic ranking based on ROI, feasibility, and strategic alignment
       const toNumber = (value: unknown): number | null => {
@@ -370,8 +488,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return Math.min(1, Math.max(0, normalized));
       };
 
-      const requestedGoals = new Set(data.strategicGoals ?? []);
-
       const metricInputs = savedConcepts.map((concept) => {
         const feasibility = (concept as any)?.feasibilityData ?? {};
         return {
@@ -391,6 +507,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const recruitmentRange = createRange(metricInputs.map((m) => m.recruitmentRate));
 
       const round = (value: number): number => Number(value.toFixed(3));
+
+      const requestedGoals = new Set(data.strategicGoals ?? []);
 
       const scoredConcepts = metricInputs
         .map(({ concept, roi, estimatedCost, timeline, completionRisk, recruitmentRate }) => {
@@ -442,63 +560,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .sort((a, b) => (b.rankScore ?? 0) - (a.rankScore ?? 0));
 
-      // Step 5: Automatically save as a study proposal for persistence
-      if (savedConcepts.length > 0) {
-        try {
-          // Fetch research results if researchStrategyId is provided
-          let researchResults = null;
-          if (data.researchStrategyId) {
-            try {
-              const results = await storage.getResearchResultsByStrategy(data.researchStrategyId);
-              if (results.length > 0) {
-                // Store research results in structured JSON format for proper display
-                researchResults = JSON.stringify(results);
-              }
-            } catch (error) {
-              console.error("Error fetching research results:", error);
-            }
-          }
+      const portfolioSummary = await generatePortfolioSummary(scoredConcepts, data);
 
-          const proposalData = {
-            title: `${data.drugName} in ${data.indication} Study Proposal`,
-            drugName: data.drugName,
-            indication: data.indication,
-            studyPhase: data.studyPhasePref || 'Phase III',
-            strategicGoals: data.strategicGoals,
-            geography: data.geography || ['US', 'EU'],
-            researchStrategyId: data.researchStrategyId || null,
-            researchResults: researchResults, // Include the formatted research results
-            generatedConcepts: scoredConcepts,
-            userInputs: {
-              drugName: data.drugName,
-              indication: data.indication,
-              studyPhasePref: data.studyPhasePref,
-              strategicGoals: data.strategicGoals,
-              geography: data.geography,
-              targetSubpopulation: data.targetSubpopulation,
-              comparatorDrugs: data.comparatorDrugs,
-              budgetCeilingEur: data.budgetCeilingEur,
-              timelineCeilingMonths: data.timelineCeilingMonths,
-              globalLoeDate: data.globalLoeDate,
-              hasPatentExtensionPotential: data.hasPatentExtensionPotential,
-              anticipatedFpiDate: data.anticipatedFpiDate,
-              aiModel: data.aiModel,
-              researchStrategyId: data.researchStrategyId
-            },
-            conceptCount: savedConcepts.length
-          };
+      completeProgress(progressToken, "Concept generation complete");
 
-          await storage.createSavedStudyProposal(proposalData);
-          console.log("Successfully saved study proposal for persistence");
-        } catch (error) {
-          console.error("Error saving study proposal:", error);
-          // Don't fail the entire request if proposal saving fails
-        }
-      }
-
-      res.json(scoredConcepts);
+      res.json({
+        concepts: scoredConcepts,
+        portfolioSummary,
+        progressToken,
+      });
     } catch (error) {
       console.error("Error generating study concepts:", error);
+      failProgress(progressToken, error instanceof Error ? error.message : "Unknown error");
       
       // More detailed error logging
       if (error instanceof Error) {

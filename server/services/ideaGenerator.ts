@@ -79,7 +79,7 @@ export async function generateSeedIdeas(
     }
 
     // Transform concepts into InsertIdea objects with proper feasibility calculations
-    const ideas: InsertIdea[] = concepts.map((concept: any, index: number) => {
+    const ideas: InsertIdea[] = await Promise.all(concepts.map(async (concept: any, index: number) => {
       const laneId = index;
       const ideaId = `${String.fromCharCode(65 + laneId)}_v1`; // A_v1, B_v1, etc.
       
@@ -97,7 +97,7 @@ export async function generateSeedIdeas(
         timelineCeilingMonths: tournamentData.timelineCeilingMonths || undefined,
         globalLoeDate: tournamentData.globalLoeDate || undefined
       };
-      const calculatedFeasibilityData = calculateFeasibility(concept, requestData);
+      const calculatedFeasibilityData = await calculateFeasibility(concept, requestData);
       
       // Merge AI-generated feasibility data with calculated values, prioritizing calculated values
       const finalFeasibilityData = {
@@ -151,7 +151,7 @@ export async function generateSeedIdeas(
         overallScore: 0, // Will be calculated after review
         scoreChange: null,
       };
-    });
+    }));
 
     return ideas;
   } catch (error) {
@@ -224,6 +224,14 @@ function buildSeedIdeaPrompt(
   const therapeuticArea = getTherapeuticAreaFromIndication(data.indication);
   const jjBusinessPrompt = generateJJBusinessPrompt(therapeuticArea, data.drugName);
 
+  const intentGuidance = `Strategic interpretation hints:
+  - "accelerate uptake": consider pragmatic, head-to-head, or RWE/registry designs that shorten adoption lag or differentiate versus incumbents.
+  - "defend market share": evaluate comparator or switch-prevention trials, RWE retention programs, or new population unlocks that sustain share.
+  - "generate real world evidence": prioritise observational/pragmatic or hybrid designs that create post-launch evidence and inform practice.
+  - "facilitate market access": favour designs demonstrating payer-relevant outcomes, budget impact, or localized effectiveness.
+  - "expand label" / "secure initial approval": focus on pivotal or confirmatory interventional studies unlocking new indications or patient segments.
+  Provide a short reason for the selected design intent.`;
+
   return `
   ${jjBusinessPrompt}
   
@@ -239,6 +247,8 @@ function buildSeedIdeaPrompt(
   # Evidence from Literature:
   ${searchResults.content}
   
+  ${intentGuidance}
+
   ## CRITICAL INSTRUCTIONS:
   1. FIRST, analyze the evidence to identify what is ALREADY KNOWN about ${data.drugName} in ${data.indication}.
   2. SECOND, identify critical KNOWLEDGE GAPS that align with the strategic goals.

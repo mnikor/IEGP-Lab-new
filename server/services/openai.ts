@@ -31,28 +31,57 @@ export async function analyzeWithOpenAI(
       ? buildValidationPrompt(data, searchResults)
       : buildConceptGenerationPrompt(data, searchResults);
 
-    // Build request parameters based on model capabilities
-    const requestParams: any = {
-      model: aiModel,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      response_format: { type: "json_object" },
-    };
+    const isGpt5 = aiModel === "gpt-5-medium-reasoning" || aiModel === "gpt-5-high-reasoning";
+    let rawContent = "";
+    if (isGpt5) {
+      const reasoningEffort = aiModel === "gpt-5-high-reasoning" ? "high" : "medium";
+      const response = await openai.responses.create({
+        model: "gpt-5",
+        reasoning: { effort: reasoningEffort },
+        input: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ]
+      });
 
-    // o3 and o3-mini models don't use temperature or max_tokens parameters
-    // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-    if (!aiModel.startsWith("o3")) {
-      requestParams.temperature = 0.7;
+      rawContent =
+        (response as any).output_text ??
+        ((response as any).output
+          ?.map((segment: any) => {
+            const content = (segment as any)?.content;
+            if (!Array.isArray(content)) {
+              return "";
+            }
+            return content
+              .map((piece: any) => (piece?.type === "output_text" ? piece.text : piece?.text) ?? "")
+              .join("");
+          })
+          .join("") ?? "");
+    } else {
+      // Build request parameters based on model capabilities
+      const requestParams: any = {
+        model: aiModel,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        response_format: { type: "json_object" },
+      };
+
+      // o3 and o3-mini models don't use temperature or max_tokens parameters
+      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      if (!aiModel.startsWith("o3")) {
+        requestParams.temperature = 0.7;
+      }
+
+      const completion = await openai.chat.completions.create(requestParams);
+      rawContent = completion.choices[0].message.content || "";
     }
-
-    const response = await openai.chat.completions.create(requestParams);
 
     // Parse the JSON response carefully
     let result;
     try {
-      result = JSON.parse(response.choices[0].message.content || "{}");
+      result = JSON.parse(rawContent || "{}");
       console.log("OpenAI result type:", typeof result, Array.isArray(result) ? "array" : "not an array");
     } catch (error) {
       console.error("Error parsing OpenAI response:", error);
@@ -204,13 +233,14 @@ ${text.substring(0, 15000)}` // Limit text length to avoid token limits
  */
 function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResults: { content: string; citations: string[] }): string {
   const numberOfConcepts = data.numberOfConcepts || 3;
+  const strategicGoals = data.strategicGoals.map(goal => goal.replace('_', ' ')).join(', ');
   return `
   Based on the following parameters and evidence, generate ${numberOfConcepts} distinct clinical study concepts for ${data.drugName} in ${data.indication}.
 
   # Parameters:
   - Drug: ${data.drugName}
   - Indication: ${data.indication}
-  - Strategic Goals: ${data.strategicGoals.map(goal => goal.replace('_', ' ')).join(', ')}
+  - Strategic Goals: ${strategicGoals}
   - Geography: ${data.geography.join(', ')}
   - Study Phase Preference: ${data.studyPhasePref}
   - Target Subpopulation: ${data.targetSubpopulation || 'Not specified'}
@@ -224,10 +254,11 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
   
   ## CRITICAL INSTRUCTIONS:
   1. FIRST, analyze the evidence to identify what is ALREADY KNOWN about ${data.drugName} in ${data.indication}.
-  2. SECOND, identify critical KNOWLEDGE GAPS that align with the strategic goals "${data.strategicGoals.map(goal => goal.replace('_', ' ')).join(', ')}".
+  2. SECOND, identify critical KNOWLEDGE GAPS that align with the strategic goals "${strategicGoals}".
   3. THIRD, design NOVEL study concepts that address these gaps and advance the strategic goal, rather than replicating existing studies.
   4. FOURTH, for each concept, build compelling "Reasons to Believe" based on the available evidence that justify why this study has a good probability of success.
-  
+  5. IF THE STRATEGIC GOAL INCLUDES "ACCELERATE UPTAKE" OR "FACILITATE MARKET ACCESS", bias recommendations toward pivotal Phase III (or registration-enabling) evidence. If a lower phase is proposed, explicitly explain how downstream trials (e.g., Phase III confirmatory studies) will be executed, including incremental cost and timeline to achieve uptake.
+
   ## Design Requirements:
   1. Create truly innovative studies that build upon existing evidence rather than duplicating what's already been done.
   2. For Phase III oncology studies, ensure cost estimates accurately reflect the high expense (typically €30-100M range).
@@ -259,11 +290,11 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
         "indication": "The indication from the parameters",
         "strategicGoals": ["Array of strategic goals from the parameters"],
         "geography": ["Array of geography codes"],
-        "studyPhase": "A recommended study phase (I, II, III, IV, or any)",
+        "studyPhase": "A recommended study phase (I, II, III, IV, or any). If strategic goals include accelerate uptake or facilitate market access, default to Phase III unless a compelling rationale is provided for a different phase.",
         "targetSubpopulation": "The target subpopulation (use the provided value or suggest one)",
         "comparatorDrugs": ["Array of comparator drugs (use the provided values or suggest appropriate ones)"],
         "knowledgeGapAddressed": "Detailed explanation of the specific knowledge gap this study addresses based on current evidence",
-        "innovationJustification": "Explanation of why this study design is novel and how it advances the strategic goal",
+        "innovationJustification": "Explanation of why this study design is novel and how it advances the strategic goal. If proposing Phase I/II for an accelerate uptake goal, include a downstream pivotal plan.",
         "reasonsToBelieve": {
           "scientificRationale": {
             "mechanismOfAction": "Evidence supporting the drug's mechanism in this indication",
@@ -278,7 +309,12 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
           "marketRegulatory": {
             "regulatoryPrecedent": "Similar approved therapies or regulatory guidance support",
             "unmetNeed": "Clear evidence of unmet medical need in target population",
-            "competitiveAdvantage": "Differentiation from existing treatments"
+            "competitiveAdvantage": "Differentiation from existing treatments",
+            "strategicGoalSpecificPhaseGuidance": {
+              "accelerateUptake": "Phase III pivotal trial with a clear path to registration and market access",
+              "facilitateMarketAccess": "Phase III pivotal trial with a clear path to registration and market access, or a Phase II trial with a compelling rationale for a smaller study"
+            },
+            "narrative": "Provide a brief narrative explaining how the study design addresses the strategic goal and why the chosen phase is appropriate"
           },
           "developmentFeasibility": {
             "patientAccess": "Evidence that target patients can be identified and recruited",
@@ -322,7 +358,8 @@ function buildConceptGenerationPrompt(data: GenerateConceptRequest, searchResult
           "materialCosts": 300000,
           "monitoringCosts": 400000,
           "dataCosts": 300000,
-          "regulatoryCosts": 100000
+          "regulatoryCosts": 100000,
+          "pivotalFollowOnPlan": "If applicable, describe follow-on Phase III/registration strategy including incremental cost and timing to achieve uptake."
         },
         "evidenceSources": [
           {

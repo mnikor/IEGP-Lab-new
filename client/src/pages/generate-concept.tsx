@@ -2,16 +2,18 @@ import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ConceptForm from "@/components/concept/ConceptForm";
 import ResultsSection from "@/components/concept/ResultsSection";
-import { StudyConcept } from "@/lib/types";
+import { StudyConcept, PortfolioSummary } from "@/lib/types";
 
 const GenerateConcept: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("generate");
   const [generatedConcepts, setGeneratedConcepts] = useState<StudyConcept[] | null>(null);
   const [researchStrategyId, setResearchStrategyId] = useState<number | null>(null);
+  const [portfolioSummary, setPortfolioSummary] = useState<PortfolioSummary | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
-  const handleConceptGeneration = (concepts: StudyConcept[], strategyId?: number) => {
+  const handleConceptGeneration = (concepts: StudyConcept[], summary: PortfolioSummary | null, strategyId?: number) => {
     setGeneratedConcepts(concepts);
+    setPortfolioSummary(summary);
     setResearchStrategyId(strategyId || null);
     setActiveTab("results");
   };
@@ -45,6 +47,7 @@ const GenerateConcept: React.FC = () => {
               <ResultsSection 
                 concepts={generatedConcepts} 
                 researchStrategyId={researchStrategyId}
+                portfolioSummary={portfolioSummary}
               />
             )}
           </TabsContent>

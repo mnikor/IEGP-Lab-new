@@ -12,6 +12,9 @@ interface LoeDetailsProps {
   timeToLoe?: number;
   postLoeValue?: number;
   estimatedFpiDate?: string;
+  expectedToplineDate?: string;
+  plannedDbLockDate?: string;
+  windowToLoeMonths?: number;
   className?: string;
 }
 
@@ -24,13 +27,19 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
   timeToLoe, 
   postLoeValue, 
   estimatedFpiDate,
+  expectedToplineDate,
+  plannedDbLockDate,
+  windowToLoeMonths,
   className = ''
 }) => {
   // Console log received props for debugging
   console.log('LoeDetails received props:', {
     globalLoeDate, 
     timeToLoe,
-    estimatedFpiDate
+    estimatedFpiDate,
+    expectedToplineDate,
+    plannedDbLockDate,
+    windowToLoeMonths
   });
 
   // Set up default values
@@ -93,10 +102,30 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
   }
   
   // STEP 3: Calculate estimated data readout date
-  const studyDuration = 24; // months (default study duration)
+  const normalisedTopline = (() => {
+    if (expectedToplineDate && expectedToplineDate.trim() !== '') {
+      try {
+        const parsed = new Date(expectedToplineDate);
+        if (!isNaN(parsed.getTime())) {
+          return parsed.toISOString().split('T')[0];
+        }
+      } catch (err) {
+        console.warn('Unable to parse expectedToplineDate, falling back to calculated value', err);
+      }
+    }
+    return null;
+  })();
+
+  const fallbackDuration = 24;
   const fpiDate = new Date(defaultFpiDate);
-  const readoutDate = new Date(fpiDate);
-  readoutDate.setMonth(fpiDate.getMonth() + studyDuration);
+  const readoutDate = normalisedTopline
+    ? new Date(normalisedTopline)
+    : (() => {
+        const temp = new Date(fpiDate);
+        temp.setMonth(fpiDate.getMonth() + fallbackDuration);
+        return temp;
+      })();
+
   const estimatedReadoutDate = readoutDate.toISOString().split('T')[0];
   
   console.log('Milestone dates:', {
@@ -108,28 +137,27 @@ const LoeDetails: React.FC<LoeDetailsProps> = ({
   // STEP 4: Calculate time to LOE from data readout
   // Always prioritize the timeToLoe from backend if available
   const calculatedTimeToLoe = (() => {
-    // If backend provided a value, use it
-    if (timeToLoe !== undefined && !isNaN(timeToLoe)) {
-      console.log('Using backend-calculated timeToLoe:', timeToLoe);
-      return timeToLoe;
+    const candidate = [timeToLoe, windowToLoeMonths].find((val) => typeof val === "number" && !isNaN(val));
+    if (typeof candidate === "number") {
+      console.log('Using backend-provided time-to-LOE:', candidate);
+      return candidate;
     }
-    
-    // Otherwise calculate it ourselves
+
     try {
       const readoutMs = new Date(estimatedReadoutDate).getTime();
       const loeMs = new Date(formattedLoeDate).getTime();
       if (isNaN(readoutMs) || isNaN(loeMs)) {
         throw new Error('Invalid date for time-to-LOE calculation');
       }
-      
-      const diffMonths = Math.max(0, 
+
+      const diffMonths = Math.max(0,
         Math.round((loeMs - readoutMs) / (1000 * 60 * 60 * 24 * 30.5))
       );
       console.log('Calculated time-to-LOE:', diffMonths, 'months');
       return diffMonths;
     } catch (e) {
       console.error('Error calculating time-to-LOE:', e);
-      return defaultLoeYears * 12; // Last resort fallback
+      return defaultLoeYears * 12;
     }
   })();
   

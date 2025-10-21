@@ -38,12 +38,37 @@ export interface PicoData {
   outcomes?: string;
 }
 
+export interface PortfolioSummary {
+  headline: string;
+  recommendation: RecommendationLevel;
+  rationale: string[];
+  highlights: Array<{ conceptId: number | string; title: string; summary: string }>;
+  warnings: string[];
+}
+
+export type RecommendationLevel = "proceed" | "revise" | "stop";
+
+export interface ConceptRecommendation {
+  level: RecommendationLevel;
+  confidence: "high" | "medium" | "low";
+  rationale: string[];
+  blockers?: string[];
+  windowAssessment?: string;
+}
+
 export interface McDAScore {
   scientificValidity: number;
   clinicalImpact: number;
   commercialValue: number;
   feasibility: number;
   overall: number;
+  commercialRecommendation?: ConceptRecommendation;
+  commercialAlerts?: string[];
+  financialSignals?: {
+    projectedROI?: number | null;
+    riskAdjustedEnpv?: number | null;
+    windowToLoeMonths?: number | null;
+  };
 }
 
 export interface RegionalLoeData {
@@ -125,7 +150,10 @@ export interface FeasibilityData {
   numberOfCountries: number;
   recruitmentPeriodMonths: number;
   followUpPeriodMonths: number;
-  
+  expectedToplineDate?: string;
+  plannedDbLockDate?: string;
+  windowToLoeMonths?: number;
+
   // Loss of Exclusivity data
   globalLoeDate?: string;      // ISO date string for primary/global LOE
   regionalLoeData?: RegionalLoeData[]; // Region-specific LOE information
@@ -167,6 +195,16 @@ export interface FeasibilityData {
   riskAdjustedENpvUsd?: number;
   riskAdjustedENpvEur?: number;
   regionalRevenueForecast?: RegionalRevenueForecast[];
+  studyImpact?:
+    | "label_expansion"
+    | "market_access_enabler"
+    | "clinical_guideline_shift"
+    | "practice_evolution"
+    | "market_defense"
+    | "evidence_gap_fill"
+    | "limited_impact"
+    | "no_material_change"
+    | null;
 }
 
 export interface EvidenceSource {
@@ -210,7 +248,6 @@ export interface ReasonsToBelieve {
     endpointViability?: string;
     operationalReadiness?: string;
   };
-  overallConfidence?: string;
 }
 
 export interface StudyConcept {
@@ -238,6 +275,11 @@ export interface StudyConcept {
   currentEvidence?: CurrentEvidence;
   globalLoeDate?: string;    // Top-level LOE date for quicker access
   timeToLoe?: number;        // Top-level time to LOE for quicker access
+  estimatedFpiDate?: string;
+  expectedToplineDate?: string;
+  recommendation?: ConceptRecommendation;
+  portfolioSummary?: PortfolioSummary;
+  commercialAlerts?: string[];
   rankScore?: number;
   rankBreakdown?: {
     roi: number;
@@ -245,6 +287,22 @@ export interface StudyConcept {
     alignment: number;
   };
   createdAt?: string;
+  studyImpact?:
+    | "label_expansion"
+    | "market_access_enabler"
+    | "clinical_guideline_shift"
+    | "practice_evolution"
+    | "market_defense"
+    | "evidence_gap_fill"
+    | "limited_impact"
+    | "no_material_change"
+    | null;
+}
+
+export interface GenerateConceptResponse {
+  concepts: StudyConcept[];
+  portfolioSummary?: PortfolioSummary | null;
+  progressToken?: string;
 }
 
 export interface GenerateConceptRequest {
@@ -277,6 +335,7 @@ export interface GenerateConceptRequest {
     weight: number;
   }[];
   scenarioPreference?: "base" | "optimistic" | "pessimistic";
+  progressToken?: string;
 }
 
 export interface EvidenceFile {

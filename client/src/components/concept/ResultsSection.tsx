@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { StudyConcept } from "@/lib/types";
+import { StudyConcept, PortfolioSummary } from "@/lib/types";
 import ConceptCard from "./ConceptCard";
 import SituationalAnalysisModal from "./SituationalAnalysisModal";
 import { Download, FileDown, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { ConceptSummaryPanel } from "./ConceptSummaryPanel";
 
 interface ResearchResult {
   id: number;
@@ -27,9 +28,10 @@ interface ResearchResult {
 interface ResultsSectionProps {
   concepts: StudyConcept[];
   researchStrategyId?: number | null;
+  portfolioSummary?: PortfolioSummary | null;
 }
 
-const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts, researchStrategyId }) => {
+const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts, researchStrategyId, portfolioSummary }) => {
   const { toast } = useToast();
   const [localConcepts, setLocalConcepts] = useState<StudyConcept[]>(concepts);
   const [researchResults, setResearchResults] = useState<ResearchResult[]>([]);
@@ -137,6 +139,13 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts, researchStrat
     );
   };
 
+  const handleViewConcept = (conceptId: number | string) => {
+    const element = document.getElementById(`concept-${conceptId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   // Extract drug name and indication from the first concept
   const drugName = localConcepts.length > 0 ? localConcepts[0].drugName || 'Unknown Drug' : 'Unknown Drug';
   const indication = localConcepts.length > 0 ? localConcepts[0].indication || 'Unknown Indication' : 'Unknown Indication';
@@ -170,6 +179,7 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ concepts, researchStrat
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
+            <ConceptSummaryPanel summary={portfolioSummary} onViewConcept={handleViewConcept} />
             {localConcepts.map((concept, index) => (
               <ConceptCard 
                 key={concept.id || index} 

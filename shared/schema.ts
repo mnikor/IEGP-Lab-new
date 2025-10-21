@@ -14,6 +14,18 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
+export const StudyImpactEnum = z.enum([
+  "label_expansion",
+  "market_access_enabler",
+  "clinical_guideline_shift",
+  "practice_evolution",
+  "market_defense",
+  "evidence_gap_fill",
+  "limited_impact",
+  "no_material_change",
+]);
+export type StudyImpact = z.infer<typeof StudyImpactEnum>;
+
 // Study concept model
 export const studyConcepts = pgTable("study_concepts", {
   id: serial("id").primaryKey(),
@@ -45,12 +57,62 @@ export const studyConcepts = pgTable("study_concepts", {
   feasibilityData: json("feasibility_data").notNull(),
   evidenceSources: json("evidence_sources").notNull(),
   aiAnalysis: json("ai_analysis"), // Enhanced AI analysis data including justification and statistical plan
+  studyImpact: text("study_impact"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertStudyConceptSchema = createInsertSchema(studyConcepts).omit({
   id: true,
   createdAt: true,
+});
+
+export const StudyConceptSchema = z.object({
+  id: z.number().optional(),
+  title: z.string(),
+  drugName: z.string(),
+  indication: z.string(),
+  strategicGoals: z.array(z.string()),
+  otherStrategicGoalText: z.string().optional().nullable(),
+  geography: z.array(z.string()),
+  studyPhase: z.string(),
+  targetSubpopulation: z.string().optional().nullable(),
+  comparatorDrugs: z.array(z.string()).optional().nullable(),
+  budgetCeilingEur: z.number().optional().nullable(),
+  timelineCeilingMonths: z.number().optional().nullable(),
+  salesImpactThreshold: z.number().optional().nullable(),
+  knowledgeGapAddressed: z.string().optional().nullable(),
+  innovationJustification: z.string().optional().nullable(),
+  reasonsToBelieve: z.unknown(),
+  picoData: z.unknown(),
+  mcdaScores: z.unknown(),
+  swotAnalysis: z.unknown(),
+  feasibilityData: z.unknown(),
+  evidenceSources: z.unknown(),
+  currentEvidence: z.unknown().optional().nullable(),
+  aiAnalysis: z.unknown().optional().nullable(),
+  globalLoeDate: z.string().optional().nullable(),
+  timeToLoe: z.number().optional().nullable(),
+  estimatedFpiDate: z.string().optional().nullable(),
+  expectedToplineDate: z.string().optional().nullable(),
+  plannedDbLockDate: z.string().optional().nullable(),
+  portfolioSummary: z.unknown().optional().nullable(),
+  recommendation: z.unknown().optional().nullable(),
+  rankScore: z.number().optional().nullable(),
+  rankBreakdown: z.unknown().optional().nullable(),
+  createdAt: z.string().optional(),
+  studyImpact: StudyImpactEnum.optional().nullable(),
+});
+
+export const PortfolioSummarySchema = z.object({
+  headline: z.string(),
+  recommendation: z.enum(["proceed", "revise", "stop"]),
+  rationale: z.array(z.string()),
+  highlights: z.array(z.object({
+    conceptId: z.union([z.number(), z.string()]),
+    title: z.string(),
+    summary: z.string(),
+  })),
+  warnings: z.array(z.string()),
 });
 
 // Synopsis validation model
@@ -103,9 +165,23 @@ export const insertSynopsisValidationSchema = createInsertSchema(synopsisValidat
 });
 
 // Available AI models for concept generation and validation
-export const aiModelSchema = z.enum(["gpt-4o", "gpt-4-turbo", "o3-mini", "o3"]);
+export const aiModelSchema = z.enum([
+  "gpt-4o",
+  "gpt-4-turbo",
+  "gpt-4.1",
+  "gpt-5-medium-reasoning",
+  "gpt-5-high-reasoning",
+  "o3-mini",
+  "o3"
+]);
 
 // Input schemas for API requests
+export const GenerateConceptResponseSchema = z.object({
+  concepts: z.array(StudyConceptSchema),
+  portfolioSummary: PortfolioSummarySchema.nullable().optional(),
+  progressToken: z.string().optional(),
+});
+
 export const generateConceptRequestSchema = z.object({
   drugName: z.string().min(1, "Drug name is required"),
   indication: z.string().min(1, "Indication is required"),
@@ -156,6 +232,7 @@ export const generateConceptRequestSchema = z.object({
   
   // Research strategy integration
   researchStrategyId: z.number().optional(),
+  progressToken: z.string().optional(),
 });
 
 export const validateSynopsisRequestSchema = z.object({

@@ -15,6 +15,8 @@ After the removal of the multi-agent tournament system, the application focuses 
 - Uses Perplexity search (`server/services/perplexity.ts`) to gather up-to-date evidence about the provided drug/indication.
 - Synthesizes evidence with OpenAI models (`server/services/openai.ts`) to produce structured concepts containing PICO data, MCDA scores, SWOT analysis, and feasibility estimates.
 - Adds deterministic feasibility refinement via `calculateFeasibility()` (`server/services/feasibilityCalculator.ts`) to normalize cost, timeline, and sample-size projections.
+- Applies strategy-aware commercial modelling in `calculateCommercialOutlook()` so incremental sales, eNPV, and ROI respond to goals such as label expansion, uptake acceleration, market defense, or RWE evidence.
+- Classifies each concept with a `studyImpact` tag (e.g., label expansion, market access enabler, practice evolution) that propagates to the frontend for quick triage.
 - Generates a design rationale block in `server/routes.ts` that ties each recommendation back to strategic goals, feasibility metrics, and MCDA scoring.
 
 ### Study Idea Validation
@@ -30,6 +32,7 @@ After the removal of the multi-agent tournament system, the application focuses 
 - React + Vite SPA located under `client/` with routes defined in `client/src/App.tsx`.
 - Sidebar navigation now contains only "New Concept", "Validate Study Idea", "Reports", and "Help" (`client/src/components/layout/Sidebar.tsx`).
 - Concept generation form lives in `client/src/components/concept/ConceptForm.tsx`, while feasibility visualizations render through `client/src/components/shared/FeasibilityDashboard.tsx`.
+- Real-time progress updates are streamed via SSE when generating concepts (`ConceptForm.tsx` + `/api/progress/:token`), and concept cards surface the new study impact badge alongside feasibility and ROI signals.
 
 ## Tech Stack
 - **Frontend:** React 18, TypeScript, Tailwind, TanStack Query, Wouter router.
@@ -78,6 +81,11 @@ npm run check
 - The server listens on port 5001 by default (`server/index.ts`). Adjust as needed before deployment.
 - Ensure the database schema defined in `shared/schema.ts` has been pushed using Drizzle migrations or `npm run db:push`.
 - Since tournaments are removed, confirm that any existing data referencing tournament tables is archived or dropped.
+
+## Recent Enhancements
+- **Progress tracking:** Persistent progress tokens and an SSE endpoint (`server/routes.ts`, `client/src/components/concept/ConceptForm.tsx`) keep the generation UI in sync with backend stages.
+- **Strategy-aware commercial modelling:** `server/services/feasibilityCalculator.ts` now blends strategic goals into incremental sales, staged uptake, and eNPV outputs via `deriveStrategyProfile()` and `calculateCommercialOutlook()`.
+- **Study impact labelling:** Concepts receive a `studyImpact` classification (shared in `shared/schema.ts`, rendered in `ConceptCard.tsx`) so reviewers can distinguish label-expanding trials from market-access or evidence-gap studies at a glance.
 
 ## Roadmap Ideas
 - Expand feasibility calculator with geographic/site-specific cost intelligence from `server/data/regionalCostBenchmarks.ts`.

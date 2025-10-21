@@ -14,6 +14,114 @@ type RegionalDeploymentMix = {
   weight: number;
 };
 
+interface StrategyProfile {
+  unlockMultiplier: number;
+  maxShare: number;
+  retentionShare: number;
+  uptakeLagYears: number;
+  accessDelayYears: number;
+  windowMultiplier: number;
+  windowCap: number;
+  evidenceMultiplier: number;
+  practiceConfidence: number;
+  labelProbability: number;
+  accessProbability: number;
+}
+
+function deriveStrategyProfile(concept: ConceptWithFeasibility): StrategyProfile {
+  const goals = Array.isArray(concept.strategicGoals) ? concept.strategicGoals : [];
+
+  const profile: StrategyProfile = {
+    unlockMultiplier: 1,
+    maxShare: 35,
+    retentionShare: 0,
+    uptakeLagYears: 0,
+    accessDelayYears: 0,
+    windowMultiplier: 1,
+    windowCap: 1.5,
+    evidenceMultiplier: 1,
+    practiceConfidence: 0.2,
+    labelProbability: 0.15,
+    accessProbability: 0.25,
+  };
+
+  const bumpUnlock = (amount: number, cap?: number) => {
+    profile.unlockMultiplier += amount;
+    if (cap) {
+      profile.maxShare = Math.max(profile.maxShare, cap);
+    }
+  };
+
+  if (goals.includes("expand_label") || goals.includes("extend_lifecycle_combinations") || goals.includes("secure_initial_approval")) {
+    bumpUnlock(0.35, 45);
+    profile.windowMultiplier += 0.12;
+    profile.labelProbability += 0.35;
+    profile.practiceConfidence += 0.25;
+  }
+
+  if (goals.includes("extend_lifecycle_combinations")) {
+    bumpUnlock(0.2, 42);
+    profile.retentionShare += 0.03;
+    profile.windowMultiplier += 0.08;
+    profile.practiceConfidence += 0.1;
+  }
+
+  if (goals.includes("accelerate_uptake")) {
+    bumpUnlock(0.15, 40);
+    profile.uptakeLagYears -= 0.6;
+    profile.retentionShare += 0.03;
+    profile.practiceConfidence += 0.12;
+    profile.accessProbability += 0.08;
+  }
+
+  if (goals.includes("defend_market_share")) {
+    profile.retentionShare += 0.08;
+    profile.uptakeLagYears -= 0.35;
+    profile.evidenceMultiplier += 0.05;
+    profile.maxShare = Math.max(profile.maxShare, 38);
+    profile.practiceConfidence += 0.15;
+    profile.accessProbability += 0.05;
+  }
+
+  if (goals.includes("generate_real_world_evidence")) {
+    profile.retentionShare += 0.06;
+    profile.uptakeLagYears -= 0.4;
+    profile.windowMultiplier += 0.05;
+    profile.evidenceMultiplier += 0.1;
+    bumpUnlock(0.05, 38);
+    profile.practiceConfidence += 0.3;
+    profile.accessProbability += 0.12;
+  }
+
+  if (goals.includes("facilitate_market_access")) {
+    profile.accessDelayYears -= 0.3;
+    profile.uptakeLagYears -= 0.2;
+    profile.windowMultiplier += 0.05;
+    profile.accessProbability += 0.25;
+    profile.practiceConfidence += 0.05;
+  }
+
+  if (goals.includes("manage_safety_risk")) {
+    profile.retentionShare += 0.02;
+    profile.evidenceMultiplier += 0.02;
+    profile.practiceConfidence += 0.08;
+  }
+
+  // Ensure values remain within sensible bounds
+  profile.unlockMultiplier = Math.max(0.5, profile.unlockMultiplier);
+  profile.maxShare = Math.max(20, Math.min(55, profile.maxShare));
+  profile.retentionShare = Math.max(0, Math.min(0.2, profile.retentionShare));
+  profile.windowMultiplier = Math.max(0.6, Math.min(1.5, profile.windowMultiplier));
+  profile.windowCap = Math.max(1, Math.min(2.0, profile.windowCap + (profile.windowMultiplier - 1) * 0.5));
+  profile.evidenceMultiplier = Math.max(0.6, Math.min(1.4, profile.evidenceMultiplier));
+  profile.uptakeLagYears = Math.max(-1.5, Math.min(1.5, profile.uptakeLagYears));
+  profile.accessDelayYears = Math.max(-1, Math.min(1.5, profile.accessDelayYears));
+  profile.practiceConfidence = Math.max(0, Math.min(1, profile.practiceConfidence));
+  profile.labelProbability = Math.max(0, Math.min(0.9, profile.labelProbability));
+  profile.accessProbability = Math.max(0, Math.min(0.9, profile.accessProbability));
+
+  return profile;
+}
 type ExtendedGenerateConceptRequest = GenerateConceptRequest & {
   anticipatedFpiDate?: string;
   globalLoeDate?: string;
@@ -42,7 +150,9 @@ function detectBiologicsOrHighCostTherapy(concept: ConceptWithFeasibility): bool
   const drugName = (concept.drugName || '').toLowerCase();
   const indication = (concept.indication || '').toLowerCase();
   const title = (concept.title || '').toLowerCase();
-  const description = (concept.picoData?.population || concept.title || '').toLowerCase();
+  const pico = concept.picoData as Record<string, unknown> | undefined;
+  const picoPopulation = typeof pico?.population === "string" ? (pico.population as string) : (concept.title || '');
+  const description = picoPopulation.toLowerCase();
   
   // Biologic drug naming patterns
   const biologicPatterns = [
@@ -426,6 +536,9 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
     numberOfCountries: geographyCount,
     recruitmentPeriodMonths: recruitmentPeriod,
     followUpPeriodMonths: Math.round(timeline - recruitmentPeriod),
+    expectedToplineDate: loeData.expectedToplineDate,
+    plannedDbLockDate: loeData.plannedDbLockDate,
+    windowToLoeMonths: loeData.windowToLoeMonths,
     
     // LOE data from calculations - IMPORTANT: use user-provided values when available
     globalLoeDate: requestData.globalLoeDate || loeData.globalLoeDate,
@@ -455,6 +568,7 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
   const completionRisk = calculateCompletionRisk(conceptWithFeasibility, studyPhase, requestData);
   
   // Step 8: Calculate projected ROI
+  const strategyProfile = deriveStrategyProfile(conceptWithFeasibility);
   const commercialOutlook = calculateCommercialOutlook({
     concept: conceptWithFeasibility,
     feasibility: initialFeasibilityData,
@@ -462,6 +576,7 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
     regionalBenchmarks,
     effectiveRegionalMix,
     scenarioPreference: requestData.scenarioPreference,
+    strategyProfile,
   });
   const projectedROI = commercialOutlook.baseRoi;
   
@@ -545,6 +660,9 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
     commercialOutlook,
   });
 
+  const studyImpact = classifyStudyImpact(conceptWithFeasibility, strategyProfile, commercialOutlook);
+  (conceptWithFeasibility as any).studyImpact = studyImpact;
+
   return {
     // Core metrics
     estimatedCost: finalTotalCost,
@@ -574,6 +692,9 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
     timeToLoe: loeData.timeToLoe,
     postLoeValue: loeData.postLoeValue,
     estimatedFpiDate: requestData.anticipatedFpiDate || loeData.estimatedFpiDate,
+    expectedToplineDate: loeData.expectedToplineDate,
+    plannedDbLockDate: loeData.plannedDbLockDate,
+    windowToLoeMonths: loeData.windowToLoeMonths,
     
     // Cost breakdown - ensure all values are properly set and non-zero
     siteCosts: finalSiteCosts,
@@ -609,7 +730,7 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
     riskAdjustedENpvUsd: Math.round(commercialOutlook.riskAdjustedENpvUsd),
     riskAdjustedENpvEur: Math.round(commercialOutlook.riskAdjustedENpvEur),
     regionalRevenueForecast: commercialOutlook.regionalRevenueForecast,
-
+    studyImpact,
     // AI Analysis - include comprehensive statistical justification data
     aiAnalysis,
   };
@@ -678,17 +799,19 @@ function calculateCommercialOutlook(params: {
   regionalBenchmarks: RegionalCostBenchmark[];
   effectiveRegionalMix: RegionalDeploymentMix[];
   scenarioPreference?: "base" | "optimistic" | "pessimistic";
+  strategyProfile?: StrategyProfile;
 }): CommercialOutlook {
-  const { concept, feasibility, requestData, regionalBenchmarks, effectiveRegionalMix } = params;
-  const studyPhase = concept.studyPhase || "any";
+  const { concept, feasibility, requestData, regionalBenchmarks, effectiveRegionalMix, strategyProfile } = params;
   const timelineMonths = feasibility.timeline || 36;
   const timelineYears = timelineMonths / 12;
-  const timeToImpactYears = Math.max(0.5, timelineYears + ((requestData?.scenarioPreference === "pessimistic") ? 0.5 : 0));
+  const profile = strategyProfile ?? deriveStrategyProfile(concept);
 
   const discountRate = 0.1;
   const usdToEur = 0.92;
+  const therapeuticMultiplier = getTherapeuticRevenueMultiplier(concept) * profile.evidenceMultiplier;
 
-  const therapeuticMultiplier = getTherapeuticRevenueMultiplier(concept);
+  const adjustedWindowYears = calculateWindowOfOpportunityYears(feasibility, timelineMonths) * profile.windowMultiplier;
+  const cappedWindow = Math.max(1, Math.min(profile.windowCap, adjustedWindowYears));
 
   const regionalRevenueForecast: RegionalRevenueForecast[] = effectiveRegionalMix.map((mix) => {
     const benchmark = regionalBenchmarks.find((region) => region.regionId === mix.regionId) || BASELINE_REGIONAL_BENCHMARK;
@@ -696,10 +819,13 @@ function calculateCommercialOutlook(params: {
     const deploymentWeight = mix.weight || 0;
 
     const baseMarketSizeUsd = marketData ? marketData.marketSize : 500000000;
-    const marketShare = estimateRegionalMarketShare(concept, marketData, deploymentWeight);
-    const windowYears = calculateWindowOfOpportunityYears(feasibility, timelineMonths);
+    const baselineShare = estimateRegionalMarketShare(concept, marketData, deploymentWeight);
+    const adjustedShare = Math.min(profile.maxShare, baselineShare * profile.unlockMultiplier);
 
-    const incrementalSalesUsd = baseMarketSizeUsd * (marketShare / 100) * Math.min(windowYears / 5, 1.5) * therapeuticMultiplier;
+    const unlockedRevenueUsd = baseMarketSizeUsd * (adjustedShare / 100) * Math.min(cappedWindow / 5, profile.windowCap) * therapeuticMultiplier;
+    const retentionRevenueUsd = baseMarketSizeUsd * profile.retentionShare * Math.min(cappedWindow / 5, profile.windowCap) * 0.35 * therapeuticMultiplier;
+
+    const incrementalSalesUsd = unlockedRevenueUsd + retentionRevenueUsd;
     const incrementalSalesEur = incrementalSalesUsd * usdToEur * (benchmark.fxRateToEur || 1);
 
     return {
@@ -707,30 +833,27 @@ function calculateCommercialOutlook(params: {
       displayName: benchmark.displayName,
       incrementalSalesUsd,
       incrementalSalesEur,
-      windowYears,
+      windowYears: cappedWindow,
     } satisfies RegionalRevenueForecast;
   });
 
   const totalIncrementalSalesUsd = regionalRevenueForecast.reduce((sum, region) => sum + region.incrementalSalesUsd, 0);
   const totalIncrementalSalesEur = regionalRevenueForecast.reduce((sum, region) => sum + region.incrementalSalesEur, 0);
 
-  const baseENpvUsd = calculateENpv(totalIncrementalSalesUsd, feasibility.estimatedCost, timeToImpactYears, discountRate);
+  const baseDelayYears = timelineYears + profile.accessDelayYears;
+  const timeToImpactYears = Math.max(0.25, baseDelayYears + Math.max(0, profile.uptakeLagYears));
+  const baseENpvUsd = calculateENpv(totalIncrementalSalesUsd, feasibility.estimatedCost, timeToImpactYears, discountRate, profile.uptakeLagYears);
   const baseENpvEur = baseENpvUsd * usdToEur;
   const riskMultiplier = 1 - (feasibility.completionRisk || 0.3) * 0.6;
   const riskAdjustedENpvUsd = baseENpvUsd * riskMultiplier;
   const riskAdjustedENpvEur = riskAdjustedENpvUsd * usdToEur;
 
-  const baseRoi = calculateProjectedROI(concept, requestData);
+  const baseRoi = calculateProjectedROI(concept, requestData) * profile.evidenceMultiplier;
 
-  const optimisticMultiplier = 1.25;
-  const pessimisticMultiplier = 0.65;
-  const optimisticDelay = -0.5;
-  const pessimisticDelay = 0.75;
-
-  const optimisticIncrementalUsd = totalIncrementalSalesUsd * optimisticMultiplier;
-  const optimisticENpvUsd = calculateENpv(optimisticIncrementalUsd, feasibility.estimatedCost, Math.max(0.25, timeToImpactYears + optimisticDelay), discountRate);
-  const pessimisticIncrementalUsd = totalIncrementalSalesUsd * pessimisticMultiplier;
-  const pessimisticENpvUsd = calculateENpv(pessimisticIncrementalUsd, feasibility.estimatedCost, timeToImpactYears + pessimisticDelay, discountRate);
+  const optimisticIncrementalUsd = totalIncrementalSalesUsd * 1.25;
+  const optimisticENpvUsd = calculateENpv(optimisticIncrementalUsd, feasibility.estimatedCost, Math.max(0.2, timeToImpactYears - 0.4), discountRate, profile.uptakeLagYears - 0.3);
+  const pessimisticIncrementalUsd = totalIncrementalSalesUsd * 0.7;
+  const pessimisticENpvUsd = calculateENpv(pessimisticIncrementalUsd, feasibility.estimatedCost, timeToImpactYears + 0.8, discountRate, profile.uptakeLagYears + 0.4);
 
   return {
     totalIncrementalSalesUsd,
@@ -754,29 +877,75 @@ function calculateCommercialOutlook(params: {
         incrementalSalesEur: optimisticIncrementalUsd * usdToEur,
         eNpvUsd: optimisticENpvUsd,
         eNpvEur: optimisticENpvUsd * usdToEur,
-        roi: baseRoi * 1.2,
+        roi: baseRoi * 1.18,
       },
       pessimistic: {
         incrementalSalesUsd: pessimisticIncrementalUsd,
         incrementalSalesEur: pessimisticIncrementalUsd * usdToEur,
         eNpvUsd: pessimisticENpvUsd,
         eNpvEur: pessimisticENpvUsd * usdToEur,
-        roi: Math.max(0.5, baseRoi * 0.7),
+        roi: Math.max(0.4, baseRoi * 0.65),
       },
     },
   } satisfies CommercialOutlook;
 }
 
-function calculateENpv(totalSalesUsd: number, investment: number, timeToImpactYears: number, discountRate: number): number {
+function calculateENpv(totalSalesUsd: number, investment: number, timeToImpactYears: number, discountRate: number, uptakeLagYears: number = 0): number {
   const years = 5;
   let npv = -investment;
   const annualRevenue = totalSalesUsd / years;
+  const rampFactor = uptakeLagYears < 0 ? 1 : 0.5;
+
   for (let year = 1; year <= years; year++) {
-    const delay = timeToImpactYears + year - 1;
-    const discountedRevenue = annualRevenue / Math.pow(1 + discountRate, delay);
+    const uptakeScaler = uptakeLagYears >= 0 ? Math.min(1, rampFactor + (year * (1 - rampFactor) / years)) : 1;
+    const delay = timeToImpactYears + year - 1 + Math.max(0, uptakeLagYears);
+    const discountedRevenue = (annualRevenue * uptakeScaler) / Math.pow(1 + discountRate, delay);
     npv += discountedRevenue;
   }
   return npv;
+}
+
+function classifyStudyImpact(concept: ConceptWithFeasibility, profile: StrategyProfile, commercialOutlook: CommercialOutlook): StudyConcept["studyImpact"] {
+  const hasLabelGoal = concept.strategicGoals?.some((goal) => ["expand_label", "secure_initial_approval"].includes(goal)) ?? false;
+  const hasAccessGoal = concept.strategicGoals?.includes("facilitate_market_access") ?? false;
+  const hasRweGoal = concept.strategicGoals?.includes("generate_real_world_evidence") ?? false;
+  const hasDefenseGoal = concept.strategicGoals?.includes("defend_market_share") ?? false;
+  const hasUptakeGoal = concept.strategicGoals?.includes("accelerate_uptake") ?? false;
+
+  const salesUsd = commercialOutlook.totalIncrementalSalesUsd;
+  const impactStrength = salesUsd >= 500000000 ? "high" : salesUsd >= 150000000 ? "medium" : salesUsd >= 50000000 ? "low" : "minimal";
+  const largeEnpv = commercialOutlook.baseENpvUsd >= 100000000;
+  const moderateEnpv = commercialOutlook.baseENpvUsd >= 25000000;
+
+  if (hasLabelGoal && (impactStrength === "high" || largeEnpv)) {
+    return "label_expansion";
+  }
+
+  if (hasAccessGoal && (impactStrength !== "minimal" || profile.accessProbability > 0.5)) {
+    return "market_access_enabler";
+  }
+
+  if (hasRweGoal && profile.practiceConfidence > 0.5) {
+    return impactStrength === "high" ? "clinical_guideline_shift" : "practice_evolution";
+  }
+
+  if (hasDefenseGoal && (impactStrength === "high" || moderateEnpv)) {
+    return "market_defense";
+  }
+
+  if (hasUptakeGoal && impactStrength !== "minimal") {
+    return "practice_evolution";
+  }
+
+  if (impactStrength === "minimal") {
+    return "no_material_change";
+  }
+
+  if (impactStrength === "low") {
+    return "limited_impact";
+  }
+
+  return "evidence_gap_fill";
 }
 
 function estimateRegionalMarketShare(concept: ConceptWithFeasibility, marketData: any, deploymentWeight: number): number {
@@ -1058,6 +1227,9 @@ function calculateLoeData(
   timeToLoe: number;
   postLoeValue: number;
   estimatedFpiDate: string;
+  plannedDbLockDate: string;
+  expectedToplineDate: string;
+  windowToLoeMonths: number;
 } {
   // Current date for FPI calculations
   const currentDate = new Date();
@@ -1188,6 +1360,7 @@ function calculateLoeData(
   }
   
   // Calculate estimated data readout date based on timeline and FPI date
+  const estimatedDbLockDate = new Date(estimatedFpiDate.getTime());
   const estimatedDataReadoutDate = new Date(estimatedFpiDate.getTime());
   
   // Get the study duration from either the concept object or use the timeline value
@@ -1215,6 +1388,9 @@ function calculateLoeData(
   
   // Apply the readout factor to the study duration
   const dataReadoutMonths = Math.round(studyDurationMonths * primaryEndpointReadoutFactor);
+  const dbLockLag = Math.max(2, Math.round(Math.max(0, studyDurationMonths - dataReadoutMonths) * 0.5));
+
+  estimatedDbLockDate.setMonth(estimatedFpiDate.getMonth() + dataReadoutMonths + dbLockLag);
   estimatedDataReadoutDate.setMonth(estimatedFpiDate.getMonth() + dataReadoutMonths);
   
   console.log("Estimated data readout date:", estimatedDataReadoutDate.toISOString());
@@ -1256,11 +1432,17 @@ function calculateLoeData(
   }
   
   // Return the LOE data
+  const plannedDbLockDate = estimatedDbLockDate.toISOString().split('T')[0];
+  const expectedToplineDate = estimatedDataReadoutDate.toISOString().split('T')[0];
+
   return {
     globalLoeDate: globalLoeDate.toISOString().split('T')[0],
     regionalLoeData,
     timeToLoe: timeToGlobalLoe,
-    postLoeValue: Math.min(0.7, postLoeValue), // Cap at 70% value retention
-    estimatedFpiDate: estimatedFpiDate.toISOString().split('T')[0]
+    postLoeValue: Math.min(0.7, postLoeValue),
+    estimatedFpiDate: estimatedFpiDate.toISOString().split('T')[0],
+    plannedDbLockDate,
+    expectedToplineDate,
+    windowToLoeMonths: timeToGlobalLoe,
   };
 }
