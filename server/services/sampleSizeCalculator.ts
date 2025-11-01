@@ -12,6 +12,36 @@ interface StudyDesign {
   comparatorType: 'placebo' | 'active' | 'historical' | 'none';
 }
 
+function normalizeEndpointType(rawType: string | undefined): EndpointParameters["type"] {
+  switch ((rawType || '').toLowerCase()) {
+    case 'survival':
+      return 'survival';
+    case 'response_rate':
+    case 'response-rate':
+    case 'binary':
+      return 'response_rate';
+    case 'continuous':
+    case 'composite':
+      return 'continuous';
+    case 'safety':
+      return 'safety';
+    case 'biomarker':
+      return 'biomarker';
+    case 'rwe_effectiveness':
+    case 'real_world_effectiveness':
+      return 'rwe_effectiveness';
+    case 'rwe_safety':
+    case 'real_world_safety':
+      return 'rwe_safety';
+    case 'registry':
+      return 'registry';
+    case 'real_world_outcomes':
+      return 'real_world_outcomes';
+    default:
+      return 'response_rate';
+  }
+}
+
 /**
  * Statistical parameters for sample size calculations
  */
@@ -143,6 +173,20 @@ export async function calculateSampleSizeWithAI(concept: Partial<StudyConcept>, 
   powerAnalysis: string;
   aiAnalysis?: any;
 }> {
+  const llmEnabled = process.env.PORTFOLIO_SUMMARY_USE_LLM === "true";
+
+  if (!llmEnabled) {
+    console.warn("Sample size analysis: LLM disabled, using traditional calculator");
+    const fallback = calculateSampleSizeTraditional(concept, requestData);
+    return {
+      ...fallback,
+      aiAnalysis: {
+        deterministicFallback: true,
+        message: "LLM disabled via PORTFOLIO_SUMMARY_USE_LLM"
+      }
+    };
+  }
+
   const aiAnalyzer = new AIStatisticalAnalyzer();
   
   try {
@@ -150,6 +194,8 @@ export async function calculateSampleSizeWithAI(concept: Partial<StudyConcept>, 
     const aiResult = await aiAnalyzer.analyzeStudyConcept(concept as StudyConcept, requestData);
     
     // Convert AI result to expected format
+    const endpointType = normalizeEndpointType(aiResult.statisticalPlan.endpointType);
+
     const parameters: StatisticalParameters = {
       alpha: aiResult.statisticalPlan.alpha,
       beta: 1 - aiResult.statisticalPlan.power,
@@ -167,10 +213,10 @@ export async function calculateSampleSizeWithAI(concept: Partial<StudyConcept>, 
     };
 
     const endpoint: EndpointParameters = {
-      type: aiResult.statisticalPlan.endpointType,
+      type: endpointType,
       baseline: aiResult.statisticalPlan.effectSize, // Simplified mapping
       target: aiResult.statisticalPlan.effectSize * 1.5,
-      hazardRatio: aiResult.statisticalPlan.endpointType === 'survival' ? 0.75 : undefined
+      hazardRatio: endpointType === 'survival' ? 0.75 : undefined
     };
 
     // Final validation to ensure AI returned valid sample size

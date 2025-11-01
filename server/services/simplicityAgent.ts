@@ -1,7 +1,24 @@
 import OpenAI from "openai";
 import type { Idea } from "@shared/tournament";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const llmEnabled = process.env.PORTFOLIO_SUMMARY_USE_LLM === "true";
+let openaiClient: OpenAI | null = null;
+
+async function getOpenAIClient(): Promise<OpenAI> {
+  if (!llmEnabled) {
+    throw new Error("LLM usage disabled");
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY environment variable not found");
+  }
+
+  if (!openaiClient) {
+    openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+
+  return openaiClient;
+}
 
 /**
  * Simplicity Agent - advocates for operational feasibility and execution simplicity
@@ -14,6 +31,17 @@ export async function evaluateSimplicity(idea: Idea): Promise<{
   operationalRisk: 'low' | 'medium' | 'high';
   recommendation: string;
 }> {
+  if (!llmEnabled) {
+    console.warn("Simplicity agent: LLM disabled, providing heuristic evaluation");
+    return {
+      simplicityScore: 55,
+      complexityWarnings: ["Deterministic assessment: review biomarker and operational complexity manually."],
+      simplificationSuggestions: ["Prioritize a single primary endpoint and streamline eligibility criteria."],
+      operationalRisk: 'medium',
+      recommendation: 'Manual simplification review recommended'
+    };
+  }
+
   const prompt = `You are a Simplicity Agent focused on operational feasibility and execution success in clinical trials.
 
 Your role is to counterbalance overengineering tendencies by:
@@ -57,7 +85,8 @@ Provide your assessment as JSON:
 Focus on practical execution rather than scientific elegance. Simple studies that complete successfully are better than complex studies that fail.`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const client = await getOpenAIClient();
+    const response = await client.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
@@ -107,6 +136,11 @@ export function calculateComplexityPenalty(simplicityScore: number, operationalR
  * Generate simplified alternative study design
  */
 export async function generateSimplifiedAlternative(idea: Idea): Promise<string> {
+  if (!llmEnabled) {
+    console.warn("Simplicity agent: LLM disabled, returning deterministic alternative");
+    return "Recommend a streamlined Phase II randomized study focusing on one primary endpoint with standard-of-care comparator.";
+  }
+
   const prompt = `Given this potentially overengineered study design, propose a simplified alternative that maintains scientific rigor while reducing operational complexity:
 
 CURRENT STUDY: ${idea.title}
@@ -124,7 +158,8 @@ Create a simplified version that:
 Provide a concise alternative study design (2-3 sentences) that could achieve similar scientific objectives with lower execution risk.`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const client = await getOpenAIClient();
+    const response = await client.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: [{ role: "user", content: prompt }],
       temperature: 0.4

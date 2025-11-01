@@ -1,7 +1,28 @@
-import OpenAI from 'openai';
 import type { StudyConcept } from '@shared/schema';
+import type OpenAI from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let cachedClient: OpenAI | null = null;
+
+async function getOpenAIClient() {
+  if (!isLlmEnabled()) {
+    throw new Error('LLM usage disabled');
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY environment variable not found');
+  }
+
+  if (!cachedClient) {
+    const OpenAI = (await import('openai')).default;
+    cachedClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+
+  return cachedClient;
+}
+
+function isLlmEnabled(): boolean {
+  return process.env.PORTFOLIO_SUMMARY_USE_LLM === 'true';
+}
 
 interface DrugCharacteristics {
   mechanism: string;
@@ -104,6 +125,29 @@ interface SampleSizeResult {
 export class AIStatisticalAnalyzer {
   
   async analyzeStudyConcept(concept: StudyConcept, requestData: any): Promise<SampleSizeResult> {
+    if (!isLlmEnabled()) {
+      console.warn('AIStatisticalAnalyzer: LLM disabled, using deterministic fallbacks');
+      const fallbackPlan = this.generateFallbackStatisticalPlan(concept);
+      const fallbackCalculation = this.generateFallbackCalculation(concept, fallbackPlan);
+      const fallbackSampleSummary = {
+        totalPatients: fallbackCalculation.totalPatients,
+        patientsPerArm: fallbackCalculation.patientsPerArm,
+        numberOfArms: fallbackCalculation.numberOfArms,
+        sensitivityAnalysis: [] as { scenario: string; sampleSize: number; rationale: string }[]
+      };
+      const fallbackJustification = this.generateFallbackJustification(concept, fallbackPlan, fallbackSampleSummary);
+
+      return {
+        totalPatients: fallbackSampleSummary.totalPatients,
+        patientsPerArm: fallbackSampleSummary.patientsPerArm,
+        numberOfArms: fallbackSampleSummary.numberOfArms,
+        statisticalPlan: fallbackPlan,
+        justification: fallbackJustification,
+        precedentAnalysis: fallbackJustification.precedentAnalysis,
+        sensitivityAnalysis: fallbackSampleSummary.sensitivityAnalysis
+      };
+    }
+
     // 1. Build comprehensive study context
     const context = await this.buildStudyContext(concept);
     
@@ -149,6 +193,7 @@ Please provide a structured analysis in JSON format with:
 Focus on clinically relevant details that would influence sample size calculations.`;
 
     try {
+      const openai = await getOpenAIClient();
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -173,6 +218,10 @@ Focus on clinically relevant details that would influence sample size calculatio
   }
 
   private async getAIStatisticalPlan(concept: StudyConcept, context: any): Promise<StatisticalPlan> {
+    if (!isLlmEnabled()) {
+      return this.generateFallbackStatisticalPlan(concept);
+    }
+
     const prompt = `As a senior biostatistician, design the optimal statistical plan for this clinical study:
 
 Study: ${concept.title}
@@ -205,6 +254,7 @@ Provide a statistical plan in JSON format including:
 Base recommendations on real clinical trial methodology and regulatory standards.`;
 
     try {
+      const openai = await getOpenAIClient();
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -234,6 +284,10 @@ Base recommendations on real clinical trial methodology and regulatory standards
     numberOfArms: number;
     sensitivityAnalysis?: any[];
   }> {
+    if (!isLlmEnabled()) {
+      return this.generateFallbackCalculation(concept, plan);
+    }
+
     const prompt = `Calculate the sample size for this clinical study using established statistical methods:
 
 Study: ${concept.title}
@@ -272,6 +326,7 @@ Provide calculations in JSON format:
 Use real statistical formulas, not rough estimates.`;
 
     try {
+      const openai = await getOpenAIClient();
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -300,6 +355,10 @@ Use real statistical formulas, not rough estimates.`;
     plan: StatisticalPlan, 
     sampleSize: any
   ): Promise<StatisticalJustification> {
+    if (!isLlmEnabled()) {
+      return this.generateFallbackJustification(concept, plan, sampleSize);
+    }
+
     const geography = Array.isArray(concept.geography) ? concept.geography.join(', ') : (concept.geography || 'Global');
     
     const prompt = `As a senior biostatistician and regulatory expert, provide comprehensive justification for this clinical study design:
@@ -357,6 +416,7 @@ Provide comprehensive analysis in JSON format with these sections:
 Base all recommendations on actual regulatory guidance, published literature, and real clinical precedents. Provide specific references where possible.`;
 
     try {
+      const openai = await getOpenAIClient();
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [

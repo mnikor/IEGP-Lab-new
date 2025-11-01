@@ -836,37 +836,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Use ValidationResearchGenerator for comprehensive research  
         const validationResearchGenerator = new ValidationResearchGenerator();
-        const comprehensiveResearch = await validationResearchGenerator.generateValidationResearch({
+        const researchPackage = await validationResearchGenerator.generateValidationResearch({
           drugName: data.drugName,
           indication: data.indication,
-          strategicGoals: data.strategicGoals
+          strategicGoals: data.strategicGoals,
+          studyPhase: data.studyPhasePref,
+          geography: req.body.geography ? (Array.isArray(req.body.geography) ? req.body.geography : [req.body.geography]) : ["US", "EU"],
+          additionalContext: data.additionalContext
         });
-        
-        // Execute the research strategy
-        const researchExecutor = new ResearchExecutor();
-        const researchResults = await researchExecutor.executeResearch(comprehensiveResearch.searches);
-        
-        // Format for AI analysis
+
         searchResults = {
-          content: researchResults.map((result: any) => 
-            `**${result.searchQuery}**\n${result.rawResults.content || result.content || ''}`
-          ).join('\n\n'),
-          citations: researchResults.flatMap((result: any) => result.rawResults?.citations || result.citations || [])
+          content: researchPackage.researchSummary || "No external research executed.",
+          citations: researchPackage.citations || []
         };
-        
-        // Store detailed research results for Situational Analysis
-        detailedResearchResults = researchResults.map((result: any) => ({
-          id: result.id || Math.random().toString(36).substr(2, 9),
-          searchQuery: result.searchQuery,
-          searchType: result.searchType || 'therapeutic',
-          priority: result.priority || 1,
-          rawResults: result.rawResults || { content: result.content, citations: result.citations },
-          synthesizedInsights: result.synthesizedInsights,
-          keyFindings: result.keyFindings,
-          designImplications: result.designImplications,
-          strategicRecommendations: result.strategicRecommendations,
-          content: result.rawResults?.content || result.content,
-          citations: result.rawResults?.citations || result.citations || []
+
+        detailedResearchResults = researchPackage.strategy.searches.map((search: any) => ({
+          id: search.id || Math.random().toString(36).substr(2, 9),
+          searchQuery: search.query,
+          searchType: search.type || 'strategic',
+          priority: search.priority || 1,
+          rawResults: {
+            content: "Research not executed (LLM fallback).",
+            citations: []
+          },
+          synthesizedInsights: null,
+          keyFindings: null,
+          designImplications: null,
+          strategicRecommendations: null,
+          content: "Research not executed (LLM fallback).",
+          citations: []
         }));
       }
       
@@ -894,7 +892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const feasibilityData = await calculateFeasibility(tempConcept, data);
       
       // Step 5: Analyze the document against evidence with feasibility context
-      const validationResults = await analyzeWithOpenAI(searchResults!, { 
+      const validationResults = await analyzeWithOpenAI(searchResults || { content: "", citations: [] }, { 
         ...data,
         documentText: enrichedText,
         extractedPico,
@@ -974,7 +972,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const ids = idStr.split(',').map(id => parseInt(id.trim()));
       const concepts = await Promise.all(ids.map(id => storage.getStudyConcept(id)));
-      const validConcepts = concepts.filter(Boolean);
+      const validConcepts = concepts.filter((concept): concept is NonNullable<typeof concept> => Boolean(concept));
 
       if (validConcepts.length === 0) {
         return res.status(404).json({ message: "No valid concepts found" });

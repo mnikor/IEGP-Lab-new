@@ -252,10 +252,30 @@ export class ResearchExecutor {
       return `No content found for "${search.query}"`;
     }
 
+    const buildDeterministicFormatting = () => {
+      const typeContext = this.getSearchTypeContext(search.type);
+      let result = `${typeContext}\n\n## **Key Insights: ${search.query}**\n\n${content}`;
+
+      if (citations.length > 0) {
+        result += `\n\n### **📚 Sources & References:**\n`;
+        citations.forEach((citation: string, index: number) => {
+          result += `**[${index + 1}]** ${citation}\n`;
+        });
+      }
+
+      return result;
+    };
+
+    const llmEnabled = process.env.PORTFOLIO_SUMMARY_USE_LLM === "true";
+    if (!llmEnabled) {
+      console.warn("Research formatter: LLM disabled, using deterministic formatting");
+      return buildDeterministicFormatting();
+    }
+
     // Use AI to reformat the content properly
     try {
       const openai = new (await import('openai')).default({ apiKey: process.env.OPENAI_API_KEY });
-      
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -288,13 +308,13 @@ CRITICAL FORMATTING RULES:
       });
 
       const formattedContent = response.choices[0].message.content || content;
-      
+
       // Extract key insights based on search type
       const typeContext = this.getSearchTypeContext(search.type);
-      
+
       // Build formatted result
       let result = `${typeContext}\n\n## **Key Insights: ${search.query}**\n\n${formattedContent}`;
-      
+
       // Format citations with better structure
       if (citations.length > 0) {
         result += `\n\n### **📚 Sources & References:**\n`;
@@ -302,24 +322,14 @@ CRITICAL FORMATTING RULES:
           result += `**[${index + 1}]** ${citation}\n`;
         });
       }
-      
+
       return result;
-      
+
     } catch (error) {
       console.error('Error formatting content with AI, using fallback:', error);
-      
+
       // Fallback to basic formatting
-      const typeContext = this.getSearchTypeContext(search.type);
-      let result = `${typeContext}\n\n## **Key Insights: ${search.query}**\n\n${content}`;
-      
-      if (citations.length > 0) {
-        result += `\n\n### **📚 Sources & References:**\n`;
-        citations.forEach((citation: string, index: number) => {
-          result += `**[${index + 1}]** ${citation}\n`;
-        });
-      }
-      
-      return result;
+      return buildDeterministicFormatting();
     }
   }
 
@@ -416,11 +426,15 @@ CRITICAL FORMATTING RULES:
     return Array.from(new Set(allCitations));
   }
 
-  private async synthesizeResults(results: ResearchResult[], nctVerification?: any, allCitations: string[] = []): Promise<string> {
+  private async synthesizeResults(
+    results: ResearchResult[],
+    nctVerification?: any,
+    allCitations: string[] = []
+  ): Promise<string> {
     const successfulResults = results.filter(r => !(r.rawResults as any)?.error);
-    
+
     console.log(`Synthesizing ${successfulResults.length} successful results out of ${results.length} total searches`);
-    
+
     if (successfulResults.length === 0) {
       console.error("No successful research results to synthesize");
       const failedResults = results.filter(r => (r.rawResults as any)?.error);
@@ -428,7 +442,7 @@ CRITICAL FORMATTING RULES:
         const errorType = (r.rawResults as any)?.errorType || 'UNKNOWN';
         return `• **${r.searchQuery}**: ${errorType}`;
       }).join('\n');
-      
+
       return `# ❌ Research Execution Failed
 
 ## Search Results Summary
@@ -446,6 +460,12 @@ ${errorSummary}
 4. **Alternative Approach**: Consider running fewer searches at once to reduce load
 
 *No fallback content is provided to ensure data integrity. All research results must come from authentic sources.*`;
+    }
+
+    const llmEnabled = process.env.PORTFOLIO_SUMMARY_USE_LLM === "true";
+    if (!llmEnabled) {
+      console.warn("Research synthesis: LLM disabled, using basic synthesis");
+      return this.createBasicSynthesis(successfulResults);
     }
 
     // Use OpenAI to create a comprehensive synthesis

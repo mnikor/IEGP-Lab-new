@@ -1,7 +1,24 @@
 import OpenAI from "openai";
 import { v4 as uuidv4 } from 'uuid';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const llmEnabled = process.env.PORTFOLIO_SUMMARY_USE_LLM === "true";
+let openaiClient: OpenAI | null = null;
+
+async function getOpenAIClient(): Promise<OpenAI> {
+  if (!llmEnabled) {
+    throw new Error("LLM usage disabled");
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY environment variable not found");
+  }
+
+  if (!openaiClient) {
+    openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+
+  return openaiClient;
+}
 
 interface ValidationResearchContext {
   drugName: string;
@@ -30,14 +47,26 @@ interface ValidationResearchStrategy {
   riskCategories: string[];
 }
 
+interface ValidationResearchPackage {
+  strategy: ValidationResearchStrategy;
+  researchSummary: string;
+  citations: string[];
+}
+
 export class ValidationResearchGenerator {
   
   async generateValidationStrategy(context: ValidationResearchContext): Promise<ValidationResearchStrategy> {
     try {
+      if (!llmEnabled) {
+        console.warn("Validation research: LLM disabled, using heuristic strategy");
+        return this.generateFallbackValidationStrategy(context);
+      }
+
       // Generate validation-specific research strategy using OpenAI
       const prompt = this.buildValidationPrompt(context);
       
-      const response = await openai.chat.completions.create({
+      const client = await getOpenAIClient();
+      const response = await client.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
           {
@@ -85,6 +114,17 @@ export class ValidationResearchGenerator {
       console.error('Error generating validation strategy:', error);
       return this.generateFallbackValidationStrategy(context);
     }
+  }
+
+  async generateValidationResearch(context: ValidationResearchContext): Promise<ValidationResearchPackage> {
+    const strategy = await this.generateValidationStrategy(context);
+    const fallbackSummary = this.buildFallbackResearchSummary(strategy, context);
+
+    return {
+      strategy,
+      researchSummary: fallbackSummary.content,
+      citations: fallbackSummary.citations
+    };
   }
 
   private buildValidationPrompt(context: ValidationResearchContext): string {
@@ -410,5 +450,35 @@ Respond in JSON format:
       'low': 3
     };
     return priorityMap[priority] || 6;
+  }
+
+  private buildFallbackResearchSummary(strategy: ValidationResearchStrategy, context: ValidationResearchContext) {
+    const lines: string[] = [];
+    const citations: string[] = [];
+
+    lines.push(`# Validation Research Fallback Summary`);
+    lines.push(`Drug: ${context.drugName}`);
+    lines.push(`Indication: ${context.indication}`);
+    lines.push(`Strategic Goals: ${(context.strategicGoals || []).join(', ') || 'Not specified'}`);
+    lines.push("");
+    lines.push(`## Search Plan Overview`);
+
+    strategy.searches.forEach((search, index) => {
+      lines.push(`### ${index + 1}. ${search.query}`);
+      lines.push(`- Category: ${search.category || 'not specified'}`);
+      lines.push(`- Priority: ${search.priority}`);
+      lines.push(`- Rationale: ${search.rationale}`);
+      lines.push("- Status: Not executed (LLM fallback)");
+      lines.push("- Expected Insights: Pending manual or future automated execution");
+      lines.push("");
+    });
+
+    lines.push(`## Risk Categories`);
+    lines.push((strategy.riskCategories || []).join(', ') || 'Not specified');
+
+    return {
+      content: lines.join('\n'),
+      citations
+    };
   }
 }

@@ -1,4 +1,5 @@
 // Common shared types for the application
+import type { CommercialAssumptions, StudyImpactCategory } from "@shared/commercialTypes";
 
 export type StrategicGoal = 
   "expand_label" | 
@@ -195,16 +196,8 @@ export interface FeasibilityData {
   riskAdjustedENpvUsd?: number;
   riskAdjustedENpvEur?: number;
   regionalRevenueForecast?: RegionalRevenueForecast[];
-  studyImpact?:
-    | "label_expansion"
-    | "market_access_enabler"
-    | "clinical_guideline_shift"
-    | "practice_evolution"
-    | "market_defense"
-    | "evidence_gap_fill"
-    | "limited_impact"
-    | "no_material_change"
-    | null;
+  commercialAssumptions?: CommercialAssumptions;
+  studyImpact?: StudyImpactCategory;
 }
 
 export interface EvidenceSource {
@@ -287,16 +280,6 @@ export interface StudyConcept {
     alignment: number;
   };
   createdAt?: string;
-  studyImpact?:
-    | "label_expansion"
-    | "market_access_enabler"
-    | "clinical_guideline_shift"
-    | "practice_evolution"
-    | "market_defense"
-    | "evidence_gap_fill"
-    | "limited_impact"
-    | "no_material_change"
-    | null;
 }
 
 export interface GenerateConceptResponse {

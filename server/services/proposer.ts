@@ -2,8 +2,24 @@ import OpenAI from "openai";
 import { Idea, InsertIdea, Review } from "@shared/tournament";
 import { calculateFeasibility } from "./feasibilityCalculator";
 
-// Initialize OpenAI client
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const llmEnabled = process.env.PORTFOLIO_SUMMARY_USE_LLM === "true";
+let openaiClient: OpenAI | null = null;
+
+async function getOpenAIClient(): Promise<OpenAI> {
+  if (!llmEnabled) {
+    throw new Error("LLM usage disabled");
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY environment variable not found");
+  }
+
+  if (!openaiClient) {
+    openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+
+  return openaiClient;
+}
 
 /**
  * Generates a challenger idea based on a champion and its reviews
@@ -19,15 +35,17 @@ export async function generateChallenger(
   round: number
 ): Promise<InsertIdea> {
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error("OPENAI_API_KEY environment variable not found");
+    if (!llmEnabled) {
+      console.warn("Proposer: LLM disabled, generating heuristic challenger");
+      return buildDeterministicChallenger(champion, reviews, round);
     }
 
     // Build the prompt for challenger generation
     const prompt = buildChallengerPrompt(champion, reviews);
 
     // Generate challenger using OpenAI
-    const response = await openai.chat.completions.create({
+    const client = await getOpenAIClient();
+    const response = await client.chat.completions.create({
       model: "gpt-4.1",
       messages: [
         { 
@@ -49,6 +67,16 @@ export async function generateChallenger(
     const ideaId = `${String.fromCharCode(65 + laneId)}_v${nextVersionNumber}`; // A_v2, B_v2, etc.
     
     // Create the challenger idea with improvements
+    type SwotArray = string[];
+    type SwotKeys = 'strengths' | 'weaknesses' | 'opportunities' | 'threats';
+    const swotFromResult: Partial<Record<SwotKeys, SwotArray>> = (result.swotAnalysis ?? {}) as Partial<Record<SwotKeys, SwotArray>>;
+    const castArray = (value: SwotArray | undefined, fallback: SwotArray): SwotArray =>
+      Array.isArray(value) ? value : fallback;
+    const swotStrengths = castArray(swotFromResult['strengths'], champion.swotAnalysis?.strengths || []);
+    const swotWeaknesses = castArray(swotFromResult['weaknesses'], champion.swotAnalysis?.weaknesses || []);
+    const swotOpportunities = castArray(swotFromResult['opportunities'], champion.swotAnalysis?.opportunities || []);
+    const swotThreats = castArray(swotFromResult['threats'], champion.swotAnalysis?.threats || []);
+
     const challenger: InsertIdea = {
       ideaId,
       tournamentId: champion.tournamentId,
@@ -77,10 +105,10 @@ export async function generateChallenger(
       
       // The SWOT analysis should reflect the improvements made
       swotAnalysis: {
-        strengths: result.swotAnalysis?.strengths || champion.swotAnalysis?.strengths || [],
-        weaknesses: result.swotAnalysis?.weaknesses || champion.swotAnalysis?.weaknesses || [],
-        opportunities: result.swotAnalysis?.opportunities || champion.swotAnalysis?.opportunities || [],
-        threats: result.swotAnalysis?.threats || champion.swotAnalysis?.threats || []
+        strengths: swotStrengths,
+        weaknesses: swotWeaknesses,
+        opportunities: swotOpportunities,
+        threats: swotThreats
       },
       
       // Feasibility metrics should be adjusted based on improvements
@@ -105,6 +133,50 @@ export async function generateChallenger(
     console.error("Error generating challenger:", error);
     throw error;
   }
+}
+
+function buildDeterministicChallenger(champion: Idea, reviews: Review[], round: number): InsertIdea {
+  const nextVersionNumber = round + 1;
+  const laneId = champion.laneId;
+  const ideaId = `${String.fromCharCode(65 + laneId)}_v${nextVersionNumber}`;
+
+  const aggregatedWeaknesses = reviews.flatMap(review => review.weaknesses || []).slice(0, 3);
+  const improvementRationale = aggregatedWeaknesses.length
+    ? `Addresses reviewer concerns: ${aggregatedWeaknesses.join("; ")}`
+    : `Deterministic improvement of ${champion.title}`;
+
+  const feasibilityData = champion.feasibilityData;
+
+  return {
+    ideaId,
+    tournamentId: champion.tournamentId,
+    laneId: champion.laneId,
+    round,
+    isChampion: false,
+    parentIdeaId: champion.ideaId,
+    title: `${champion.title} (Deterministic Challenger)`,
+    drugName: champion.drugName,
+    indication: champion.indication,
+    strategicGoals: champion.strategicGoals,
+    geography: champion.geography,
+    studyPhase: champion.studyPhase,
+    targetSubpopulation: champion.targetSubpopulation,
+    comparatorDrugs: champion.comparatorDrugs,
+    knowledgeGapAddressed: champion.knowledgeGapAddressed,
+    innovationJustification: `${champion.innovationJustification || ""} Deterministic enhancements applied for operational feasibility.`,
+    picoData: champion.picoData,
+    mcdaScores: champion.mcdaScores,
+    swotAnalysis: champion.swotAnalysis,
+    feasibilityData,
+    evidenceSources: champion.evidenceSources,
+    improvementRationale,
+    keyImprovements: [
+      "Deterministic challenger generated due to LLM disabled mode",
+      "Focus on addressing top reviewer weaknesses"
+    ],
+    overallScore: 0,
+    scoreChange: null
+  } as InsertIdea;
 }
 
 /**

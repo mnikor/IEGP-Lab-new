@@ -2,11 +2,13 @@ import { StudyConcept, GenerateConceptRequest } from "@shared/schema";
 import { FeasibilityData, RegionalLoeData, RegionalRevenueForecast, ScenarioOutcome } from "@/lib/types";
 import { calculateSampleSizeWithAI, calculateSampleSizeTraditional } from "./sampleSizeCalculator";
 import { analyzeTherapeuticArea, adjustSampleSizeForTherapeuticArea, getTherapeuticAreaCostMultiplier } from "./therapeuticAreaEngine";
+import { generateCommercialAssumptions } from "./commercialAssumptionGenerator";
 import { BASELINE_REGIONAL_BENCHMARK, getRegionalBenchmarks } from "../data/regionalCostBenchmarks";
 import { BASELINE_VENDOR_PROFILE, calculateVendorScenario } from "./vendorCostEngine";
 import type { RegionalCostBenchmark } from "../data/regionalCostBenchmarks";
 import type { VendorScenarioResult, SupportedStudyPhase } from "./vendorCostEngine";
 import { REGIONAL_MARKET_DATA } from "./commercialIntelligence";
+import type { CommercialAssumptions, StudyImpactCategory } from "@shared/commercialTypes";
 
 // TypeScript interface for the extended request type including anticipatedFpiDate
 type RegionalDeploymentMix = {
@@ -569,6 +571,20 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
   
   // Step 8: Calculate projected ROI
   const strategyProfile = deriveStrategyProfile(conceptWithFeasibility);
+  const commercialAssumptions = await generateCommercialAssumptions(
+    {
+      title: concept.title,
+      drugName: concept.drugName,
+      indication: concept.indication,
+      studyPhase: concept.studyPhase,
+      strategicGoals: concept.strategicGoals,
+      geography: concept.geography,
+      mcdaScores: concept.mcdaScores,
+      feasibilityData: { timeline: initialFeasibilityData.timeline },
+    },
+    therapeuticContext.area
+  );
+  initialFeasibilityData.commercialAssumptions = commercialAssumptions;
   const commercialOutlook = calculateCommercialOutlook({
     concept: conceptWithFeasibility,
     feasibility: initialFeasibilityData,
@@ -577,6 +593,7 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
     effectiveRegionalMix,
     scenarioPreference: requestData.scenarioPreference,
     strategyProfile,
+    commercialAssumptions,
   });
   const projectedROI = commercialOutlook.baseRoi;
   
@@ -730,6 +747,7 @@ export async function calculateFeasibility(concept: ConceptWithFeasibility, requ
     riskAdjustedENpvUsd: Math.round(commercialOutlook.riskAdjustedENpvUsd),
     riskAdjustedENpvEur: Math.round(commercialOutlook.riskAdjustedENpvEur),
     regionalRevenueForecast: commercialOutlook.regionalRevenueForecast,
+    commercialAssumptions,
     studyImpact,
     // AI Analysis - include comprehensive statistical justification data
     aiAnalysis,
@@ -800,8 +818,9 @@ function calculateCommercialOutlook(params: {
   effectiveRegionalMix: RegionalDeploymentMix[];
   scenarioPreference?: "base" | "optimistic" | "pessimistic";
   strategyProfile?: StrategyProfile;
+  commercialAssumptions: CommercialAssumptions;
 }): CommercialOutlook {
-  const { concept, feasibility, requestData, regionalBenchmarks, effectiveRegionalMix, strategyProfile } = params;
+  const { concept, feasibility, requestData, regionalBenchmarks, effectiveRegionalMix, strategyProfile, commercialAssumptions } = params;
   const timelineMonths = feasibility.timeline || 36;
   const timelineYears = timelineMonths / 12;
   const profile = strategyProfile ?? deriveStrategyProfile(concept);
@@ -813,19 +832,26 @@ function calculateCommercialOutlook(params: {
   const adjustedWindowYears = calculateWindowOfOpportunityYears(feasibility, timelineMonths) * profile.windowMultiplier;
   const cappedWindow = Math.max(1, Math.min(profile.windowCap, adjustedWindowYears));
 
+  const impactWindowYears = Math.max(1, Math.min(cappedWindow, commercialAssumptions.impactDurationYears || cappedWindow));
+  const baseAnnualRevenue = Math.max(0, commercialAssumptions.avgAnnualRevenuePerPatientUsd) * Math.max(0, commercialAssumptions.addressablePatientCount);
+  const peakShare = Math.min(profile.maxShare, Math.max(1, commercialAssumptions.peakSharePercent) * profile.unlockMultiplier);
+  const annualIncrementalRevenue = baseAnnualRevenue * (peakShare / 100) * therapeuticMultiplier;
+  const retentionAnnualRevenue = baseAnnualRevenue * profile.retentionShare * 0.35 * therapeuticMultiplier;
+  const totalAnnualRevenue = annualIncrementalRevenue + retentionAnnualRevenue;
+
+  const weightDenominator = effectiveRegionalMix.reduce((sum, mix) => {
+    const weight = mix.weight || 1;
+    const marketData = REGIONAL_MARKET_DATA[mix.regionId as keyof typeof REGIONAL_MARKET_DATA];
+    const pricing = marketData?.pricingMultiplier ?? 1;
+    return sum + weight * pricing;
+  }, 0) || effectiveRegionalMix.length || 1;
+
   const regionalRevenueForecast: RegionalRevenueForecast[] = effectiveRegionalMix.map((mix) => {
     const benchmark = regionalBenchmarks.find((region) => region.regionId === mix.regionId) || BASELINE_REGIONAL_BENCHMARK;
     const marketData = REGIONAL_MARKET_DATA[mix.regionId as keyof typeof REGIONAL_MARKET_DATA];
-    const deploymentWeight = mix.weight || 0;
-
-    const baseMarketSizeUsd = marketData ? marketData.marketSize : 500000000;
-    const baselineShare = estimateRegionalMarketShare(concept, marketData, deploymentWeight);
-    const adjustedShare = Math.min(profile.maxShare, baselineShare * profile.unlockMultiplier);
-
-    const unlockedRevenueUsd = baseMarketSizeUsd * (adjustedShare / 100) * Math.min(cappedWindow / 5, profile.windowCap) * therapeuticMultiplier;
-    const retentionRevenueUsd = baseMarketSizeUsd * profile.retentionShare * Math.min(cappedWindow / 5, profile.windowCap) * 0.35 * therapeuticMultiplier;
-
-    const incrementalSalesUsd = unlockedRevenueUsd + retentionRevenueUsd;
+    const weighting = (mix.weight || 1) * (marketData?.pricingMultiplier ?? 1);
+    const allocation = weighting / weightDenominator;
+    const incrementalSalesUsd = totalAnnualRevenue * allocation * impactWindowYears;
     const incrementalSalesEur = incrementalSalesUsd * usdToEur * (benchmark.fxRateToEur || 1);
 
     return {
@@ -833,27 +859,33 @@ function calculateCommercialOutlook(params: {
       displayName: benchmark.displayName,
       incrementalSalesUsd,
       incrementalSalesEur,
-      windowYears: cappedWindow,
+      windowYears: impactWindowYears,
     } satisfies RegionalRevenueForecast;
   });
 
-  const totalIncrementalSalesUsd = regionalRevenueForecast.reduce((sum, region) => sum + region.incrementalSalesUsd, 0);
-  const totalIncrementalSalesEur = regionalRevenueForecast.reduce((sum, region) => sum + region.incrementalSalesEur, 0);
+  const fallbackTotalIncrementalUsd = totalAnnualRevenue * impactWindowYears;
+  const totalIncrementalSalesUsd = regionalRevenueForecast.length > 0
+    ? regionalRevenueForecast.reduce((sum, region) => sum + region.incrementalSalesUsd, 0)
+    : fallbackTotalIncrementalUsd;
+  const totalIncrementalSalesEur = totalIncrementalSalesUsd * usdToEur;
 
-  const baseDelayYears = timelineYears + profile.accessDelayYears;
-  const timeToImpactYears = Math.max(0.25, baseDelayYears + Math.max(0, profile.uptakeLagYears));
-  const baseENpvUsd = calculateENpv(totalIncrementalSalesUsd, feasibility.estimatedCost, timeToImpactYears, discountRate, profile.uptakeLagYears);
+  const assumptionAccessDelayYears = (commercialAssumptions.accessDelayMonths || 0) / 12;
+  const baseDelayYears = timelineYears + profile.accessDelayYears + assumptionAccessDelayYears;
+  const assumptionUptakeLagYears = Math.max(-1.5, Math.min(1.5, (commercialAssumptions.uptakeRampYears || 0) - 1));
+  const uptakeLagYears = assumptionUptakeLagYears + profile.uptakeLagYears;
+  const timeToImpactYears = Math.max(0.25, baseDelayYears + Math.max(0, uptakeLagYears));
+  const baseENpvUsd = calculateENpv(totalIncrementalSalesUsd, feasibility.estimatedCost, timeToImpactYears, discountRate, uptakeLagYears);
   const baseENpvEur = baseENpvUsd * usdToEur;
-  const riskMultiplier = 1 - (feasibility.completionRisk || 0.3) * 0.6;
+  const riskMultiplier = Math.max(0.2, Math.min(1, (1 - (feasibility.completionRisk || 0.3) * 0.6) * (0.7 + 0.3 * (commercialAssumptions.confidence || 0.5))));
   const riskAdjustedENpvUsd = baseENpvUsd * riskMultiplier;
   const riskAdjustedENpvEur = riskAdjustedENpvUsd * usdToEur;
 
-  const baseRoi = calculateProjectedROI(concept, requestData) * profile.evidenceMultiplier;
+  const baseRoi = calculateProjectedROI(concept, requestData, commercialAssumptions, totalIncrementalSalesUsd) * profile.evidenceMultiplier;
 
   const optimisticIncrementalUsd = totalIncrementalSalesUsd * 1.25;
-  const optimisticENpvUsd = calculateENpv(optimisticIncrementalUsd, feasibility.estimatedCost, Math.max(0.2, timeToImpactYears - 0.4), discountRate, profile.uptakeLagYears - 0.3);
+  const optimisticENpvUsd = calculateENpv(optimisticIncrementalUsd, feasibility.estimatedCost, Math.max(0.2, timeToImpactYears - 0.4), discountRate, uptakeLagYears - 0.3);
   const pessimisticIncrementalUsd = totalIncrementalSalesUsd * 0.7;
-  const pessimisticENpvUsd = calculateENpv(pessimisticIncrementalUsd, feasibility.estimatedCost, timeToImpactYears + 0.8, discountRate, profile.uptakeLagYears + 0.4);
+  const pessimisticENpvUsd = calculateENpv(pessimisticIncrementalUsd, feasibility.estimatedCost, timeToImpactYears + 0.8, discountRate, uptakeLagYears + 0.4);
 
   return {
     totalIncrementalSalesUsd,
@@ -863,7 +895,15 @@ function calculateCommercialOutlook(params: {
     riskAdjustedENpvUsd,
     riskAdjustedENpvEur,
     baseRoi,
-    regionalRevenueForecast,
+    regionalRevenueForecast: regionalRevenueForecast.length > 0 ? regionalRevenueForecast : [
+      {
+        regionId: "global",
+        displayName: "Global",
+        incrementalSalesUsd: totalIncrementalSalesUsd,
+        incrementalSalesEur: totalIncrementalSalesEur,
+        windowYears: impactWindowYears,
+      }
+    ],
     scenarios: {
       base: {
         incrementalSalesUsd: totalIncrementalSalesUsd,
@@ -905,7 +945,7 @@ function calculateENpv(totalSalesUsd: number, investment: number, timeToImpactYe
   return npv;
 }
 
-function classifyStudyImpact(concept: ConceptWithFeasibility, profile: StrategyProfile, commercialOutlook: CommercialOutlook): StudyConcept["studyImpact"] {
+function classifyStudyImpact(concept: ConceptWithFeasibility, profile: StrategyProfile, commercialOutlook: CommercialOutlook): StudyImpactCategory {
   const hasLabelGoal = concept.strategicGoals?.some((goal) => ["expand_label", "secure_initial_approval"].includes(goal)) ?? false;
   const hasAccessGoal = concept.strategicGoals?.includes("facilitate_market_access") ?? false;
   const hasRweGoal = concept.strategicGoals?.includes("generate_real_world_evidence") ?? false;
@@ -1079,25 +1119,29 @@ function calculateCompletionRisk(
  * 
  * @param concept The study concept to calculate ROI for
  * @param requestData The original request data for context
+ * @param commercialAssumptions Commercial assumptions for revenue calculations
+ * @param totalIncrementalSalesUsd Total incremental sales in USD
  * @returns Projected ROI as a multiple (e.g., 2.5x means 2.5 times the investment)
  */
 function calculateProjectedROI(
   concept: ConceptWithFeasibility,
-  requestData: Partial<ExtendedGenerateConceptRequest>
+  requestData: Partial<ExtendedGenerateConceptRequest>,
+  commercialAssumptions: CommercialAssumptions,
+  totalIncrementalSalesUsd: number
 ): number {
   // Get feasibility data if it exists
   const feasibilityData = concept.feasibilityData as FeasibilityData | undefined;
-  
+
   // Only calculate if feasibilityData exists and has estimatedCost
   if (!feasibilityData || typeof feasibilityData.estimatedCost !== 'number') {
     return 2.5; // Return default if no cost data yet
   }
-  
+
   // Step 1: Determine base factors based on strategic goals
   const strategicGoals = concept.strategicGoals || requestData.strategicGoals || ['expand_label'];
   const primaryStrategicGoal = strategicGoals[0] || 'expand_label';
   const studyPhase = concept.studyPhase || 'any';
-  
+
   // Market impact multipliers by strategic goal (5-year horizon)
   const marketMultipliers: { [key: string]: number } = {
     'expand_label': 2.0,      // New indication can expand market
@@ -1126,8 +1170,10 @@ function calculateProjectedROI(
     'any': 0.9   // Default
   };
   
-  // Step 3: Calculate base ROI components
-  let potentialRevenue = 1000000; // Base assumption for annual revenue impact
+  // Step 3: Calculate base ROI components grounded in commercial assumptions
+  const assumedAnnualRevenue = Math.max(0, commercialAssumptions.avgAnnualRevenuePerPatientUsd) * Math.max(0, commercialAssumptions.addressablePatientCount);
+  const assumedTotalRevenue = Math.max(totalIncrementalSalesUsd, assumedAnnualRevenue * Math.max(1, commercialAssumptions.impactDurationYears || 1));
+  let potentialRevenue = assumedTotalRevenue;
   
   // Adjust for strategic goal with fallback
   potentialRevenue *= marketMultipliers[primaryStrategicGoal] || marketMultipliers['other'];

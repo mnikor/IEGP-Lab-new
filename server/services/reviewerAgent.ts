@@ -4,8 +4,24 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { storage } from '../storage';
 
-// Initialize OpenAI client
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const llmEnabled = process.env.PORTFOLIO_SUMMARY_USE_LLM === "true";
+let openaiClient: OpenAI | null = null;
+
+async function getOpenAIClient(): Promise<OpenAI> {
+  if (!llmEnabled) {
+    throw new Error("LLM usage disabled");
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY environment variable not found");
+  }
+
+  if (!openaiClient) {
+    openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+
+  return openaiClient;
+}
 
 // Define the list of reviewer agent IDs
 export const REVIEWER_AGENTS = ['CLIN', 'STAT', 'SAF', 'REG', 'HEOR', 'OPS', 'PADV', 'ETH', 'COMM', 'SUC'];
@@ -35,6 +51,18 @@ function getAgentPrompt(agentId: string): string {
  */
 export async function runReviewerAgent(idea: Idea, agentId: string): Promise<InsertReview> {
   try {
+    if (!llmEnabled) {
+      console.warn(`Reviewer agent ${agentId}: LLM disabled, returning heuristic review`);
+      return {
+        ideaId: idea.ideaId,
+        agentId,
+        score: 0.6,
+        strengths: ["Deterministic review: foundational design aligns with strategic goals."],
+        weaknesses: ["LLM disabled; detailed critique unavailable. Conduct manual review."],
+        additionalMetrics: {}
+      };
+    }
+
     // Get the agent prompt template
     const systemPrompt = getAgentPrompt(agentId);
     
@@ -42,7 +70,8 @@ export async function runReviewerAgent(idea: Idea, agentId: string): Promise<Ins
     const userPrompt = buildIdeaReviewPrompt(idea);
     
     // Call OpenAI to get the review
-    const response = await openai.chat.completions.create({
+    const client = await getOpenAIClient();
+    const response = await client.chat.completions.create({
       model: "gpt-4.1", 
       messages: [
         { role: "system", content: systemPrompt },

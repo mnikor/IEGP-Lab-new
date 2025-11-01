@@ -2,7 +2,24 @@ import OpenAI from 'openai';
 import { StudyConcept } from "@shared/schema";
 import { generateJJBusinessPrompt, getJJBusinessGuidance } from './jjBusinessIntelligence';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const llmEnabled = process.env.PORTFOLIO_SUMMARY_USE_LLM === 'true';
+let openaiClient: OpenAI | null = null;
+
+async function getOpenAIClient(): Promise<OpenAI> {
+  if (!llmEnabled) {
+    throw new Error('LLM usage disabled');
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY environment variable not found');
+  }
+
+  if (!openaiClient) {
+    openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+
+  return openaiClient;
+}
 
 export interface RefinementRequest {
   message: string;
@@ -120,6 +137,22 @@ export class ConceptRefiner {
 
   async refineStudyConcept(request: RefinementRequest): Promise<RefinementResponse> {
     const { message, currentConcept, conversationHistory = [] } = request;
+
+    if (!llmEnabled) {
+      console.warn('ConceptRefiner: LLM disabled, returning deterministic rationale');
+      return {
+        updatedConcept: currentConcept,
+        explanation: "LLM disabled: no automatic refinements applied. Review manually for cascading changes.",
+        changes: [],
+        cascadingAnalysis: {
+          timelineImpact: "Manual review required to assess timeline modifications.",
+          resourceImpact: "Consider resource allocation adjustments manually.",
+          financialImpact: "No LLM analysis available.",
+          regulatoryImpact: "Maintain current regulatory assumptions until reviewed.",
+          strategicImpact: "Evaluate strategic alignment manually."
+        }
+      };
+    }
 
     // Generate J&J business intelligence guidance
     const therapeuticArea = this.getTherapeuticAreaFromIndication(currentConcept.indication);
@@ -256,7 +289,8 @@ Dynamically identify which elements need modification based on the interconnecti
 
     try {
       // Use o3 reasoning model for intelligent cascading change analysis
-      const response = await openai.chat.completions.create({
+      const client = await getOpenAIClient();
+      const response = await client.chat.completions.create({
         model: "o3", // o3 reasoning model for intelligent analysis and cascading change detection
         messages: [
           {
@@ -565,7 +599,17 @@ Provide practical, actionable suggestions in a JSON array format:
 `;
 
     try {
-      const response = await openai.chat.completions.create({
+      if (!llmEnabled) {
+        console.warn('ConceptRefiner: LLM disabled, returning heuristic suggestions');
+        return [
+          "Reassess comparator alignment with strategic goals and regulatory expectations.",
+          "Optimize recruitment plan by focusing on high-yield geographies.",
+          "Refine endpoint prioritization to balance feasibility and impact."
+        ];
+      }
+
+      const client = await getOpenAIClient();
+      const response = await client.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
           {

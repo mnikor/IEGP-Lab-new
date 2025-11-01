@@ -14,18 +14,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
-export const StudyImpactEnum = z.enum([
-  "label_expansion",
-  "market_access_enabler",
-  "clinical_guideline_shift",
-  "practice_evolution",
-  "market_defense",
-  "evidence_gap_fill",
-  "limited_impact",
-  "no_material_change",
-]);
-export type StudyImpact = z.infer<typeof StudyImpactEnum>;
-
 // Study concept model
 export const studyConcepts = pgTable("study_concepts", {
   id: serial("id").primaryKey(),
@@ -57,7 +45,6 @@ export const studyConcepts = pgTable("study_concepts", {
   feasibilityData: json("feasibility_data").notNull(),
   evidenceSources: json("evidence_sources").notNull(),
   aiAnalysis: json("ai_analysis"), // Enhanced AI analysis data including justification and statistical plan
-  studyImpact: text("study_impact"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -100,7 +87,6 @@ export const StudyConceptSchema = z.object({
   rankScore: z.number().optional().nullable(),
   rankBreakdown: z.unknown().optional().nullable(),
   createdAt: z.string().optional(),
-  studyImpact: StudyImpactEnum.optional().nullable(),
 });
 
 export const PortfolioSummarySchema = z.object({

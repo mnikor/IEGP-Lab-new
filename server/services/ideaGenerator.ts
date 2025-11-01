@@ -4,8 +4,8 @@ import { perplexityWebSearch } from "./perplexity";
 import { calculateFeasibility } from "./feasibilityCalculator";
 import { generateJJBusinessPrompt } from "./jjBusinessIntelligence";
 
-// Use the OpenAI client
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const llmEnabled = process.env.PORTFOLIO_SUMMARY_USE_LLM === "true";
+const openai = llmEnabled && process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 /**
  * Generates seed ideas for a tournament using the GPT-4.1 model
@@ -20,6 +20,110 @@ export async function generateSeedIdeas(
   tournamentId: number,
   numIdeas: number = 5
 ): Promise<InsertIdea[]> {
+  if (!openai) {
+    console.warn("Seed idea generation: LLM disabled, using deterministic concepts");
+    const rawComparatorDrugs = (tournamentData as any)?.comparatorDrugs;
+    const comparatorList = Array.isArray(rawComparatorDrugs) && rawComparatorDrugs.length
+      ? rawComparatorDrugs
+      : ["Standard of Care"];
+    const targetSubpopulation = (tournamentData as any)?.targetSubpopulation || null;
+    const geographyList = Array.isArray(tournamentData.geography) && tournamentData.geography.length
+      ? tournamentData.geography
+      : ["US", "EU"];
+
+    const fallbackConcepts = Array.from({ length: numIdeas }).map((_, index) => ({
+      title: `${tournamentData.drugName} Concept ${index + 1}`,
+      drugName: tournamentData.drugName,
+      indication: tournamentData.indication,
+      strategicGoals: tournamentData.strategicGoals.map(goal => goal.goal),
+      geography: geographyList,
+      studyPhase: tournamentData.studyPhasePref,
+      targetSubpopulation,
+      comparatorDrugs: comparatorList,
+      knowledgeGapAddressed: "Deterministic fallback concept derived from user inputs.",
+      innovationJustification: "Uses provided strategic goals to focus on feasible execution.",
+      picoData: {
+        population: `Adults with ${tournamentData.indication}`,
+        intervention: tournamentData.drugName,
+        comparator: comparatorList[0] || "Standard of Care",
+        outcomes: "Efficacy and safety endpoints"
+      },
+      mcdaScores: {
+        scientificValidity: 3.4,
+        clinicalImpact: 3.3,
+        commercialValue: 3.1,
+        feasibility: 3.5,
+        overall: 3.3
+      },
+      swotAnalysis: {
+        strengths: ["Aligns with strategic goals", "Feasible multi-region execution"],
+        weaknesses: ["Derived without LLM insights"],
+        opportunities: ["Establishes presence in key geographies"],
+        threats: ["Competitive programs may advance faster"]
+      },
+      feasibilityData: {}
+    }));
+
+    const ideas: InsertIdea[] = await Promise.all(fallbackConcepts.map(async (concept: any, index: number) => {
+      const laneId = index;
+      const ideaId = `${String.fromCharCode(65 + laneId)}_v1`;
+
+      const requestData = {
+        drugName: tournamentData.drugName,
+        indication: tournamentData.indication,
+        strategicGoals: concept.strategicGoals,
+        geography: concept.geography,
+        studyPhasePref: concept.studyPhase,
+        targetSubpopulation: concept.targetSubpopulation,
+        comparatorDrugs: concept.comparatorDrugs,
+        budgetCeilingEur: tournamentData.budgetCeilingEur || undefined,
+        timelineCeilingMonths: tournamentData.timelineCeilingMonths || undefined,
+        globalLoeDate: tournamentData.globalLoeDate || undefined
+      };
+
+      const calculatedFeasibilityData = await calculateFeasibility(concept, requestData);
+      const correctedPicoData = {
+        ...concept.picoData,
+        population: updatePicoPopulationWithSampleSize(
+          concept.picoData.population,
+          calculatedFeasibilityData.sampleSize,
+          concept.indication,
+          concept.targetSubpopulation
+        )
+      };
+
+      return {
+        ideaId,
+        tournamentId,
+        laneId,
+        round: 0,
+        isChampion: true,
+        title: concept.title,
+        drugName: concept.drugName,
+        indication: concept.indication,
+        strategicGoals: concept.strategicGoals,
+        geography: concept.geography,
+        studyPhase: concept.studyPhase,
+        targetSubpopulation: concept.targetSubpopulation || null,
+        comparatorDrugs: concept.comparatorDrugs || [],
+        knowledgeGapAddressed: concept.knowledgeGapAddressed,
+        innovationJustification: concept.innovationJustification,
+        picoData: correctedPicoData,
+        mcdaScores: concept.mcdaScores,
+        swotAnalysis: concept.swotAnalysis,
+        feasibilityData: {
+          ...calculatedFeasibilityData,
+          pivotalFollowOnPlan: (calculatedFeasibilityData as any)?.pivotalFollowOnPlan || "Define follow-on pivotal evidence once primary endpoints met."
+        },
+        evidenceSources: [],
+        overallScore: 0,
+        scoreChange: null,
+      } as InsertIdea;
+    }));
+
+    return ideas;
+  }
+
   try {
     if (!process.env.OPENAI_API_KEY) {
       throw new Error("OPENAI_API_KEY environment variable not found");
@@ -56,7 +160,7 @@ export async function generateSeedIdeas(
     const prompt = buildSeedIdeaPrompt(tournamentData, searchResults, numIdeas);
 
     // Generate seed ideas using OpenAI
-    const response = await openai.chat.completions.create({
+    const response = await openai!.chat.completions.create({
       model: "gpt-4.1",
       messages: [
         { 

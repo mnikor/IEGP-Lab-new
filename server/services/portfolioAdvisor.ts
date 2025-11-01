@@ -1,9 +1,24 @@
 import OpenAI from "openai";
 import { GenerateConceptRequest, StudyConcept } from "@shared/schema";
 
-const openaiClient = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  : null;
+const llmEnabled = process.env.PORTFOLIO_SUMMARY_USE_LLM === "true";
+let openaiClient: OpenAI | null = null;
+
+async function getOpenAIClient(): Promise<OpenAI> {
+  if (!llmEnabled) {
+    throw new Error("LLM usage disabled");
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY environment variable not found");
+  }
+
+  if (!openaiClient) {
+    openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+
+  return openaiClient;
+}
 
 type RecommendationLevel = "proceed" | "revise" | "stop";
 
@@ -241,19 +256,31 @@ export async function generatePortfolioSummary(
 ): Promise<PortfolioSummary> {
   const fallback = buildDeterministicSummary(concepts);
 
-  if (!openaiClient || concepts.length === 0) {
+  if (!llmEnabled || concepts.length === 0) {
+    console.warn("Portfolio summary: LLM disabled or no concepts available, using deterministic fallback");
+    return fallback;
+  }
+
+  const configuredBaseUrl = process.env.OPENAI_API_BASE_URL || process.env.OPENAI_BASE_URL || process.env.OPENAI_API_HOST || "";
+  if (configuredBaseUrl && !configuredBaseUrl.startsWith("http")) {
     return fallback;
   }
 
   try {
+    const client = await getOpenAIClient();
+    console.log("Portfolio summary: invoking chat completions", {
+      conceptCount: concepts.length,
+      hasClient: Boolean(client),
+    });
     const payload = buildPromptPayload(concepts, requestData);
-    const response = await openaiClient.responses.create({
-      model: "gpt-5",
-      reasoning: { effort: "medium" },
-      input: [
+    const response = await client.chat.completions.create({
+      model: "gpt-4o",
+      temperature: 0.2,
+      messages: [
         {
           role: "system",
-          content: "You are a senior clinical development strategist. Respond strictly with valid JSON using keys headline, recommendation, rationale, highlights, warnings. Recommendation must be one of proceed, revise, or stop.",
+          content:
+            "You are a senior clinical development strategist. Respond strictly with valid JSON using keys headline, recommendation, rationale, highlights, warnings. Recommendation must be one of proceed, revise, or stop.",
         },
         {
           role: "user",
@@ -262,13 +289,18 @@ export async function generatePortfolioSummary(
       ],
     });
 
-    const raw = (response as any).output_text as string | undefined;
+    const raw = response.choices?.[0]?.message?.content;
     if (!raw) {
+      console.warn("Portfolio summary: empty response, using fallback");
       return fallback;
     }
 
     const parsed = JSON.parse(raw);
     const normalized = normalizeSummary(parsed);
+    console.log("Portfolio summary: received normalized result", {
+      hasHeadline: Boolean(normalized?.headline),
+      recommendation: normalized?.recommendation,
+    });
     return normalized ?? fallback;
   } catch (error) {
     console.error("Failed to generate portfolio summary via GPT:", error);
